@@ -1,0 +1,128 @@
+package gui
+{
+   import avatar.AvatarInfo;
+   import avatar.AvatarManager;
+   import avatar.UserCommXtCommManager;
+   import com.sbi.popup.SBOkPopup;
+   import flash.display.MovieClip;
+   import flash.events.MouseEvent;
+   import localization.LocalizationManager;
+   import quest.QuestManager;
+   import quest.QuestXtCommManager;
+   import room.RoomXtCommManager;
+   
+   public class ItemWindowAdventure extends ItemWindowBase
+   {
+      
+      private var _scriptDef:Object;
+      
+      public function ItemWindowAdventure(param1:Function, param2:MovieClip, param3:String, param4:int, param5:Function = null, param6:Function = null, param7:Function = null, param8:Function = null, param9:Object = null)
+      {
+         this._scriptDef = QuestXtCommManager.getScriptDef(param9.scriptIds[param4]);
+         super(this._scriptDef.bannerMediaRefId,param1,param2,param3,param4,param5,param6,param7,param8);
+      }
+      
+      override protected function setChildrenAndInitialConditions() : void
+      {
+         var _loc1_:AvatarInfo = null;
+         _window.txt.mouseEnabled = false;
+         _window.txt.mouseChildren = false;
+         LocalizationManager.translateId(_window.txt.titleTxt,this._scriptDef.titleStrId);
+         if(_window["memLock"])
+         {
+            _window["memLock"].visible = this._scriptDef.membersOnly;
+            _window["memLock"].mouseEnabled = false;
+            _window["memLock"].mouseChildren = false;
+            _loc1_ = gMainFrame.userInfo.getAvatarInfoByDbAvId(gMainFrame.userInfo.myDbAvId);
+            if(_loc1_)
+            {
+               if(_loc1_.questLevel < this._scriptDef.levelMin)
+               {
+                  _window.tag.visible = false;
+               }
+            }
+         }
+         if(this._scriptDef.defId == 21)
+         {
+            _window.tag.visible = false;
+         }
+      }
+      
+      override protected function addEventListeners() : void
+      {
+         if(_window)
+         {
+            if(_mouseDown != null && !(_memberOnlyDown != null && !gMainFrame.userInfo.isMember))
+            {
+               addEventListener(MouseEvent.MOUSE_DOWN,_mouseDown,false,0,true);
+            }
+            if(_mouseOver != null)
+            {
+               addEventListener(MouseEvent.ROLL_OVER,_mouseOver,false,0,true);
+            }
+            if(_mouseOut != null)
+            {
+               addEventListener(MouseEvent.ROLL_OUT,_mouseOut,false,0,true);
+            }
+            if(_memberOnlyDown != null && !gMainFrame.userInfo.isMember)
+            {
+               addEventListener(MouseEvent.MOUSE_DOWN,_memberOnlyDown,false,0,true);
+            }
+         }
+      }
+      
+      public function performContinueChecks() : Object
+      {
+         var _loc1_:AvatarInfo = null;
+         if(QuestManager.isInPrivateAdventureState)
+         {
+            QuestManager.showLeaveQuestLobbyPopup(this.performContinueChecks);
+            return null;
+         }
+         if(AvatarManager.isMyUserInCustomPVPState())
+         {
+            UserCommXtCommManager.sendCustomPVPMessage(false,0);
+         }
+         if(!RoomXtCommManager.isSwitching)
+         {
+            if(Boolean(this._scriptDef.membersOnly) && !gMainFrame.userInfo.isMember)
+            {
+               UpsellManager.displayPopup(UpsellManager.ADVENTURES,"adventure/" + this._scriptDef.defId);
+               return null;
+            }
+            _loc1_ = gMainFrame.userInfo.getAvatarInfoByDbAvId(gMainFrame.userInfo.myDbAvId);
+            if(_loc1_)
+            {
+               if(Boolean(AvatarManager.playerAvatar) && Boolean(AvatarManager.playerAvatar.enviroTypeFlag & 1 << Utility.ENVIRO_AIR))
+               {
+                  new SBOkPopup(GuiManager.guiLayer,LocalizationManager.translateIdOnly(15706));
+                  return null;
+               }
+               if(_loc1_.questLevel < this._scriptDef.levelMin)
+               {
+                  new SBOkPopup(GuiManager.guiLayer,LocalizationManager.translateIdAndInsertOnly(14697,this._scriptDef.levelMin));
+                  return null;
+               }
+               if(this._scriptDef.avatarLimit == 1 && Boolean(_window.tag.visible))
+               {
+                  return {
+                     "func":QuestXtCommManager.sendQuestCreateJoinPublic,
+                     "defId":this._scriptDef.defId
+                  };
+               }
+               if(_window.tag.visible)
+               {
+                  return {
+                     "func":AdventureExpertPopup.init,
+                     "defId":this._scriptDef.defId
+                  };
+               }
+               return null;
+            }
+            return null;
+         }
+         return null;
+      }
+   }
+}
+

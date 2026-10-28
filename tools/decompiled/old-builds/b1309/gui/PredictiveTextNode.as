@@ -1,0 +1,55 @@
+package gui
+{
+   public class PredictiveTextNode
+   {
+      
+      public var char:String;
+      
+      public var children:Vector.<PredictiveTextNode> = new Vector.<PredictiveTextNode>();
+      
+      public var weight:int;
+      
+      public var isSpecialCharacter:Boolean;
+      
+      public var useType:int;
+      
+      public var isSpecialLangChar:Boolean;
+      
+      public function PredictiveTextNode(param1:String, param2:int, param3:Vector.<PredictiveTextNode>, param4:Boolean = false, param5:int = 0, param6:Boolean = false)
+      {
+         super();
+         char = param1;
+         weight = param2;
+         children = param3;
+         isSpecialCharacter = param4;
+         useType = param5;
+         isSpecialLangChar = param6;
+      }
+      
+      public function destroy() : void
+      {
+         children = null;
+      }
+      
+      public function contains(param1:String) : int
+      {
+         var _loc3_:int = 0;
+         var _loc2_:int = 0;
+         if(children != null)
+         {
+            _loc3_ = int(children.length);
+            _loc2_ = 0;
+            while(_loc2_ < _loc3_)
+            {
+               if(children[_loc2_].char == param1)
+               {
+                  return _loc2_;
+               }
+               _loc2_++;
+            }
+         }
+         return -1;
+      }
+   }
+}
+

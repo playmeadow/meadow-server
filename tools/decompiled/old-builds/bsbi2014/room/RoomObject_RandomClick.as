@@ -1,0 +1,50 @@
+package room
+{
+   import flash.display.MovieClip;
+   import flash.events.Event;
+   
+   public class RoomObject_RandomClick extends RoomObject
+   {
+      
+      private var _frameCountdown:int;
+      
+      public function RoomObject_RandomClick(mc:MovieClip)
+      {
+         super(mc);
+         mc.stop();
+      }
+      
+      override public function mouseDown(f:Boolean) : void
+      {
+         if(_bHold == false && f == true)
+         {
+            this._frameCountdown = 5 + int(Math.random() * _mc.totalFrames) / 2;
+            _bHold = true;
+         }
+      }
+      
+      override protected function onEnterFrame(e:Event) : void
+      {
+         if(_bHold)
+         {
+            if(_mc.currentFrame == _mc.totalFrames)
+            {
+               _mc.gotoAndStop(0);
+            }
+            else
+            {
+               _mc.nextFrame();
+            }
+            if(this._frameCountdown == 0)
+            {
+               _bHold = false;
+            }
+            else
+            {
+               --this._frameCountdown;
+            }
+         }
+      }
+   }
+}
+

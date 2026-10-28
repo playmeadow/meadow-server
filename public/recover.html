@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recover account</title><link rel="icon" type="image/png" href="/logo-square.png">
+<style>@font-face{font-family:d;src:url('/fonts/CCDigitalDelivery-Regular.otf')}*{box-sizing:border-box}body{margin:0;padding:48px 16px;background:#12001f;color:#fff;font:16px/1.45 d,system-ui}main{max-width:420px;margin:auto;padding:28px;background:#1d0833;border:1px solid #3e1a66;border-radius:18px}.logo{height:62px}h1{font-size:25px;margin:10px 0}p,label{color:#b7a0d4}label{display:block;margin:14px 0 5px}input,select,button{width:100%;font:inherit;color:#fff;background:#12001f;border:1px solid #6a2fa8;border-radius:12px;padding:10px 12px}button{margin-top:20px;background:#9d00ff;color: #fff;font-weight:bold;cursor:pointer}.status{min-height:24px;margin:14px 0 0;color:#b7a0d4}a{color:#fff}
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style></head>
+<body><main><img class="logo" src="/logo.png" alt=""><h1>Account recovery</h1>
+<div id="request"><p>We’ll send a one-time recovery link to the email saved on your account.</p><form id="request-form"><label>Username<input id="username" autocomplete="username" required></label><label>Recovery email<input id="email" type="email" autocomplete="email" required></label><label>What do you need to recover?<select id="kind"><option value="password">Password</option><option value="twoStep">2FA</option></select></label><button>Send recovery link</button></form></div>
+<div id="complete" hidden><p id="intro"></p><form id="complete-form"><label id="password-label"><span id="password-text">New password</span><input id="password" type="password" autocomplete="new-password" minlength="10" required></label><button>Complete recovery</button></form></div><p class="status" id="status" role="status"></p><p><a href="/account">Back to sign in</a></p></main>
+<script>"use strict";const $=id=>document.getElementById(id),token=new URLSearchParams(location.search).get('token');const post=async(path,body)=>{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return {ok:r.ok,data:await r.json()}};const status=(text)=>$('status').textContent=text;if(token){post('/account/api/recover/check',{token}).then(r=>{if(!r.ok){status(r.data.error);return}$('request').hidden=true;$('complete').hidden=false;const two=r.data.kind==='twoStep';$('intro').textContent=two?'Enter your password to remove 2FA from this account.':'Choose a new password.';$('password-text').textContent=two?'Your password':'New password';$('password').autocomplete=two?'current-password':'new-password';$('password').minLength=two?1:10}).catch(()=>status('The server did not answer.'))}$('request-form').addEventListener('submit',async e=>{e.preventDefault();const r=await post('/account/api/recover/request',{username:$('username').value,email:$('email').value,kind:$('kind').value});status(r.data.ok||'Could not start recovery.')});$('complete-form').addEventListener('submit',async e=>{e.preventDefault();const r=await post('/account/api/recover/complete',{token,password:$('password').value});status(r.data.ok||r.data.error||'Could not complete recovery.')});</script></body></html>

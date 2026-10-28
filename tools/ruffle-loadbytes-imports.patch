@@ -1,0 +1,16 @@
+diff --git a/core/src/loader.rs b/core/src/loader.rs
+index 33adb41c..d4ebfa86 100644
+--- a/core/src/loader.rs
++++ b/core/src/loader.rs
+@@ -385,6 +385,11 @@ impl<'gc> LoadManager<'gc> {
+                         }
+ 
+                         importer_movie.finish_importing();
++                        // A movie from `Loader.loadBytes` is preloaded once, as it
++                        // is loaded, and never by `preload_tick`: one that stopped
++                        // at this import would stay half-loaded and never fire
++                        // "complete". Carry on preloading it now the import is in.
++                        importer_movie.preload(uc, &mut ExecutionLimit::none());
+                     });
+                     Ok(())
+                 }

@@ -1,0 +1,33 @@
+diff --git a/core/src/player.rs b/core/src/player.rs
+index c3756621..245dba64 100644
+--- a/core/src/player.rs
++++ b/core/src/player.rs
+@@ -2451,6 +2451,28 @@ impl Player {
+ 
+         // GC
+         self.gc_arena.borrow_mut().collect_debt();
++        // The collector paces itself by what it allocates, and knows nothing
++        // of the memory its objects hold outside it: a ByteArray's bytes, a
++        // loaded movie's data, decoded bitmaps. A game that loads and unloads
++        // big movies (a room's art) piles those up between collections, and
++        // a phone's browser puts the page out long before one comes. So
++        // whenever the page's memory has grown by GROWTH_PAGES since the
++        // last full collection, there is one now, and what it frees is used
++        // again before the memory grows any further.
++        #[cfg(target_arch = "wasm32")]
++        {
++            use std::sync::atomic::{AtomicUsize, Ordering};
++            static FULL_GC_AT_PAGES: AtomicUsize = AtomicUsize::new(0);
++            const GROWTH_PAGES: usize = 512; // 32 MiB of 64 KiB pages
++            let pages = core::arch::wasm32::memory_size(0);
++            let at = FULL_GC_AT_PAGES.load(Ordering::Relaxed);
++            if at == 0 {
++                FULL_GC_AT_PAGES.store(pages + GROWTH_PAGES, Ordering::Relaxed);
++            } else if pages >= at {
++                self.gc_arena.borrow_mut().finish_cycle();
++                FULL_GC_AT_PAGES.store(core::arch::wasm32::memory_size(0) + GROWTH_PAGES, Ordering::Relaxed);
++            }
++        }
+ 
+         rval
+     }

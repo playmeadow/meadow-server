@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create an account</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* black and white throughout, in the game's own text font: the look of
+         the client (its app/index.html). Nothing is said by colour: what
+         went wrong is white with a "!" before it, and what cannot be undone
+         has a dashed edge. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --raised: #2b0e4b;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      ::selection { background: #9d00ff; color: #fff; }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 3px solid var(--bg); }
+      body {
+        margin: 0;
+        padding: 40px 16px;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.01em; }
+      h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+      h3 { font-size: 14px; font-weight: 700; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 13px; }
+      .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+      input, select, textarea {
+        font: inherit;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 9px 14px 10px;
+        transition: border-color 0.12s;
+      }
+      input::placeholder, textarea::placeholder { color: #8a74a8; }
+      input:hover, select:hover, textarea:hover { border-color: #6a2fa8; }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: #9d00ff; }
+      input:disabled, select:disabled, textarea:disabled { opacity: 0.4; }
+      select:not([multiple]) {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 34px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+        background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 0 6px 0 0;
+        padding: 0;
+        vertical-align: -4px;
+        border: 1px solid #6a2fa8;
+        border-radius: 6px;
+        background: var(--panel);
+        cursor: pointer;
+      }
+      input[type="checkbox"]:hover { border-color: #9d00ff; }
+      input[type="checkbox"]:checked {
+        border-color: #9d00ff;
+        background: #9d00ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 16px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+      }
+      button:hover { background: var(--raised); border-color: #6a2fa8; }
+      button:disabled { opacity: 0.45; cursor: default; }
+      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid #9d00ff; outline-offset: 2px; }
+      button.primary { font-weight: 700; color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      button.primary:hover { background: #b33cff; border-color: #b33cff; }
+      button.primary:disabled, button.primary:disabled:hover { background: #4a1a78; border-color: #4a1a78; color: #9b86b8; }
+      button.danger { border-style: dashed; border-color: #6a2fa8; }
+      button.danger:hover { border-style: solid; border-color: #9d00ff; }
+      .status, #status { min-height: 20px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+      .status.bad, #status.bad { color: var(--text); }
+      .status.bad::before, #status.bad::before, .notice::before {
+        content: "!";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: #9d00ff;
+        color: #fff;
+        font-weight: 700;
+        line-height: 17px;
+        text-align: center;
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+      }
+      main.narrow { max-width: 380px; }
+      h1 { margin: 0 0 16px; }
+      p { margin: 0 0 18px; }
+      .steps { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+      .chooser { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+      @media (max-width: 600px) { .chooser { grid-template-columns: 1fr; } }
+      .animals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-content: start; }
+      .animal { white-space: normal; padding: 8px 4px 8px; margin: 0; width: auto; border-radius: 18px; font-size: 13px; color: var(--muted); }
+      .animal img { display: block; width: 100%; aspect-ratio: 1; border-radius: 12px; filter: grayscale(1); opacity: 0.6; transition: filter 0.15s, opacity 0.15s; }
+      .animal span { display: block; margin-top: 4px; }
+      .animal:hover img, .animal[aria-checked="true"] img { filter: none; opacity: 1; }
+      .animal[aria-checked="true"] { border-color: #9d00ff; box-shadow: inset 0 0 0 1px #9d00ff; color: var(--text); background: var(--bg); }
+      .stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        padding: 16px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        text-align: center;
+      }
+      .stage img { width: 100%; max-width: 300px; max-height: 300px; }
+      .stage .name { font-size: 20px; font-weight: 700; margin-top: 6px; }
+      .stage .empty { color: var(--muted); }
+      .picked { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 18px; }
+      .picked img { width: 56px; height: 56px; border-radius: 10px; }
+      .picked div { flex: 1; font-weight: 700; }
+      label { margin: 14px 0 5px; }
+      input { width: 100%; background: var(--bg); }
+      button.primary { width: 100%; margin-top: 20px; padding: 10px 16px 11px; font-size: 16px; }
+      button.plain { width: auto; margin: 0; padding: 4px 14px 5px; font-size: 13px; }
+      #status { margin: 14px 0 0; text-align: center; }
+      label.agree { display: flex; align-items: flex-start; gap: 10px; margin-top: 18px; color: var(--text); font-size: 13px; cursor: pointer; }
+      label.agree input { width: 18px; margin: 1px 0 0; }
+      footer { max-width: 720px; margin: 14px auto 0; text-align: center; font-size: 13px; color: var(--muted); }
+      .logo { display: block; height: 72px; margin: 0 0 12px; }
+      .mark { height: 34px; flex: none; }
+      .captcha { display: flex; justify-content: center; margin-top: 16px; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="card">
+      <img class="logo" src="/logo.png" alt="">
+      <div id="step-animal">
+        <div class="steps">Step 1 of 2</div>
+        <h1>Choose an animal</h1>
+        <div class="chooser">
+          <div class="animals" id="animals" role="radiogroup" aria-label="Your first animal"></div>
+          <div class="stage" aria-live="polite">
+            <div class="empty" id="stage-empty"></div>
+            <img id="stage-art" alt="" hidden>
+            <div class="name" id="stage-name" hidden></div>
+          </div>
+        </div>
+        <button class="primary" id="next" type="button" disabled>Next</button>
+      </div>
+
+      <div id="step-account" hidden>
+        <div class="steps">Step 2 of 2</div>
+        <h1>Create your account</h1>
+        <div class="picked">
+          <img id="picked-art" alt="">
+          <div id="picked-name"></div>
+          <button class="plain" id="back" type="button">Change</button>
+        </div>
+        <form id="form">
+          <label for="username">Username <span class="hint">3 to 20 letters, digits or spaces</span></label>
+          <input id="username" name="username" autocomplete="username" maxlength="20" required>
+          <label for="password">Password <span class="hint">10 or more, with A-Z, a-z and 0-9</span></label>
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="100" required>
+          <label for="confirm">Password again</label>
+          <input id="confirm" name="confirm" type="password" autocomplete="new-password" required>
+          <label for="email">Recovery email <span class="hint">Optional: used only to recover your password or 2FA, and without one a lost password cannot be recovered</span></label>
+          <input id="email" name="email" type="email" autocomplete="email" maxlength="254">
+          <label class="agree"><input id="agreed" name="agreed" type="checkbox" required>
+            <span>I am 18 or older, and old enough in my country to agree to this myself. I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+          <div class="captcha" id="captcha"></div>
+          <button class="primary" id="submit" type="submit">Create account</button>
+        </form>
+      </div>
+
+      <div id="step-done" hidden>
+        <h1>Welcome, <span id="done-name"></span></h1>
+        <p><a href="/account">Your account</a></p>
+      </div>
+
+      <div id="status" role="status"></div>
+    </main>
+    <footer>Already have an account? <a href="/account">Manage it</a></footer>
+    <footer>Meadow is an unofficial fan project, not affiliated with WildWorks or Animal Jam. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></footer>
+
+    <script src="/captcha.js"></script>
+    <script>
+      "use strict";
+
+      // the animals the server lets a new account start as (lib/admin.js),
+      // in the order the official sign-up page shows them.
+      const ANIMALS = [
+        [4, "wolf", "Wolf"], [13, "rhino", "Rhino"], [8, "bunny", "Bunny"],
+        [1, "tiger", "Tiger"], [18, "seal", "Seal"], [5, "koala", "Koala"],
+        [6, "panda", "Panda"], [24, "penguin", "Penguin"], [7, "monkey", "Monkey"],
+      ];
+
+      const MESSAGES = {
+        invalid_username: "Usernames are 3 to 20 letters, digits, spaces, dots or dashes, with at least three letters.",
+        username_taken: "That username is already taken.",
+        name_not_allowed: "That username is not allowed.",
+        invalid_password: "Passwords need 10 characters or more, with a capital letter, a small letter and a digit.",
+        weak_password: "That password is too easy to guess: it is a common one, or has your username in it.",
+        choose_animal: "Choose an animal first.",
+        too_many_registrations: "Too many accounts were created from your address. Try again in an hour.",
+        address_banned: "Your address is banned.",
+        agree_first: "Tick the box to agree first.",
+        captcha_required: "Complete the captcha.",
+        captcha_failed: "Captcha failed. Try again.",
+        captcha_unavailable: "Captcha unavailable. Try again later.",
+        invalid_email: "Enter a valid recovery email address.",
+      };
+
+      const $ = id => document.getElementById(id);
+      const form = $("form");
+      const check = window.captcha.mount($("captcha"), "signup");
+      let chosen = null; // [id, file name, name]
+
+      const setStatus = (text, bad) => {
+        $("status").textContent = text;
+        $("status").classList.toggle("bad", bad);
+      };
+
+      const showStep = name => {
+        for (const step of ["animal", "account", "done"]) {
+          $(`step-${step}`).hidden = step !== name;
+        }
+        $("card").classList.toggle("narrow", name !== "animal");
+        setStatus("", false);
+      };
+
+      const choose = animal => {
+        chosen = animal;
+        for (const button of $("animals").children) {
+          const picked = button.dataset.id === String(animal[0]);
+          button.setAttribute("aria-checked", String(picked));
+          button.tabIndex = picked ? 0 : -1;
+        }
+        $("stage-empty").hidden = true;
+        $("stage-art").src = `/signup/hero_${animal[1]}.svg`;
+        $("stage-art").alt = animal[2];
+        $("stage-art").hidden = false;
+        $("stage-name").textContent = animal[2];
+        $("stage-name").hidden = false;
+        $("next").disabled = false;
+      };
+
+      ANIMALS.forEach((animal, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "animal";
+        button.dataset.id = animal[0];
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-checked", "false");
+        button.tabIndex = index === 0 ? 0 : -1;
+        const picture = document.createElement("img");
+        picture.src = `/signup/thumb_${animal[1]}.svg`;
+        picture.alt = "";
+        const name = document.createElement("span");
+        name.textContent = animal[2];
+        button.append(picture, name);
+        button.addEventListener("click", () => choose(animal));
+        $("animals").append(button);
+      });
+
+      $("animals").addEventListener("keydown", event => {
+        const step = {ArrowRight: 1, ArrowDown: 3, ArrowLeft: -1, ArrowUp: -3}[event.key];
+        const buttons = [...$("animals").children];
+        const at = buttons.indexOf(document.activeElement);
+        if (step === undefined || at === -1) {
+          return;
+        }
+        event.preventDefault();
+        const to = (at + step + buttons.length) % buttons.length;
+        buttons[to].focus();
+        choose(ANIMALS[to]);
+      });
+
+      $("next").addEventListener("click", () => {
+        $("picked-art").src = `/signup/thumb_${chosen[1]}.svg`;
+        $("picked-name").textContent = `Starting as a ${chosen[2].toLowerCase()}`;
+        showStep("account");
+        form.username.focus();
+      });
+
+      $("back").addEventListener("click", () => showStep("animal"));
+
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (form.password.value !== form.confirm.value) {
+          setStatus("The two passwords do not match.", true);
+          return;
+        }
+        $("submit").disabled = true;
+        try {
+          const answer = await check.answer();
+          if (answer === "") {
+            setStatus(window.captcha.FAILED, true);
+            $("submit").disabled = false;
+            return;
+          }
+          const response = await fetch("/api/register", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username: form.username.value, password: form.password.value, email: form.email.value, avatarType: chosen[0], agreed: form.agreed.checked,
+              captcha: answer}),
+          });
+          check.reset();
+          const body = await response.json();
+          if (response.ok) {
+            $("done-name").textContent = body.username;
+            form.reset();
+            showStep("done");
+          }
+          else {
+            setStatus(MESSAGES[body.error] || "Could not create the account.", true);
+          }
+        }
+        catch (err) {
+          setStatus("The server did not answer.", true);
+        }
+        $("submit").disabled = false;
+      });
+    </script>
+  </body>
+</html>

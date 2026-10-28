@@ -1,0 +1,7 @@
+[Unit]
+Description=Update the Meadow server from GitHub
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/aj/ajc-private-server/deploy/update.sh

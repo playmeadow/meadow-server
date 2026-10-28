@@ -1,0 +1,49 @@
+name: Commit messages
+
+# every commit pushed, and every commit in a pull request, is checked against
+# .github/commitlint.config.mjs (Conventional Commits).
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      # installed for this run only: the server itself has no npm packages
+      - name: Install commitlint
+        run: npm install --no-save --no-package-lock --ignore-scripts @commitlint/cli@19.8.1 @commitlint/config-conventional@19.8.1
+      - name: Check the commits
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            from=$PR_BASE to=$PR_HEAD
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != 0000000000000000000000000000000000000000 ] && git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null; then
+            from=$PUSH_BEFORE to=$PUSH_AFTER
+          else
+            # a new branch (or a force push): what it has that the default branch has not,
+            # or else the last commit alone
+            from=$(git merge-base "origin/$DEFAULT_BRANCH" "$PUSH_AFTER" 2>/dev/null || true)
+            [ -n "$from" ] && [ "$from" != "$PUSH_AFTER" ] || from=$PUSH_AFTER~1
+            to=$PUSH_AFTER
+          fi
+          git cat-file -e "$from^{commit}" 2>/dev/null || { npx --no-install commitlint --config .github/commitlint.config.mjs --last --verbose; exit; }
+          npx --no-install commitlint --config .github/commitlint.config.mjs --from "$from" --to "$to" --verbose

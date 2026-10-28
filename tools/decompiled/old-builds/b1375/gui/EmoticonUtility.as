@@ -1,0 +1,440 @@
+package gui
+{
+   import avmplus.getQualifiedClassName;
+   import flash.display.MovieClip;
+   import flash.display.Sprite;
+   
+   public class EmoticonUtility
+   {
+      
+      public static const NORMAL_TYPE:int = 0;
+      
+      public static const PLAYER_WALL_TYPE:int = 1;
+      
+      private static const MEMBER_EMOTES_WINDOW_OFFSET_Y:Number = -70;
+      
+      private static const MEMBER_EMOTES_ROWS:int = 2;
+      
+      private static const EMOTES_MARGIN_TOP:int = 14;
+      
+      private static const EMOTES_MARGIN_LEFT:int = 11;
+      
+      private static const EMOTES_STEP_V:int = 23;
+      
+      private static const EMOTES_STEP_H:int = 33;
+      
+      private static const EMOTES_ROW_MAX:uint = 7;
+      
+      private static const EMOTES_WINDOW_OFFSET_X:Number = -109;
+      
+      private static const NUM_MEMBER_EMOTES:int = 14;
+      
+      private static var displaySprites:Array = ["emoMO_angry_sml","emoMO_combat_sml","emoMO_confused_sml","emoMO_laugh_sml","emoMO_phantom_sml","emoMO_sad_sml","emoMO_sleep_sml","emoMO_heartbreak_sml","emoMO_lovesick_sml","emoMO_ninja_sml","emoMO_sick_sml","emoMO_smiley_sml","emoMO_sunglasses_sml","emoMO_vampire_sml","emo_peace_sml","emo_angry_sml","emo_blush_sml","emo_confused_sml","emo_cool_sml","emo_cry_sml","emo_evil_sml","emo_grin_sml","emo_happy_sml","emo_laugh_sml","emo_love_sml","emo_rainy_sml","emo_sick_sml","emo_sleep_sml","emo_sneaky_sml","emo_surprise_sml","emo_think_sml","emo_tongue_sml","emo_wink_sml","emo_game_sml","emo_hearts_sml","emo_brokenHeart_sml","emo_burger_sml","emo_icecream_sml","emo_sword_sml","emo_star1_sml","emo_star2_sml","emo_star3_sml"];
+      
+      private static var displaySpritesNotAllowedInPlayerWall:Array = ["emoMO_angry_sml","emoMO_combat_sml","emoMO_confused_sml","emoMO_laugh_sml","emoMO_phantom_sml","emoMO_sad_sml","emoMO_sleep_sml","emoMO_heartbreak_sml","emoMO_lovesick_sml","emoMO_ninja_sml","emoMO_sick_sml","emoMO_smiley_sml","emoMO_sunglasses_sml","emoMO_vampire_sml","emo_confused_sml","emo_love_sml","emo_rainy_sml","emo_sick_sml","emo_hearts_sml","emo_brokenHeart_sml","emo_sword_sml"];
+      
+      private static var emoteSprites:Array = ["emoMO_angry","emoMO_combat","emoMO_confused","emoMO_laugh","emoMO_phantom","emoMO_sad","emoMO_sleep","emoMO_heartbreak","emoMO_lovesick","emoMO_ninja","emoMO_sick","emoMO_smiley","emoMO_sunglasses","emoMO_vampire","emo_peace","emo_angry","emo_blush","emo_confused","emo_cool","emo_cry","emo_evil","emo_grin","emo_happy","emo_laugh","emo_love","emo_rainy","emo_sick","emo_sleep","emo_sneaky","emo_surprise","emo_think","emo_tongue","emo_wink","emo_game","emo_hearts","emo_brokenHeart","emo_burger","emo_icecream","emo_sword","emo_star1","emo_star2","emo_star3"];
+      
+      private static var _emoteStrings:Object = {};
+      
+      private static var _emoteChatStrings:Object = {};
+      
+      _emoteStrings["emoMO_angry"] = [":mad:"];
+      _emoteStrings["emoMO_combat"] = [":scuffle:"];
+      _emoteStrings["emoMO_confused"] = [":puzzle:"];
+      _emoteStrings["emoMO_laugh"] = [":joy:"];
+      _emoteStrings["emoMO_phantom"] = [":phantom:"];
+      _emoteStrings["emoMO_sad"] = [":sad:"];
+      _emoteStrings["emoMO_sleep"] = [":sleepy:"];
+      _emoteStrings["emoMO_heartbreak"] = [":breakingheart:"];
+      _emoteStrings["emoMO_lovesick"] = [":lovesick:"];
+      _emoteStrings["emoMO_ninja"] = [":ninja:"];
+      _emoteStrings["emoMO_sick"] = [":queasy:"];
+      _emoteStrings["emoMO_smiley"] = [":smiley:"];
+      _emoteStrings["emoMO_sunglasses"] = [":sunglasses:"];
+      _emoteStrings["emoMO_vampire"] = [":vampire:"];
+      _emoteStrings["emo_peace"] = [":peace:"];
+      _emoteStrings["emo_angry"] = [":angry:","X(","X-("];
+      _emoteStrings["emo_blush"] = [":blush:"];
+      _emoteStrings["emo_brokenHeart"] = [":brokenheart:"];
+      _emoteStrings["emo_burger"] = [":burger:"];
+      _emoteStrings["emo_confused"] = [":confused:",":/"];
+      _emoteStrings["emo_cool"] = [":cool:"];
+      _emoteStrings["emo_cry"] = [":cry:"];
+      _emoteStrings["emo_evil"] = [":evil:"];
+      _emoteStrings["emo_game"] = [":game:"];
+      _emoteStrings["emo_grin"] = [":D",":grin:"];
+      _emoteStrings["emo_happy"] = [":)",":happy:"];
+      _emoteStrings["emo_hearts"] = [":hearts:","<3<3<3"];
+      _emoteStrings["emo_icecream"] = [":icecream:"];
+      _emoteStrings["emo_laugh"] = [":laugh:",":))"];
+      _emoteStrings["emo_love"] = [":love:","(l)","(L)","(^_^)<3"];
+      _emoteStrings["emo_rainy"] = [":rainy:"];
+      _emoteStrings["emo_sick"] = [":sick:"];
+      _emoteStrings["emo_sleep"] = [":tired:","|)","|-)",":zzz:","-_-","-_-zzz","--_"];
+      _emoteStrings["emo_sneaky"] = [":sneaky:"];
+      _emoteStrings["emo_surprise"] = [":surprise:",":O",":-O"];
+      _emoteStrings["emo_sword"] = [":sword:"];
+      _emoteStrings["emo_think"] = [":think:",":?"];
+      _emoteStrings["emo_tongue"] = [":P",":p",":tongue:"];
+      _emoteStrings["emo_wink"] = [":wink:",";)",";-)"];
+      _emoteStrings["emo_star1"] = [":singlestar:"];
+      _emoteStrings["emo_star2"] = [":doublestar:"];
+      _emoteStrings["emo_star3"] = [":triplestar:"];
+      _emoteChatStrings["emoMO_angry"] = [":mad:"];
+      _emoteChatStrings["emoMO_combat"] = [":scuffle:"];
+      _emoteChatStrings["emoMO_laugh"] = [":joy:"];
+      _emoteChatStrings["emoMO_phantom"] = [":phantom:"];
+      _emoteChatStrings["emoMO_sad"] = [":sad:"];
+      _emoteChatStrings["emoMO_sleep"] = [":sleepy:"];
+      _emoteChatStrings["emoMO_heartbreak"] = [":breakingheart:"];
+      _emoteChatStrings["emoMO_lovesick"] = [":lovesick:"];
+      _emoteChatStrings["emoMO_ninja"] = [":ninja:"];
+      _emoteChatStrings["emoMO_sick"] = [":queasy:"];
+      _emoteChatStrings["emoMO_smiley"] = [":smiley:"];
+      _emoteChatStrings["emoMO_sunglasses"] = [":sunglasses:"];
+      _emoteChatStrings["emoMO_vampire"] = [":vampire:"];
+      _emoteChatStrings["emo_peace"] = [":peace:"];
+      _emoteChatStrings["emo_angry"] = [":angry:"];
+      _emoteChatStrings["emo_blush"] = [":blush:"];
+      _emoteChatStrings["emo_burger"] = [":burger:"];
+      _emoteChatStrings["emo_cool"] = [":cool:"];
+      _emoteChatStrings["emo_cry"] = [":cry:"];
+      _emoteChatStrings["emo_evil"] = [":evil:"];
+      _emoteChatStrings["emo_game"] = [":game:"];
+      _emoteChatStrings["emo_grin"] = [":D",":grin:"];
+      _emoteChatStrings["emo_happy"] = [":)",":happy:"];
+      _emoteChatStrings["emo_icecream"] = [":icecream:"];
+      _emoteChatStrings["emo_laugh"] = [":laugh:",":))"];
+      _emoteChatStrings["emo_sleep"] = [":tired:","|)","|-)",":zzz:","-_-","-_-zzz","--_"];
+      _emoteChatStrings["emo_sneaky"] = [":sneaky:"];
+      _emoteChatStrings["emo_surprise"] = [":surprise:",":O",":-O"];
+      _emoteChatStrings["emo_think"] = [":think:"];
+      _emoteChatStrings["emo_tongue"] = [":P",":tongue:"];
+      _emoteChatStrings["emo_wink"] = [":wink:",";)",";-)"];
+      _emoteChatStrings["emo_star1"] = [":singlestar:"];
+      _emoteChatStrings["emo_star2"] = [":doublestar:"];
+      _emoteChatStrings["emo_star3"] = [":triplestar:"];
+      
+      public function EmoticonUtility()
+      {
+         super();
+      }
+      
+      public static function setupEmotes(param1:int, param2:MovieClip, param3:Boolean, param4:Function, param5:Function, param6:Function) : MovieClip
+      {
+         var _loc12_:* = 0;
+         var _loc9_:Sprite = null;
+         var _loc10_:int = param3 ? 0 : 7 * 2;
+         var _loc8_:Number = param1 == 0 ? -55 : 15;
+         var _loc7_:MovieClip = new MovieClip();
+         var _loc11_:int = 0;
+         _loc12_ = 0;
+         for(; _loc12_ < displaySprites.length; _loc12_++)
+         {
+            if(param1 == 0 || displaySpritesNotAllowedInPlayerWall.indexOf(displaySprites[_loc12_]) == -1)
+            {
+               _loc9_ = GETDEFINITIONBYNAME(displaySprites[_loc12_]);
+               if(param1 == 0 && _loc11_ < 7 * 2)
+               {
+                  if(!param3)
+                  {
+                     _loc11_++;
+                     continue;
+                  }
+                  _loc9_.x = 11 + _loc11_ % 7 * 33 + -109;
+                  _loc9_.y = 14 + Math.floor(_loc11_ / 7) * 23 + -70;
+               }
+               else
+               {
+                  _loc9_.x = 11 + _loc11_ % 7 * 33 + -109;
+                  _loc9_.y = 14 + Math.floor((_loc11_ - _loc10_) / 7) * 23 + _loc8_;
+                  if(!param3)
+                  {
+                     _loc9_.y += 35;
+                  }
+               }
+               _loc7_.addChild(_loc9_);
+               _loc9_.addChild(GETDEFINITIONBYNAME("emo_place_holder"));
+               _loc9_.buttonMode = true;
+               _loc9_.useHandCursor = true;
+               _loc9_.mouseChildren = false;
+               _loc9_.tabEnabled = true;
+               _loc9_.tabChildren = false;
+               _loc9_.addEventListener("click",param4,false,0,true);
+               _loc9_.addEventListener("rollOver",param5,false,0,true);
+               _loc9_.addEventListener("rollOut",param5,false,0,true);
+               _loc11_++;
+            }
+         }
+         return _loc7_;
+      }
+      
+      public static function getEmoteString(param1:Sprite) : String
+      {
+         if(_emoteStrings[getQualifiedClassName(param1)])
+         {
+            return _emoteStrings[getQualifiedClassName(param1)][0];
+         }
+         return null;
+      }
+      
+      public static function matchEmoteString(param1:String, param2:Boolean = false) : Object
+      {
+         var _loc3_:* = null;
+         for each(var _loc4_:String in emoteSprites)
+         {
+            if(_emoteStrings[_loc4_].indexOf(param1) != -1)
+            {
+               if(param2 == false && _loc4_.slice(3,5) == "MO" && !gMainFrame.userInfo.isMember)
+               {
+                  UpsellManager.displayPopup("emotes","useLockedEmote");
+                  return {
+                     "sprite":null,
+                     "status":false
+                  };
+               }
+               return {
+                  "sprite":GETDEFINITIONBYNAME(_loc4_),
+                  "status":true
+               };
+            }
+         }
+         return {
+            "sprite":null,
+            "status":true
+         };
+      }
+      
+      public static function doesStringMatchAnEmote(param1:String) : Boolean
+      {
+         for each(var _loc2_:String in emoteSprites)
+         {
+            if(_emoteStrings[_loc2_].indexOf(param1) != -1)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+      
+      public static function emoteForId(param1:int) : Sprite
+      {
+         if(param1 >= 0 && param1 < emoteSprites.length)
+         {
+            return GETDEFINITIONBYNAME(emoteSprites[param1]);
+         }
+         return null;
+      }
+      
+      public static function idForEmote(param1:Sprite) : int
+      {
+         return emoteSprites.indexOf(getQualifiedClassName(param1));
+      }
+      
+      public static function stringForId(param1:int) : String
+      {
+         if(param1 >= 0 && param1 < emoteSprites.length)
+         {
+            return _emoteStrings[emoteSprites[param1]][0];
+         }
+         return null;
+      }
+      
+      public static function handleSmileyClick(param1:Object, param2:Function) : void
+      {
+         var _loc3_:int = displaySprites.indexOf(getQualifiedClassName(param1));
+         if(_loc3_ != -1 && _loc3_ < 14 && !gMainFrame.userInfo.isMember)
+         {
+            UpsellManager.displayPopup("emotes","useLockedEmote");
+         }
+         else
+         {
+            param2(GETDEFINITIONBYNAME(emoteSprites[_loc3_]));
+         }
+      }
+      
+      public static function formatStringForSmiley(param1:String, param2:int, param3:Array, param4:Boolean) : Object
+      {
+         var _loc7_:* = null;
+         var _loc21_:* = null;
+         var _loc26_:Boolean = false;
+         var _loc9_:Boolean = false;
+         var _loc25_:String = null;
+         var _loc18_:int = 0;
+         var _loc22_:RegExp = null;
+         var _loc23_:* = null;
+         var _loc5_:String = null;
+         var _loc24_:MovieClip = null;
+         var _loc12_:String = null;
+         var _loc16_:* = null;
+         var _loc6_:String = null;
+         var _loc8_:String = null;
+         var _loc10_:int = 0;
+         var _loc13_:int = 0;
+         var _loc17_:Boolean = false;
+         var _loc15_:Array = null;
+         var _loc11_:Array = [];
+         for each(_loc7_ in _emoteChatStrings)
+         {
+            for each(_loc21_ in _loc7_)
+            {
+               _loc22_ = new RegExp(escapeRegExp(_loc21_),"gm");
+               _loc11_ = param1.split(_loc22_);
+               if(param4)
+               {
+                  param1 = _loc11_.join("|*|" + _loc21_);
+               }
+               else if(_loc11_.length > 1)
+               {
+                  param1 = "";
+                  _loc18_ = 0;
+                  while(_loc18_ < _loc11_.length)
+                  {
+                     _loc25_ = _loc11_[_loc18_];
+                     if(_loc18_ == 0 && _loc25_ != " ")
+                     {
+                        param1 += _loc25_;
+                     }
+                     else if(!_loc26_)
+                     {
+                        if(_loc25_ != "" && _loc25_ != " ")
+                        {
+                           param1 += "|*|" + _loc21_ + _loc25_;
+                        }
+                        else
+                        {
+                           param1 += "|*|" + _loc21_;
+                        }
+                        _loc26_ = true;
+                     }
+                     else if(_loc25_ != "" && _loc25_ != " ")
+                     {
+                        param1 += _loc25_;
+                     }
+                     _loc18_++;
+                  }
+               }
+            }
+         }
+         var _loc20_:Array = param1.split("|*|");
+         if(_loc20_[0] == "")
+         {
+            _loc20_.shift();
+         }
+         var _loc14_:Boolean = _loc20_.length == 1;
+         var _loc19_:String = "false";
+         _loc13_ = 0;
+         while(_loc13_ < _loc20_.length)
+         {
+            if(_loc13_ == 0 && _loc20_[_loc13_] == "")
+            {
+               _loc19_ = "true";
+            }
+            loop4:
+            for(_loc5_ in _emoteChatStrings)
+            {
+               var _loc32_:int = 0;
+               var _loc31_:* = _emoteChatStrings[_loc5_];
+               loop5:
+               do
+               {
+                  for each(_loc23_ in _loc31_)
+                  {
+                     _loc6_ = _loc20_[_loc13_];
+                     if(!(_loc6_ == "" || _loc6_.charAt() == " "))
+                     {
+                        continue loop5;
+                     }
+                     continue loop4;
+                  }
+               }
+               while(_loc16_ = _loc23_, _loc10_ = int(_loc6_.indexOf(_loc16_)), if(_loc10_ != -1)
+               {
+                  _loc8_ = "";
+                  _loc18_ = 0;
+                  while(_loc18_ < _loc23_.length)
+                  {
+                     _loc8_ += _loc6_.charAt(_loc10_ + _loc18_);
+                     _loc18_++;
+                  }
+               }, _loc8_ != _loc16_);
+               if(!(_loc5_.slice(3,5) == "MO" && !gMainFrame.userInfo.isMember))
+               {
+                  _loc8_ = "";
+                  _loc24_ = GETDEFINITIONBYNAME(_loc5_ + "_sml");
+                  _loc24_.y = _loc24_.y - 3;
+                  if(_loc13_ - 1 > 0 && _loc19_ == "false" && _loc20_[_loc13_ - 1].charAt(_loc20_[_loc13_ - 1].length - 1) != " ")
+                  {
+                     _loc17_ = true;
+                  }
+                  if(_loc24_.width <= 20)
+                  {
+                     _loc12_ = " . ";
+                  }
+                  else if(_loc24_.width <= 22)
+                  {
+                     _loc12_ = " .  ";
+                  }
+                  else if(_loc24_.width <= 25)
+                  {
+                     _loc12_ = " .   ";
+                  }
+                  else
+                  {
+                     _loc12_ = "  .     ";
+                  }
+                  _loc20_[_loc13_] = _loc12_ + (_loc17_ == true ? " " : "") + _loc20_[_loc13_].substr(_loc23_.length,_loc20_[_loc13_].length);
+                  param3.push({
+                     "strindex":param2,
+                     "emoticon":_loc24_,
+                     "added":false,
+                     "smileystart":_loc19_
+                  });
+               }
+            }
+            _loc15_ = _loc20_[_loc13_].split("");
+            param2 += _loc15_.length;
+            _loc13_++;
+         }
+         return {
+            "str":_loc20_.join(""),
+            "smileyArray":param3,
+            "stringIndex":param2,
+            "hasOnlyOne":_loc14_
+         };
+      }
+      
+      public static function getSmallSmileyMCForEmoteString(param1:String) : MovieClip
+      {
+         var _loc2_:String = null;
+         var _loc3_:* = null;
+         loop0:
+         for(_loc2_ in _emoteStrings)
+         {
+            var _loc5_:int = 0;
+            var _loc4_:* = _emoteStrings[_loc2_];
+            do
+            {
+               for each(_loc3_ in _loc4_)
+               {
+               }
+               continue loop0;
+            }
+            while(_loc3_ != param1);
+            if(_loc2_.slice(3,5) == "MO" && !gMainFrame.userInfo.isMember)
+            {
+               return null;
+            }
+            return GETDEFINITIONBYNAME(_loc2_ + "_sml");
+         }
+         return null;
+      }
+      
+      private static function escapeRegExp(param1:String) : String
+      {
+         return param1.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,"\\$&");
+      }
+   }
+}
+

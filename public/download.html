@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Download Meadow</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* the look of the sign-up page: black and white, the game's text font,
+         rounded pills. the rows are filled in by the server (lib/http.js),
+         one for each installer it has. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+      }
+      * { box-sizing: border-box; }
+      ::selection { background: #9d00ff; color: #fff; }
+      body {
+        margin: 0;
+        padding: 40px 16px;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      main {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 24px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+      }
+      .logo { display: block; height: 72px; margin: 0 0 12px; }
+      h1 { margin: 0 0 14px; font-size: 26px; font-weight: 700; letter-spacing: 0.01em; }
+      .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+      .row div { flex: 1; min-width: 0; }
+      .system { font-weight: 700; }
+      .detail { color: var(--muted); font-size: 12px; }
+      .get {
+        flex: none;
+        padding: 7px 16px 8px;
+        border: 1px solid #9d00ff;
+        border-radius: 999px;
+        background: #9d00ff;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        transition: background 0.12s, border-color 0.12s;
+      }
+      .get:hover { background: #b33cff; border-color: #b33cff; }
+      .soon { flex: none; padding: 7px 16px 8px; border: 1px dashed var(--line); border-radius: 999px; color: var(--muted); font-size: 14px; }
+      .none { margin: 0; padding: 12px 0; border-top: 1px solid var(--line); color: var(--muted); }
+      footer { max-width: 520px; margin: 14px auto 0; text-align: center; font-size: 13px; color: var(--muted); }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a href="/"><img class="logo" src="/logo.png" alt="Meadow"></a>
+      <h1>Download</h1>
+      {{rows}}
+    </main>
+    <footer><a href="/register">Create an account</a> · {{sums}}</footer>
+    <footer>Meadow is an unofficial fan project, not affiliated with WildWorks or Animal Jam. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></footer>
+  </body>
+</html>

@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your account</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* black and white throughout, in the game's own text font: the look of
+         the client (its app/index.html). Nothing is said by colour: what
+         went wrong is white with a "!" before it, and what cannot be undone
+         has a dashed edge. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --raised: #2b0e4b;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      ::selection { background: #9d00ff; color: #fff; }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 3px solid var(--bg); }
+      body {
+        margin: 0;
+        padding: 32px 16px 48px;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.01em; }
+      h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+      h3 { font-size: 14px; font-weight: 700; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 13px; }
+      .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+      input, select, textarea {
+        font: inherit;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 9px 14px 10px;
+        transition: border-color 0.12s;
+      }
+      input::placeholder, textarea::placeholder { color: #8a74a8; }
+      input:hover, select:hover, textarea:hover { border-color: #6a2fa8; }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: #9d00ff; }
+      input:disabled, select:disabled, textarea:disabled { opacity: 0.4; }
+      select:not([multiple]) {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 34px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+        background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 0 6px 0 0;
+        padding: 0;
+        vertical-align: -4px;
+        border: 1px solid #6a2fa8;
+        border-radius: 6px;
+        background: var(--panel);
+        cursor: pointer;
+      }
+      input[type="checkbox"]:hover { border-color: #9d00ff; }
+      input[type="checkbox"]:checked {
+        border-color: #9d00ff;
+        background: #9d00ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 16px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+      }
+      button:hover { background: var(--raised); border-color: #6a2fa8; }
+      a.button { border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px 8px; white-space: nowrap; text-decoration: none; }
+      a.button:hover { background: var(--raised); border-color: #6a2fa8; }
+      button:disabled { opacity: 0.45; cursor: default; }
+      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid #9d00ff; outline-offset: 2px; }
+      button.primary { font-weight: 700; color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      button.primary:hover { background: #b33cff; border-color: #b33cff; }
+      button.primary:disabled, button.primary:disabled:hover { background: #4a1a78; border-color: #4a1a78; color: #9b86b8; }
+      button.danger { border-style: dashed; border-color: #6a2fa8; }
+      button.danger:hover { border-style: solid; border-color: #9d00ff; }
+      .status, #status { min-height: 20px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+      .status.bad, #status.bad { color: var(--text); }
+      .status.bad::before, #status.bad::before, .notice::before {
+        content: "!";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: #9d00ff;
+        color: #fff;
+        font-weight: 700;
+        line-height: 17px;
+        text-align: center;
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+      .wrap { max-width: 760px; margin: 0 auto; }
+      label.check { display: flex; align-items: center; color: var(--text); font-size: 14px; cursor: pointer; }
+      /* dark on white whatever the page: that is what a phone's camera reads. */
+      #two-step-qr { display: block; margin: 0 0 12px; border-radius: 14px; background: #fff; image-rendering: pixelated; }
+      #two-step-recovery { margin: 0 0 4px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); font: 15px/1.7 ui-monospace, Consolas, monospace; columns: 2; }
+      #gate { max-width: 380px; margin: 6vh auto 0; }
+      section, #gate {
+        padding: 20px;
+        margin-bottom: 16px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+      }
+      header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      header h1 { flex: 1; }
+      input, select, textarea { background: var(--bg); }
+      input:not([type="checkbox"]), textarea { width: 100%; }
+      textarea { min-height: 110px; resize: vertical; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+      /* their own custom items: a card each, its picture on the left */
+      .my-items { display: grid; gap: 10px; margin-top: 10px; }
+      .music-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-top: 10px; }
+      .music-form label { margin: 0; }
+      .music-list { display: grid; gap: 6px; margin-top: 12px; }
+      .music-list .track { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; }
+      .music-list .track span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      @media (max-width: 640px) { .music-form { grid-template-columns: 1fr; } }
+      .my-item { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: 14px; }
+      .my-item .art { width: 72px; height: 72px; border-radius: 10px; background: var(--raised, #2b0e4b); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-size: 11px; text-align: center; }
+      .my-item .art img { max-width: 100%; max-height: 100%; image-rendering: auto; }
+      .my-item .row { margin-top: 6px; }
+      .my-item input[type="text"] { flex: 1; min-width: 140px; }
+      .my-item input[type="file"] { display: none; }
+      .captcha { margin-top: 12px; }
+      .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .tile { padding: 12px 14px 11px; border: 1px solid var(--line); border-radius: 18px; }
+      .tile .value { font-size: 18px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+      .tile .name { margin-top: 2px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+      .notice { padding: 10px 14px; margin-bottom: 16px; border: 1px solid #9d00ff; border-radius: 18px; color: var(--text); }
+      .switch { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+      .switch:first-of-type { border-top: 0; }
+      .switch .what { flex: 1; }
+      .switch .what b { display: block; }
+      .switch button { min-width: 64px; }
+      .switch button[aria-pressed="true"] { color: #fff; background: #9d00ff; border-color: #9d00ff; font-weight: 700; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { text-align: left; padding: 7px 8px; border-top: 1px solid var(--line); }
+      th { border-top: 0; color: var(--muted); font-weight: 400; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+      td.bad { font-weight: 700; }
+      td.bad::before { content: "! "; }
+      .scroll { overflow-x: auto; }
+      .entry { padding: 10px 0; border-top: 1px solid var(--line); }
+      .entry:first-child { border-top: 0; }
+      .entry pre { margin: 4px 0 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .tag { display: inline-block; padding: 1px 9px 2px; border: 1px solid var(--line); border-radius: 999px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .tag.good { color: #fff; background: #9d00ff; border-color: #9d00ff; font-weight: 700; }
+      .tag.bad { color: var(--text); border-color: #9d00ff; font-weight: 700; }
+      .logo { display: block; height: 72px; margin: 0 0 12px; }
+      .mark { height: 34px; flex: none; }
+      /* the page of a ban: the ban, and the little that is left to do. */
+      #page.restricted section:not(.kept), #page.restricted .notice { display: none; }
+      .ban-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+      .ban-head img { width: 44px; height: 44px; flex: none; }
+      .ban-head h2 { margin: 0; font-size: 22px; }
+      .chat-style-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+      .chat-style-grid input[type="color"] { width: 100%; height: 42px; padding: 3px; cursor: pointer; }
+      .gradient-editor { margin: 14px 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+      .gradient-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+      .gradient-stops { display: grid; gap: 8px; }
+      .gradient-ramp { height: 22px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 999px; }
+      .gradient-stop { display: grid; grid-template-columns: 50px minmax(100px, 1fr) 72px auto; align-items: center; gap: 8px; }
+      .gradient-stop input[type="color"] { width: 50px; height: 36px; padding: 2px; cursor: pointer; }
+      .gradient-stop input[type="range"] { margin: 0; }
+      .gradient-stop output { color: var(--muted); font-size: 12px; text-align: right; }
+      .chat-preview { min-height: 74px; display: grid; place-items: center; margin-top: 14px; padding: 12px 18px; border: 1px solid var(--line); border-radius: 18px; text-align: center; font-weight: 700; background: linear-gradient(120deg, #fff, #dfe8ff); color: #445559; }
+      .chat-preview.pulse { animation: chatPulse 1.5s ease-in-out infinite alternate; }
+      .chat-preview.shimmer { background-size: 250% 100%; animation: chatShimmer 1.5s linear infinite; }
+      .chat-preview.flow { background-size: 220% 220%; animation: chatFlow 1.5s linear infinite alternate; }
+      .chat-preview.rainbow { animation: chatRainbow 2s linear infinite; }
+      @keyframes chatPulse { to { opacity: .55; } }
+      @keyframes chatShimmer { to { background-position: 100% 0; } }
+      @keyframes chatFlow { to { background-position: 100% 100%; } }
+      @keyframes chatRainbow { to { filter: hue-rotate(360deg); } }
+      @media (max-width: 440px) { .chat-style-grid { grid-template-columns: 1fr; } }
+      #ban-section pre { margin: 0 0 12px; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+      #ban-section h3 { margin: 18px 0 0; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="gate" hidden>
+        <img class="logo" src="/logo.png" alt="">
+        <h1>Your account</h1>
+        <form id="sign-in">
+          <label for="username">Username</label>
+          <input id="username" autocomplete="username" maxlength="100" required>
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" maxlength="100" required>
+          <div id="code-part" hidden>
+            <label for="code">2FA code</label>
+            <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" spellcheck="false">
+            <label class="check" style="margin-top:12px"><input id="remember-device" type="checkbox"> Trust this device for 30 days</label>
+          </div>
+          <div class="captcha" id="captcha"></div>
+          <div class="row"><button class="primary" type="submit">Sign in</button><button id="client-sign-in" type="button">Sign in with the Meadow client</button></div>
+        </form>
+        <p class="status" id="gate-status" role="status"></p>
+        <p class="hint" style="margin:10px 0 0">No account yet? <a href="/register">Create one</a> · <a href="/account/recover">Forgot password or 2FA?</a></p>
+      </div>
+
+      <div id="page" hidden>
+        <header>
+          <img class="mark" src="/logo.png" alt="">
+          <h1 id="title"></h1>
+          <a class="button" id="crystals-link" href="/crystals">Crystals</a>
+          <a class="button" id="item-giver" href="/account/items">Item giver</a>
+          <button id="sign-out" type="button">Sign out</button>
+        </header>
+
+        <section class="kept" id="ban-section" hidden>
+          <div class="ban-head">
+            <img src="/ban-icon.png" alt="">
+            <h2 id="ban-title"></h2>
+            <span class="tag bad" id="ban-address" hidden>This address</span>
+          </div>
+          <div id="ban-reason-part" hidden>
+            <label>Reason</label>
+            <pre id="ban-reason"></pre>
+          </div>
+          <h3>Appeal</h3>
+          <form id="appeal-form">
+            <label for="appeal-text"><span class="hint" id="appeal-count"></span></label>
+            <textarea id="appeal-text" spellcheck="true" required></textarea>
+            <div class="row"><button class="primary" type="submit">Send</button></div>
+          </form>
+          <div id="appeal-sent"></div>
+          <p class="status" id="appeal-status" role="status"></p>
+        </section>
+        <div class="notice" id="lock-notice" hidden>This account is locked.</div>
+
+        <section>
+          <h2>Overview</h2>
+          <div class="tiles" id="tiles" style="margin-top:10px"></div>
+        </section>
+
+        <section>
+          <h2>Features</h2>
+          <div id="switches"></div>
+          <p class="status" id="feature-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Buddies</h2>
+          <!-- closed at first: a long list made the page slow to scroll -->
+          <details id="buddies-box" hidden>
+            <summary id="buddies-summary">Buddies</summary>
+            <div id="buddies"></div>
+          </details>
+          <p class="hint" id="no-buddies" hidden>No buddies yet.</p>
+          <p class="status" id="buddy-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Blocked</h2>
+          <div id="blocked"></div>
+          <p class="hint" id="no-blocked" hidden>Nobody is blocked.</p>
+          <form id="block-form">
+            <label for="block-name">Username</label>
+            <div class="row" style="margin-top:0"><input id="block-name" maxlength="100" autocomplete="off" spellcheck="false" style="flex:1;width:auto" required>
+              <button type="submit">Block</button></div>
+          </form>
+          <p class="status" id="block-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Trades</h2>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>When</th><th>With</th><th>Got</th><th>Gave</th></tr></thead>
+              <tbody id="trades"></tbody>
+            </table>
+          </div>
+          <p class="hint" id="no-trades" hidden>No trades yet.</p>
+        </section>
+
+        <section>
+          <h2>Trade offers</h2>
+          <div id="offers-in"></div>
+          <div id="offers-out"></div>
+          <p class="hint" id="no-offers" hidden>No offers waiting.</p>
+          <form id="offer-lookup">
+            <label for="offer-to">Offer to</label>
+            <div class="row" style="margin-top:0"><input id="offer-to" maxlength="100" autocomplete="off" spellcheck="false" placeholder="Username" style="flex:1;width:auto" required>
+              <button type="submit">Trade list</button></div>
+          </form>
+          <form id="offer-form" hidden>
+            <label for="offer-wanted">You get</label>
+            <select id="offer-wanted" style="width:100%"></select>
+            <label for="offer-filter">You give</label>
+            <input id="offer-filter" placeholder="Filter" autocomplete="off">
+            <select id="offer-given" multiple size="8" style="width:100%;margin-top:8px" aria-label="Your items"></select>
+            <div class="row"><button class="primary" type="submit">Offer</button></div>
+          </form>
+          <p class="status" id="offer-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Den visitors</h2>
+          <details id="visits-box" hidden>
+            <summary id="visits-summary">Visitors</summary>
+            <div id="visits"></div>
+          </details>
+          <p class="hint" id="no-visits" hidden>No visitors yet.</p>
+        </section>
+
+        <section>
+          <h2>Achievements</h2>
+          <p id="achievement-summary"></p>
+          <details>
+            <summary>Progress</summary>
+            <div class="scroll" style="margin-top:10px">
+              <table>
+                <thead><tr><th>Counted</th><th>So far</th><th>Next at</th><th>Earned</th></tr></thead>
+                <tbody id="achievements"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+
+        <section>
+          <h2>My items</h2>
+          <p class="hint" id="my-items-hint"></p>
+          <div class="my-items" id="my-items"></div>
+          <p class="hint" id="no-my-items" hidden>You have not made any items yet. Make one in the game: Settings, then Item Maker.</p>
+          <p class="status" id="my-items-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>My music</h2>
+          <p class="hint" id="music-hint">Your own den music: an MP3 of your choice, played by the music note in your den.</p>
+          <form class="music-form" id="music-form">
+            <label>Name <input id="music-name" type="text" maxlength="40" required autocomplete="off"></label>
+            <label>MP3 <input id="music-file" type="file" accept="audio/mpeg,.mp3" required></label>
+            <button class="primary" type="submit" id="music-send">Upload</button>
+          </form>
+          <div class="music-list" id="music-list"></div>
+          <p class="status" id="music-status" role="status"></p>
+        </section>
+
+        <section class="kept" id="rename-section" hidden>
+          <h2>Username rejected</h2>
+          <form id="rename-form">
+            <label for="rename-name">New username</label>
+            <input id="rename-name" maxlength="20" autocomplete="off" spellcheck="false" required>
+            <div class="row"><button class="primary" type="submit">Save</button></div>
+          </form>
+          <p class="status" id="rename-status" role="status"></p>
+        </section>
+
+        <section class="kept">
+          <h2>Password</h2>
+          <form id="password-form">
+            <label for="current-password">Current</label>
+            <input id="current-password" type="password" autocomplete="current-password" maxlength="100" required>
+            <label for="new-password">New</label>
+            <input id="new-password" type="password" autocomplete="new-password" minlength="10" maxlength="100" required>
+            <label for="confirm-password">New again</label>
+            <input id="confirm-password" type="password" autocomplete="new-password" required>
+            <div class="row"><button class="primary" type="submit">Change</button></div>
+          </form>
+          <p class="status" id="password-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Bio</h2>
+          <form id="bio-form">
+            <label for="bio-text"><span class="hint" id="bio-count"></span></label>
+            <textarea id="bio-text" rows="5" spellcheck="true"></textarea>
+            <div class="row"><button class="primary" type="submit">Save</button>
+              <button id="bio-remove" type="button">Remove</button></div>
+          </form>
+          <p class="status" id="bio-status" role="status"></p>
+        </section>
+
+        <section id="chat-bubble">
+          <h2>Chat bubble</h2>
+          <p>Choose how your spoken chat bubbles look for everyone using Meadow's current client.</p>
+          <form id="chat-style-form">
+            <div class="gradient-editor">
+              <div class="gradient-editor-head"><b>Gradient colours</b><button id="chat-stop-add" type="button">Add colour</button></div>
+              <div class="gradient-ramp" id="chat-ramp"></div>
+              <div class="gradient-stops" id="chat-stops"></div>
+            </div>
+            <div class="chat-style-grid">
+              <div hidden><input id="chat-background" type="color" value="#ffffff"></div>
+              <div hidden><input id="chat-accent" type="color" value="#dfe8ff"></div>
+              <div><label for="chat-text-colour">Text colour</label><input id="chat-text-colour" type="color" value="#445559"></div>
+              <div><label for="chat-border">Border</label><input id="chat-border" type="color" value="#9aabb0"></div>
+              <div><label for="chat-opacity">Opacity <span class="hint" id="chat-opacity-value"></span></label><input id="chat-opacity" type="range" min="25" max="100" value="75"></div>
+              <div><label for="chat-gradient">Gradient</label><select id="chat-gradient"><option value="linear">Linear</option><option value="radial">Radial</option><option value="solid">Solid</option></select></div>
+              <div><label for="chat-angle">Direction</label><select id="chat-angle"><option value="0">0°</option><option value="45">45°</option><option value="90">90°</option><option value="135">135°</option><option value="180">180°</option><option value="225">225°</option><option value="270">270°</option><option value="315">315°</option></select></div>
+              <div><label for="chat-strength">Gradient strength <span class="hint" id="chat-strength-value"></span></label><input id="chat-strength" type="range" min="0" max="100" value="100"></div>
+              <div><label for="chat-outline">Outline thickness <span class="hint" id="chat-outline-value"></span></label><input id="chat-outline" type="range" min="0" max="4" step="1" value="1"></div>
+              <div><label for="chat-animation">Animation</label><select id="chat-animation"><option value="none">Still</option><option value="pulse">Pulse</option><option value="shimmer">Shimmer</option><option value="flow">Flow</option><option value="rainbow">Rainbow</option></select></div>
+              <div><label for="chat-speed">Animation speed <span class="hint" id="chat-speed-value"></span></label><input id="chat-speed" type="range" min="40" max="300" value="100"></div>
+            </div>
+            <div class="chat-preview" id="chat-preview">Your chat bubble preview</div>
+            <div class="row"><button id="chat-style-swap" type="button">Swap gradient</button><button id="chat-style-random" type="button">Random gradient</button></div>
+            <div class="row"><button class="primary" type="submit">Save chat style</button><button id="chat-style-reset" type="button">Use original bubble</button></div>
+          </form>
+          <p class="status" id="chat-style-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Playtime</h2>
+          <p id="playtime-text"></p>
+          <div class="switch">
+            <div class="what"><b>Show on my card</b><span class="hint">At the top of the Bio tab, for anyone who opens your card in the game.</span></div>
+            <button id="playtime-public" type="button" aria-pressed="false">Private</button>
+          </div>
+          <p class="status" id="playtime-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Discord</h2>
+          <p id="badges" hidden></p>
+          <p id="discord-shown"></p>
+          <p class="hint" id="discord-about">Shown on your card in the game. Sign in to Discord to link your account; boosting Meadow's Discord server gives you the Server Booster badge while you boost.</p>
+          <div class="row"><button class="primary" id="discord-link" type="button">Link Discord</button>
+            <button id="discord-remove" type="button">Unlink</button></div>
+          <p class="status" id="discord-status" role="status"></p>
+        </section>
+
+        <section class="kept">
+          <h2>2FA</h2>
+          <div id="two-step-off">
+            <form id="two-step-start">
+              <label for="two-step-password">Password</label>
+              <input id="two-step-password" type="password" autocomplete="current-password" maxlength="100" required>
+              <div class="row"><button class="primary" type="submit">Set up</button></div>
+            </form>
+          </div>
+          <div id="two-step-setup" hidden>
+            <p style="color:var(--text)">1. Scan with your authenticator app.</p>
+            <canvas id="two-step-qr" width="10" height="10" aria-label="QR code for your authenticator app"></canvas>
+            <p>Key: <b id="two-step-key" style="color:var(--text);overflow-wrap:anywhere"></b></p>
+            <p style="color:var(--text)">2. Enter its code.</p>
+            <form id="two-step-confirm">
+              <input id="two-step-code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" spellcheck="false" aria-label="Code from the app" required>
+              <div class="row"><button class="primary" type="submit">Turn on</button>
+                <button id="two-step-cancel" type="button">Cancel</button></div>
+            </form>
+          </div>
+          <div id="two-step-codes" hidden>
+            <p style="color:var(--text)">Recovery codes. Each works once. Shown only now.</p>
+            <pre id="two-step-recovery"></pre>
+            <div class="row"><button id="two-step-copy" type="button">Copy</button>
+              <button id="two-step-done" type="button">Done</button></div>
+          </div>
+          <div id="two-step-on" hidden>
+            <p id="two-step-state" style="color:var(--text)"></p>
+            <div class="row"><button id="forget-devices" type="button">Forget trusted devices</button></div>
+            <form id="two-step-stop">
+              <label for="two-step-stop-password">Password</label>
+              <input id="two-step-stop-password" type="password" autocomplete="current-password" maxlength="100" required>
+              <label for="two-step-stop-code">2FA code</label>
+              <input id="two-step-stop-code" autocomplete="one-time-code" maxlength="20" spellcheck="false" required>
+              <div class="row"><button class="danger" type="submit">Turn off</button></div>
+            </form>
+          </div>
+          <p class="status" id="two-step-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Username</h2>
+          <div id="name-waiting" hidden>
+            <p style="color:var(--text)">Requested: <b id="name-wanted"></b></p>
+            <div class="row"><button id="name-withdraw" type="button">Withdraw</button></div>
+          </div>
+          <form id="name-form">
+            <label for="new-name">New username</label>
+            <input id="new-name" maxlength="20" autocomplete="off" spellcheck="false" required>
+            <label for="name-reason">Reason <span class="hint">optional</span></label>
+            <input id="name-reason" maxlength="300" autocomplete="off">
+            <div class="row"><button class="primary" type="submit">Request</button></div>
+          </form>
+          <p class="status" id="name-status" role="status"></p>
+          <div id="name-history"></div>
+        </section>
+
+        <section>
+          <h2>Lock</h2>
+          <div class="row"><button id="lock" type="button"></button></div>
+          <p class="status" id="lock-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Sign-ins</h2>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>When</th><th>Where</th><th>From</th><th>Result</th></tr></thead>
+              <tbody id="history"></tbody>
+            </table>
+          </div>
+          <p class="hint" id="no-history" hidden>None yet.</p>
+          <div class="row"><button id="everywhere" type="button">Sign out everywhere</button></div>
+          <p class="status" id="history-status" role="status"></p>
+        </section>
+
+        <section class="kept">
+          <h2>Your data</h2>
+          <div class="row" style="margin-top:0"><button id="export" type="button">Download your data</button></div>
+          <p class="status" id="export-status" role="status"></p>
+        </section>
+
+        <section class="kept">
+          <h2>Delete account</h2>
+          <form id="delete-form">
+            <label for="delete-password">Password</label>
+            <input id="delete-password" type="password" autocomplete="current-password" maxlength="100" required>
+            <label for="delete-confirm">Username</label>
+            <input id="delete-confirm" maxlength="100" autocomplete="off" spellcheck="false" required>
+            <div class="row"><button class="danger" type="submit">Delete</button></div>
+          </form>
+          <p class="status" id="delete-status" role="status"></p>
+        </section>
+
+        <section>
+          <h2>Feedback</h2>
+          <form id="feedback-form">
+            <label for="feedback-kind">Kind</label>
+            <select id="feedback-kind">
+              <option value="feedback">Feedback</option>
+              <option value="bug">Bug report</option>
+            </select>
+            <label for="feedback-text">Message</label>
+            <textarea id="feedback-text" maxlength="4000" required></textarea>
+            <div class="row"><button class="primary" type="submit">Send</button></div>
+          </form>
+          <p class="status" id="feedback-status" role="status"></p>
+          <div id="feedback-sent"></div>
+        </section>
+      </div>
+      <p class="hint" style="text-align:center;margin:20px 0 0">Meadow is an unofficial fan project, not affiliated with WildWorks or Animal Jam. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+
+    <script src="/captcha.js"></script>
+    <script>
+      "use strict";
+
+      const $ = id => document.getElementById(id);
+
+      // what each switch (lib/accounts.js FEATURES) turns off.
+      const FEATURES = [
+        ["chat", "Chat"],
+        ["buddies", "Buddy requests"],
+        ["trading", "Trading"],
+        ["jamagrams", "Jam-A-Grams"],
+        ["gameInvites", "Game invites"],
+        ["wall", "Jammer Wall"],
+      ];
+      const VIA = {game: "Game", launcher: "Client", web: "This page", mod: "Moderator panel"};
+      const ANIMALS = {1: "Tiger", 4: "Wolf", 5: "Koala", 6: "Panda", 7: "Monkey", 8: "Bunny", 13: "Rhino", 18: "Seal", 24: "Penguin"};
+      const DEFAULT_CHAT_STYLE = {background: "ffffff", accent: "dfe8ff", text: "445559", border: "9aabb0", opacity: 75,
+        animation: "none", speed: 100, gradient: "linear", angle: 45, strength: 100, outline: 1,
+        stops: "ffffff:0;dfe8ff:100"};
+
+      let account = null;
+      let chatStops = [];
+      let twoStepSetup = null; // {secret, uri} while two-step sign-in is being turned on
+      let twoStepCodes = null; // the recovery codes, until the player says they kept them
+
+      const el = (tag, text, className) => {
+        const node = document.createElement(tag);
+        if (text !== undefined) {
+          node.textContent = text;
+        }
+        if (className) {
+          node.className = className;
+        }
+        return node;
+      };
+
+      const when = seconds => (seconds ? new Date(seconds * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : "never");
+
+      const setStatus = (id, text, bad = false) => {
+        $(id).textContent = text;
+        $(id).classList.toggle("bad", bad);
+      };
+
+      const parseChatStops = style => {
+        const parsed = String(style.stops || "").split(";").map(value => {
+          const match = /^([0-9a-f]{6}):(100|[1-9]?\d)$/i.exec(value);
+          return match ? {color: match[1].toLowerCase(), position: Number(match[2])} : null;
+        });
+        return parsed.length >= 2 && parsed.length <= 5 && parsed.every(Boolean)
+          ? parsed : [{color: style.background, position: 0}, {color: style.accent, position: 100}];
+      };
+
+      const styleValue = () => {
+        if (chatStops.length < 2) chatStops = parseChatStops(DEFAULT_CHAT_STYLE);
+        chatStops.sort((one, two) => one.position - two.position);
+        chatStops[0].position = 0;
+        chatStops.at(-1).position = 100;
+        const background = chatStops[0].color;
+        const accent = chatStops.at(-1).color;
+        $("chat-background").value = `#${background}`;
+        $("chat-accent").value = `#${accent}`;
+        return {
+          background, accent,
+          text: $("chat-text-colour").value.slice(1).toLowerCase(),
+          border: $("chat-border").value.slice(1).toLowerCase(),
+          opacity: Number($("chat-opacity").value),
+          animation: $("chat-animation").value,
+          speed: Number($("chat-speed").value),
+          gradient: $("chat-gradient").value,
+          angle: Number($("chat-angle").value),
+          strength: Number($("chat-strength").value),
+          outline: Number($("chat-outline").value),
+          stops: chatStops.map(stop => `${stop.color}:${stop.position}`).join(";"),
+        };
+      };
+
+      const paintChatPreview = () => {
+        const style = styleValue();
+        const preview = $("chat-preview");
+        preview.className = `chat-preview ${style.animation}`;
+        const mix = (one, two, amount) => one.map((part, index) => Math.round(part + (two[index] - part) * amount));
+        const rgb = hex => [0, 2, 4].map(at => parseInt(hex.slice(at, at + 2), 16));
+        const stops = parseChatStops(style).map((stop, index) => {
+          const colour = index ? mix(rgb(style.background), rgb(stop.color), style.strength / 100) : rgb(stop.color);
+          return `#${colour.map(part => part.toString(16).padStart(2, "0")).join("")} ${stop.position}%`;
+        }).join(", ");
+        preview.style.background = style.gradient === "solid" ? `#${style.background}` : style.gradient === "radial"
+          ? `radial-gradient(circle, ${stops})`
+          : `linear-gradient(${style.angle}deg, ${stops})`;
+        preview.style.color = `#${style.text}`;
+        preview.style.borderColor = `#${style.border}`;
+        preview.style.borderWidth = `${style.outline}px`;
+        preview.style.opacity = String(style.opacity / 100);
+        preview.style.animationDuration = `${Math.max(.25, 1.5 * 100 / style.speed)}s`;
+        $("chat-opacity-value").textContent = `${style.opacity}%`;
+        $("chat-speed-value").textContent = `${style.speed}%`;
+        $("chat-strength-value").textContent = `${style.strength}%`;
+        $("chat-outline-value").textContent = `${style.outline}px`;
+      };
+
+      const renderChatStops = () => {
+        chatStops.sort((one, two) => one.position - two.position);
+        const holder = $("chat-stops");
+        holder.replaceChildren();
+        $("chat-ramp").style.background = `linear-gradient(90deg, ${chatStops.map(stop => `#${stop.color} ${stop.position}%`).join(", ")})`;
+        chatStops.forEach((stop, index) => {
+          const row = el("div", undefined, "gradient-stop");
+          const colour = document.createElement("input");
+          colour.type = "color";
+          colour.value = `#${stop.color}`;
+          colour.setAttribute("aria-label", `Gradient colour ${index + 1}`);
+          const position = document.createElement("input");
+          position.type = "range";
+          position.min = String(index ? chatStops[index - 1].position + 1 : 0);
+          position.max = String(index < chatStops.length - 1 ? chatStops[index + 1].position - 1 : 100);
+          position.value = String(stop.position);
+          position.disabled = index === 0 || index === chatStops.length - 1;
+          const value = document.createElement("output");
+          value.textContent = index === 0 ? "Start" : index === chatStops.length - 1 ? "End" : `${stop.position}%`;
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.textContent = "Remove";
+          remove.disabled = chatStops.length <= 2;
+          colour.addEventListener("input", () => {
+            stop.color = colour.value.slice(1).toLowerCase();
+            renderChatStops();
+            paintChatPreview();
+          });
+          position.addEventListener("input", () => {
+            stop.position = Number(position.value);
+            value.textContent = `${stop.position}%`;
+            $("chat-ramp").style.background = `linear-gradient(90deg, ${chatStops.map(item => `#${item.color} ${item.position}%`).join(", ")})`;
+            paintChatPreview();
+          });
+          remove.addEventListener("click", () => {
+            chatStops.splice(index, 1);
+            renderChatStops();
+            paintChatPreview();
+          });
+          row.append(colour, position, value, remove);
+          holder.append(row);
+        });
+        $("chat-stop-add").disabled = chatStops.length >= 5;
+      };
+
+      const fillChatStyle = style => {
+        style = {...DEFAULT_CHAT_STYLE, ...style};
+        chatStops = parseChatStops(style);
+        $("chat-background").value = `#${style.background}`;
+        $("chat-accent").value = `#${style.accent}`;
+        $("chat-text-colour").value = `#${style.text}`;
+        $("chat-border").value = `#${style.border}`;
+        $("chat-opacity").value = String(style.opacity);
+        $("chat-animation").value = style.animation;
+        $("chat-speed").value = String(style.speed);
+        $("chat-gradient").value = style.gradient;
+        $("chat-angle").value = String(style.angle);
+        $("chat-strength").value = String(style.strength);
+        $("chat-outline").value = String(style.outline);
+        renderChatStops();
+        paintChatPreview();
+      };
+
+      const api = async (path, body) => {
+        try {
+          const response = await fetch(`/account/api/${path}`, body === undefined ? {} : {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (response.status === 401 && account) {
+            // the session ended (the server restarted, or 12 hours passed).
+            account = null;
+            showGate("Your session ended. Sign in again.");
+          }
+          return {ok: response.ok, status: response.status, data};
+        }
+        catch (err) {
+          return {ok: false, status: 0, data: {error: "The server did not answer."}};
+        }
+      };
+
+      // the captcha (public/captcha.js), put on the sign-in form once it is
+      // shown. after a passed one and a right password, the server gives a
+      // pass that saves a second captcha for the 2FA code.
+      let check = null;
+      let captchaPass = null;
+
+      const showGate = message => {
+        $("page").hidden = true;
+        $("gate").hidden = false;
+        check = check || window.captcha.mount($("captcha"), "login");
+        setStatus("gate-status", message || "", Boolean(message));
+      };
+
+
+      // two-step sign-in: off, being set up (the secret is on this page only), or on.
+      const renderTwoStep = () => {
+        const {twoStep} = account;
+        $("two-step-off").hidden = twoStep.on || Boolean(twoStepSetup) || Boolean(twoStepCodes);
+        $("two-step-setup").hidden = twoStep.on || !twoStepSetup;
+        $("two-step-codes").hidden = !twoStepCodes;
+        $("two-step-on").hidden = !twoStep.on || Boolean(twoStepCodes);
+        if (twoStep.on) {
+          $("two-step-state").textContent = `On since ${when(twoStep.since)} · ${twoStep.recoveryLeft} recovery codes left · ${twoStep.devices} trusted ${twoStep.devices === 1 ? "device" : "devices"}`;
+          $("forget-devices").hidden = twoStep.devices === 0;
+        }
+      };
+
+      // as a player's card in the game says it.
+      const banTitle = ban => (ban.permanent ? "Banned"
+        : ban.seconds >= 86400 ? `Banned (${Math.floor(ban.seconds / 86400)}d remaining)`
+          : ban.seconds >= 3600 ? `Banned (${Math.ceil(ban.seconds / 3600)}h remaining)`
+            : `Banned (${Math.max(1, Math.ceil(ban.seconds / 60))}m remaining)`);
+
+      const APPEAL_STATES = {waiting: ["Waiting", "tag"], approved: ["Approved", "tag good"], denied: ["Denied", "tag bad"]};
+      const appealCount = () => {
+        $("appeal-count").textContent = `${$("appeal-text").value.length} / ${account.appealLimit}`;
+      };
+
+      // the page of a ban (the account's own, or the address's): what it is,
+      // why, and the one appeal. password, 2FA and Delete stay under it.
+      const renderBan = () => {
+        const ban = account.banned;
+        $("ban-title").textContent = banTitle(ban);
+        $("ban-address").hidden = ban.kind !== "address";
+        $("ban-reason-part").hidden = !ban.reason;
+        $("ban-reason").textContent = ban.reason;
+        $("appeal-form").hidden = Boolean(account.appeal);
+        $("appeal-text").maxLength = account.appealLimit;
+        appealCount();
+        const {appeal} = account;
+        $("appeal-sent").replaceChildren();
+        if (appeal) {
+          const entry = el("div", undefined, "entry");
+          const head = el("div");
+          head.append(el("span", APPEAL_STATES[appeal.status][0], APPEAL_STATES[appeal.status][1]), ` Sent ${when(appeal.createdAt)}`);
+          entry.append(head, el("pre", appeal.text));
+          if (appeal.reply) {
+            entry.append(el("label", `Reply, ${when(appeal.handledAt)}`), el("pre", appeal.reply));
+          }
+          $("appeal-sent").append(entry);
+        }
+      };
+
+      // their own custom items (lib/playeritems.js): rename, a picture of its
+      // own (sent as it is to /api/itemart, which checks and cleans it), delete.
+      const renderMyItems = () => {
+        const items = account.customItems || [];
+        const limits = account.customItemLimits || {perDay: 0, inAll: 0};
+        $("my-items-hint").textContent = `Items you made in the game's Item Maker: ${items.length} of ${limits.inAll}, up to ${limits.perDay} a day. `
+          + `A picture costs ${limits.picturePrice || 0} Earth Crystals (any kind: one too big is made smaller). It is shown as the item's icon, and for a den item in the den, once a moderator has checked it. `
+          + (account.picturesStopped ? "A moderator has turned off picture uploads for your account." : "Pictures must suit everyone: one turned away counts against you.");
+        $("no-my-items").hidden = items.length > 0;
+        $("my-items").replaceChildren(...items.map(item => {
+          const card = el("div", undefined, "my-item");
+          const art = el("div", item.art ? undefined : "No picture", "art");
+          if (item.art) {
+            const picture = el("img");
+            picture.src = item.art;
+            picture.alt = "";
+            art.append(picture);
+          }
+          const body = el("div");
+          body.append(el("strong", `${item.name}`), el("span", ` · ${item.kind === "den" ? "den item" : "clothing"} ${item.id}${item.artWaiting ? " · picture waiting for a moderator" : ""}`, "hint"));
+          const nameRow = el("div", undefined, "row");
+          const name = el("input");
+          name.type = "text";
+          name.maxLength = 40;
+          name.value = item.name;
+          name.setAttribute("aria-label", `New name for ${item.name}`);
+          const rename = el("button", "Rename");
+          rename.type = "button";
+          rename.addEventListener("click", () => act({action: "itemRename", kind: item.kind, id: item.id, name: name.value}, "my-items-status"));
+          nameRow.append(name, rename);
+          const artRow = el("div", undefined, "row");
+          const file = el("input");
+          file.type = "file";
+          file.accept = "image/*";
+          const choose = el("button", item.art ? "New picture" : "Add picture");
+          choose.type = "button";
+          choose.addEventListener("click", () => file.click());
+          file.addEventListener("change", () => file.files[0] && sendPicture(item, file.files[0]));
+          artRow.append(file, choose);
+          if (item.art && item.kind === "clothing") {
+            // how it is worn: the picture itself, or the item's shape painted with it
+            const look = el("select");
+            look.setAttribute("aria-label", `How ${item.name} is worn`);
+            for (const [value, text] of [["sticker", "Worn as the picture"], ["texture", "Worn as its shape, with the picture in it"]]) {
+              const option = el("option", text);
+              option.value = value;
+              look.append(option);
+            }
+            look.value = item.look || "sticker";
+            look.addEventListener("change", () => act({action: "itemLook", kind: item.kind, id: item.id, look: look.value}, "my-items-status"));
+            artRow.append(look);
+          }
+          if (item.art) {
+            const remove = el("button", "Remove picture");
+            remove.type = "button";
+            remove.addEventListener("click", () => sendPicture(item, null));
+            artRow.append(remove);
+          }
+          const del = el("button", "Delete", "danger");
+          del.type = "button";
+          del.addEventListener("click", () => {
+            if (confirm(`Delete ${item.name}? It goes from everyone who has it, and cannot be undone.`)) {
+              act({action: "itemDelete", kind: item.kind, id: item.id}, "my-items-status");
+            }
+          });
+          artRow.append(del);
+          body.append(nameRow, artRow);
+          card.append(art, body);
+          return card;
+        }));
+      };
+
+      // a picture made ready to send (lib/itemart.js): as it is when the
+      // server takes it as it is (a PNG, JPEG or GIF small enough: a GIF keeps
+      // moving), else drawn into a PNG that fits, smaller until it is small
+      // enough. any picture this browser can open will do (WebP, AVIF, BMP...).
+      // null when it cannot be read at all.
+      const PICTURE_SIDE = 256;
+      const PICTURE_BYTES = 100 * 1024;
+      const preparePicture = async file => {
+        const kept = ["image/png", "image/jpeg", "image/gif"].includes(file.type);
+        let image = null;
+        try {
+          image = await createImageBitmap(file);
+        }
+        catch (err) {
+          return kept ? file : null;
+        }
+        if (kept && file.size <= PICTURE_BYTES && image.width <= PICTURE_SIDE && image.height <= PICTURE_SIDE) {
+          image.close();
+          return file;
+        }
+        for (const side of [PICTURE_SIDE, 192, 128, 96]) {
+          const scale = Math.min(1, side / image.width, side / image.height);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+          if (blob && blob.size <= PICTURE_BYTES) {
+            image.close();
+            return blob;
+          }
+        }
+        image.close();
+        return null;
+      };
+
+      const sendPicture = async (item, chosen) => {
+        const file = chosen ? await preparePicture(chosen) : null;
+        if (chosen && !file) {
+          setStatus("my-items-status", "That picture could not be read. Try a PNG, JPEG or GIF.", true);
+          return;
+        }
+        setStatus("my-items-status", file ? "Sending the picture..." : "Taking the picture away...");
+        try {
+          const response = await fetch(`/account/api/itemart?kind=${encodeURIComponent(item.kind)}&id=${encodeURIComponent(item.id)}${file ? "" : "&remove=1"}`,
+            {method: "POST", headers: {"Content-Type": "application/octet-stream"}, body: file || new Uint8Array(0)});
+          const data = await response.json().catch(() => ({}));
+          setStatus("my-items-status", data.ok || data.error || "That did not work.", !data.ok);
+          await load();
+        }
+        catch (err) {
+          setStatus("my-items-status", "The server did not answer.", true);
+        }
+      };
+
+      // their own den music (lib/playeritems.js makeMusic): an MP3 sent as it
+      // is to /account/api/music, which checks it and takes the crystals
+      const renderMusic = music => {
+        $("music-hint").textContent = `Your own den music: an MP3 of your choice (${Math.round(music.maxBytes / 1048576)} MB at most), `
+          + `played by the music note in your den. A track costs ${music.price} Earth Crystals; you have ${music.balance.toLocaleString()}. `
+          + `${music.left.today} more today, ${music.left.inAll} more in all.`
+          + (music.approval ? " A moderator listens to each first; turned away, your crystals come back." : "");
+        $("music-send").disabled = !music.enabled || music.left.today === 0 || music.balance < music.price;
+        if (!music.enabled) {
+          setStatus("music-status", "Making items is turned off on this server for now.", true);
+        }
+        $("music-list").replaceChildren(...music.tracks.map(track => {
+          const row = el("div", undefined, "track");
+          const remove = el("button", "Delete");
+          remove.type = "button";
+          remove.addEventListener("click", async () => {
+            if (!confirm(`Delete "${track.name}"? It goes from every den it is in, and the crystals do not come back.`)) {
+              return;
+            }
+            const result = await fetch(`/account/api/music?delete=${encodeURIComponent(track.id)}`, {method: "POST"}).then(r => r.json()).catch(() => ({error: "The server did not answer."}));
+            setStatus("music-status", result.ok || result.error || "That did not work.", !result.ok);
+            if (result.tracks) {
+              renderMusic(result);
+            }
+          });
+          row.append(el("span", track.name), el("span", track.waiting ? "waiting for a moderator" : "", "hint"), remove);
+          return row;
+        }));
+      };
+      const loadMusic = async () => {
+        const result = await api("music");
+        if (result.ok) {
+          renderMusic(result.data);
+        }
+      };
+      $("music-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const file = $("music-file").files[0];
+        if (!file) {
+          return;
+        }
+        $("music-send").disabled = true;
+        setStatus("music-status", "Uploading...");
+        try {
+          const response = await fetch(`/account/api/music?name=${encodeURIComponent($("music-name").value.trim())}`,
+            {method: "POST", headers: {"Content-Type": "application/octet-stream"}, body: file});
+          const data = await response.json().catch(() => ({}));
+          setStatus("music-status", data.ok || data.error || "That did not work.", !data.ok);
+          if (data.ok) {
+            $("music-form").reset();
+          }
+          if (data.tracks) {
+            renderMusic(data);
+          }
+          else {
+            $("music-send").disabled = false;
+          }
+        }
+        catch (err) {
+          setStatus("music-status", "The server did not answer.", true);
+          $("music-send").disabled = false;
+        }
+      });
+
+      const render = () => {
+        $("gate").hidden = true;
+        $("page").hidden = false;
+        $("title").textContent = account.username;
+        document.title = `${account.username} | your account`;
+
+        // A ban, or a rejected username: that and little else (lib/manage.js).
+        $("page").classList.toggle("restricted", Boolean(account.banned || account.nameRejected));
+        $("ban-section").hidden = !account.banned;
+        $("rename-section").hidden = !account.nameRejected;
+        renderTwoStep();
+        if (account.banned) {
+          renderBan();
+          return;
+        }
+        if (account.nameRejected) {
+          return;
+        }
+        renderMyItems();
+        $("lock-notice").hidden = !account.locked;
+        if (!$("chat-style-form").contains(document.activeElement)) {
+          fillChatStyle(account.chatStyle);
+        }
+
+        const tiles = [
+          [account.online ? "Playing now" : account.lastSeen ? when(account.lastSeen) : "Not played yet", "Last seen"],
+          [when(account.createdAt), "Created"],
+          [account.logins.toLocaleString(), "Logins"],
+          [played(account.playtime), "Playtime"],
+          [`${account.animals}${ANIMALS[account.animalType] ? ` · ${ANIMALS[account.animalType]} in use` : ""}`, "Animals"],
+          [account.pets.toLocaleString(), "Pets"],
+          [account.items.toLocaleString(), "Clothing"],
+          [account.denItems.toLocaleString(), "Den items"],
+          [account.buddies.toLocaleString(), "Buddies"],
+        ];
+        $("tiles").replaceChildren(...tiles.map(([value, name]) => {
+          const tile = el("div", undefined, "tile");
+          tile.append(el("div", value, "value"), el("div", name, "name"));
+          return tile;
+        }));
+
+        $("switches").replaceChildren(...FEATURES.map(([key, name]) => {
+          const row = el("div", undefined, "switch");
+          const text = el("div", undefined, "what");
+          text.append(el("b", name));
+          const button = el("button", account.features[key] ? "On" : "Off");
+          button.type = "button";
+          button.setAttribute("aria-pressed", String(account.features[key]));
+          button.setAttribute("aria-label", `${name}: ${account.features[key] ? "on" : "off"}`);
+          button.addEventListener("click", async () => {
+            button.disabled = true;
+            await act({action: "feature", feature: key, on: !account.features[key]}, "feature-status", `${name} is now ${account.features[key] ? "off" : "on"}.`);
+          });
+          row.append(text, button);
+          return row;
+        }));
+
+        $("playtime-text").textContent = `You have played for ${played(account.playtime)}.`;
+        $("playtime-public").textContent = account.playtimePublic ? "Public" : "Private";
+        $("playtime-public").setAttribute("aria-pressed", String(account.playtimePublic));
+        $("playtime-public").setAttribute("aria-label", `Show playtime on my card: ${account.playtimePublic ? "public" : "private"}`);
+        $("playtime-public").disabled = false;
+
+        if (document.activeElement !== $("bio-text")) {
+          $("bio-text").value = account.bio;
+        }
+        $("bio-text").maxLength = account.bioLimit + 20; // room for the line ends a browser counts double
+        $("bio-remove").hidden = !account.bio;
+        bioCount();
+        // linked by signing in to Discord (lib/discord.js), not typed in
+        $("discord-shown").textContent = account.discordLinked ? `Linked: ${account.discord}` : "Not linked.";
+        $("discord-link").textContent = account.discordLinked ? "Link another" : "Link Discord";
+        $("discord-link").hidden = !account.discordLinking;
+        $("discord-remove").hidden = !account.discordLinked;
+        $("badges").hidden = account.badges.length === 0;
+        $("badges").textContent = `Badges: ${account.badges.join(", ")}`;
+
+        const waiting = account.nameRequests.find(request => request.status === "waiting");
+        $("name-waiting").hidden = !waiting;
+        $("name-form").hidden = Boolean(waiting);
+        if (waiting) {
+          $("name-wanted").textContent = waiting.newName;
+        }
+        const answered = account.nameRequests.filter(request => request.status === "approved" || request.status === "denied");
+        $("name-history").replaceChildren(...answered.map(request => {
+          const entry = el("div", undefined, "entry");
+          entry.append(el("span", request.status === "approved" ? "Approved" : "Turned down", request.status === "approved" ? "tag good" : "tag bad"),
+            ` ${request.oldName} → ${request.newName}, answered ${when(request.handledAt)}`);
+          return entry;
+        }));
+
+        // notes are left alone while one is being typed.
+        if (!$("buddies").contains(document.activeElement)) {
+          $("buddies").replaceChildren(...account.buddyList.map(buddy => {
+            const row = el("div", undefined, "switch");
+            const text = el("div", undefined, "what");
+            text.append(el("b", buddy.name), el("span", buddy.online ? "Playing now" : "Offline", "hint"));
+            const note = el("input");
+            note.value = buddy.note;
+            note.maxLength = 120;
+            note.placeholder = "Note";
+            note.setAttribute("aria-label", `Note about ${buddy.name}`);
+            note.style.flex = "2";
+            note.addEventListener("change", () => act({action: "buddyNote", name: buddy.name, note: note.value}, "buddy-status", `Note about ${buddy.name} saved.`));
+            row.append(text, note);
+            return row;
+          }));
+        }
+        $("no-buddies").hidden = account.buddyList.length > 0;
+        $("buddies-box").hidden = account.buddyList.length === 0;
+        $("buddies-summary").textContent = `Show ${account.buddyList.length.toLocaleString()} ${account.buddyList.length === 1 ? "buddy" : "buddies"}`;
+
+        $("blocked").replaceChildren(...account.blocked.map(name => {
+          const row = el("div", undefined, "switch");
+          const text = el("div", undefined, "what");
+          text.append(el("b", name));
+          const button = el("button", "Unblock");
+          button.type = "button";
+          button.addEventListener("click", () => act({action: "unblock", name}, "block-status"));
+          row.append(text, button);
+          return row;
+        }));
+        $("no-blocked").hidden = account.blocked.length > 0;
+
+        $("trades").replaceChildren(...account.trades.map(trade => {
+          const row = el("tr");
+          row.append(el("td", when(trade.at)), el("td", trade.with), el("td", trade.got.join(", ")), el("td", trade.gave.join(", ")));
+          return row;
+        }));
+        $("no-trades").hidden = account.trades.length > 0;
+
+        const things = list => list.map(item => item.name).join(", ");
+        const offerRow = (text, buttons) => {
+          const row = el("div", undefined, "switch");
+          row.append(el("div", text, "what"), ...buttons.map(([label, body, className]) => {
+            const button = el("button", label, className);
+            button.type = "button";
+            button.addEventListener("click", () => act(body, "offer-status"));
+            return button;
+          }));
+          return row;
+        };
+        $("offers-in").replaceChildren(...account.offers.incoming.map(offer => offerRow(
+          `${offer.from} offers ${things(offer.offered)} for your ${offer.wanted.name}`,
+          [["Accept", {action: "answerOffer", id: offer.id, accept: true}, "primary"], ["Turn down", {action: "answerOffer", id: offer.id, accept: false}]])));
+        $("offers-out").replaceChildren(...account.offers.outgoing.map(offer => offerRow(
+          `You offered ${offer.to} ${things(offer.offered)} for their ${offer.wanted.name}`,
+          [["Withdraw", {action: "withdrawOffer", to: offer.to, id: offer.id}]])));
+        $("no-offers").hidden = account.offers.incoming.length + account.offers.outgoing.length > 0;
+
+        $("visits").replaceChildren(...account.denVisits.map(visit => {
+          const entry = el("div", undefined, "entry");
+          entry.append(el("b", visit.name), ` · ${when(visit.at)}`);
+          return entry;
+        }));
+        $("no-visits").hidden = account.denVisits.length > 0;
+        $("visits-box").hidden = account.denVisits.length === 0;
+        $("visits-summary").textContent = `Show ${account.denVisits.length.toLocaleString()} ${account.denVisits.length === 1 ? "visit" : "visits"}`;
+
+        $("achievement-summary").textContent = `${account.achievements.earned} of ${account.achievements.of} earned.`;
+        $("achievements").replaceChildren(...account.achievements.counted.map(counted => {
+          const row = el("tr");
+          row.append(el("td", counted.name), el("td", counted.value.toLocaleString()),
+            el("td", counted.next === null ? "all reached" : counted.next.toLocaleString()), el("td", `${counted.earned} of ${counted.of}`));
+          return row;
+        }));
+
+        $("lock").textContent = account.locked ? "Unlock" : "Lock";
+        $("lock").className = account.locked ? "primary" : "danger";
+
+        $("history").replaceChildren(...account.history.map(login => {
+          const row = el("tr");
+          row.append(el("td", when(login.at)), el("td", VIA[login.via] || login.via), el("td", login.address || "unknown"),
+            el("td", login.ok ? "Signed in" : "Wrong password", login.ok ? "" : "bad"));
+          return row;
+        }));
+        $("no-history").hidden = account.history.length > 0;
+
+        $("feedback-sent").replaceChildren(...account.feedback.map(message => {
+          const entry = el("div", undefined, "entry");
+          const head = el("div");
+          head.append(el("span", message.handledAt ? "Read" : "Not read yet", message.handledAt ? "tag good" : "tag"),
+            ` ${message.kind === "bug" ? "Bug report" : "Feedback"}, sent ${when(message.createdAt)}`);
+          entry.append(head, el("pre", message.text));
+          return entry;
+        }));
+      };
+
+      // one change; shows the server's words (or `said`) under that section.
+      const act = async (body, statusId, said) => {
+        const result = await api("act", body);
+        if (result.ok) {
+          account = result.data.account;
+          render();
+        }
+        if (account) {
+          setStatus(statusId, result.ok ? said || result.data.ok : result.data.error || "That did not work.", !result.ok);
+        }
+        return result.ok;
+      };
+
+      const load = async () => {
+        const result = await api("me");
+        if (result.ok) {
+          account = result.data;
+          render();
+          loadMusic();
+          // back from linking Discord: how it went, once
+          if (discordResult && Object.hasOwn(DISCORD_RESULTS, discordResult)) {
+            setStatus("discord-status", DISCORD_RESULTS[discordResult], discordResult !== "linked");
+            history.replaceState(null, "", location.pathname + location.hash);
+          }
+        }
+        else {
+          showGate(result.status === 0 ? result.data.error : "");
+          if (Object.hasOwn(CLIENT_RESULTS, clientResult || "")) {
+            setStatus("gate-status", CLIENT_RESULTS[clientResult], true);
+          }
+          // never by itself on the way back from it: a browser that would
+          // not keep the sign-in would open tab after tab.
+          else if (!clientResult && clientRemembered()) {
+            signInWithClient();
+          }
+        }
+        if (clientResult) {
+          if (result.ok && clientResult === "ok") {
+            try {
+              localStorage.setItem(CLIENT_KEY, "1");
+            }
+            catch (err) {
+              // not kept: the button stays the way in.
+            }
+          }
+          history.replaceState(null, "", location.pathname + location.hash);
+        }
+      };
+
+      // "Sign in with the Meadow client" (lib/manage.js): the browser asks
+      // whether to open Meadow, which opens this page again signed in (in a
+      // new tab: this one follows). once that has worked in this browser, the
+      // page asks by itself each time it opens signed out.
+      const CLIENT_KEY = "burrow-client-sign-in";
+      const CLIENT_RESULTS = {
+        ok: "Meadow signed you in, but this browser did not keep it. Sign in with your password.",
+        expired: "That sign-in took too long. Try again.",
+        elsewhere: "Meadow opened the page in another browser than the one you started in. Start from this browser again, or sign in with your password.",
+      };
+      const clientResult = new URLSearchParams(location.search).get("client");
+      const clientRemembered = () => {
+        try {
+          return localStorage.getItem(CLIENT_KEY) === "1";
+        }
+        catch (err) {
+          return false;
+        }
+      };
+      // the client opens the sign-in in a tab of its own (lib/manage.js,
+      // /account/client): this page, which asked for it, takes it over
+      // ("taken") and that tab closes, so the page is not open twice. a
+      // browser without BroadcastChannel is asked every 2 seconds instead.
+      let clientWaiting = false;
+      const awaitClient = () => {
+        let channel = null;
+        try {
+          channel = new BroadcastChannel("meadow-sign-in");
+        }
+        catch (err) {
+        }
+        if (channel) {
+          channel.onmessage = event => {
+            if (event.data && event.data.signedIn === "/account" && !account) {
+              channel.postMessage({taken: "/account"});
+              channel.close();
+              load();
+            }
+          };
+          return;
+        }
+        const until = Date.now() + 120000;
+        const asking = setInterval(async () => {
+          if (account || Date.now() > until) {
+            clearInterval(asking);
+          }
+          else if ((await api("me")).ok) {
+            clearInterval(asking);
+            await load();
+          }
+        }, 2000);
+      };
+      const signInWithClient = async () => {
+        const started = await api("client-start", {});
+        if (!started.ok) {
+          setStatus("gate-status", started.data.error || "That did not work.", true);
+          return;
+        }
+        setStatus("gate-status", "Opening Meadow… Allow it if your browser asks. Meadow must be logged in, or remember you.");
+        location.href = `meadow://account?n=${started.data.nonce}`;
+        if (!clientWaiting) {
+          clientWaiting = true;
+          awaitClient();
+        }
+      };
+      $("client-sign-in").addEventListener("click", signInWithClient);
+
+      $("sign-in").addEventListener("submit", async event => {
+        event.preventDefault();
+        const answer = captchaPass ? undefined : await check.answer();
+        if (answer === "") {
+          setStatus("gate-status", window.captcha.FAILED, true);
+          return;
+        }
+        const result = await api("login", {username: $("username").value, password: $("password").value,
+          code: $("code-part").hidden ? "" : $("code").value.trim(), rememberDevice: $("remember-device").checked,
+          captcha: answer, captchaPass: captchaPass || undefined});
+        if (answer !== undefined) {
+          check.reset();
+        }
+        captchaPass = result.data.captchaPass || null;
+        if (result.ok) {
+          $("password").value = "";
+          $("code").value = "";
+          $("code-part").hidden = true;
+          await load();
+        }
+        else if (result.data.twoStep && $("code-part").hidden) {
+          // the password was right; this account wants a code as well.
+          $("code-part").hidden = false;
+          $("code").focus();
+          setStatus("gate-status", result.data.error);
+        }
+        else {
+          setStatus("gate-status", result.data.error || "That did not work.", true);
+          $("code").value = "";
+        }
+      });
+
+      $("sign-out").addEventListener("click", async () => {
+        await api("logout", {});
+        account = null;
+        showGate("");
+      });
+
+      $("password-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if ($("new-password").value !== $("confirm-password").value) {
+          setStatus("password-status", "The new passwords differ.", true);
+          return;
+        }
+        if (await act({action: "password", current: $("current-password").value, password: $("new-password").value}, "password-status")) {
+          event.target.reset();
+        }
+      });
+
+      $("name-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (await act({action: "requestName", newName: $("new-name").value, reason: $("name-reason").value}, "name-status")) {
+          event.target.reset();
+        }
+      });
+
+      $("name-withdraw").addEventListener("click", () => act({action: "withdrawName"}, "name-status"));
+
+      // the modules of a QR code holding `text`, as rows of true (dark) and
+      // false, or null when it is too long. bytes, error correction level M,
+      // versions 1 to 10 (up to 213 bytes), as ISO 18004 lays them out.
+      const qrModules = text => {
+        const bytes = [...new TextEncoder().encode(text)];
+        // per version: codewords in all, error correction codewords per block,
+        // then [blocks, data codewords in each] once or twice.
+        const VERSIONS = [null, [26, 10, [1, 16]], [44, 16, [1, 28]], [70, 26, [1, 44]], [100, 18, [2, 32]], [134, 24, [2, 43]],
+          [172, 16, [4, 27]], [196, 18, [4, 31]], [242, 22, [2, 38], [2, 39]], [292, 22, [3, 36], [2, 37]], [346, 26, [4, 43], [1, 44]]];
+        const ALIGNMENT = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50]];
+        let version = 1;
+        let dataCount = 0;
+        for (;; version++) {
+          if (version > 10) {
+            return null;
+          }
+          dataCount = VERSIONS[version].slice(2).reduce((sum, [blocks, each]) => sum + blocks * each, 0);
+          if (bytes.length * 8 + 4 + (version < 10 ? 8 : 16) <= dataCount * 8) {
+            break;
+          }
+        }
+
+        // the data: "bytes follow", how many, the bytes, an end mark, padding.
+        const bits = [];
+        const put = (value, length) => {
+          for (let bit = length - 1; bit >= 0; bit--) {
+            bits.push(value >>> bit & 1);
+          }
+        };
+        put(4, 4);
+        put(bytes.length, version < 10 ? 8 : 16);
+        bytes.forEach(byte => put(byte, 8));
+        put(0, Math.min(4, dataCount * 8 - bits.length));
+        put(0, (8 - bits.length % 8) % 8);
+        for (let pad = 0xEC; bits.length < dataCount * 8; pad ^= 0xEC ^ 0x11) {
+          put(pad, 8);
+        }
+        const data = [];
+        for (let index = 0; index < bits.length; index += 8) {
+          data.push(bits.slice(index, index + 8).reduce((byte, bit) => byte << 1 | bit, 0));
+        }
+
+        // reed-Solomon error correction over GF(256), polynomial 0x11D.
+        const multiply = (a, b) => {
+          let product = 0;
+          for (let bit = 7; bit >= 0; bit--) {
+            product = product << 1 ^ (product >>> 7) * 0x11D;
+            product ^= (b >>> bit & 1) * a;
+          }
+          return product;
+        };
+        const [, ecCount, ...groups] = VERSIONS[version];
+        const divisor = Array(ecCount).fill(0);
+        divisor[ecCount - 1] = 1;
+        for (let step = 0, root = 1; step < ecCount; step++, root = multiply(root, 2)) {
+          for (let index = 0; index < ecCount; index++) {
+            divisor[index] = multiply(divisor[index], root) ^ (index + 1 < ecCount ? divisor[index + 1] : 0);
+          }
+        }
+        const remainder = block => {
+          const result = Array(ecCount).fill(0);
+          for (const byte of block) {
+            const factor = byte ^ result.shift();
+            result.push(0);
+            divisor.forEach((coefficient, index) => {
+              result[index] ^= multiply(coefficient, factor);
+            });
+          }
+          return result;
+        };
+        // the blocks, then their codewords dealt out one from each in turn.
+        const blocks = [];
+        let taken = 0;
+        for (const [count, each] of groups) {
+          for (let block = 0; block < count; block++) {
+            blocks.push(data.slice(taken, taken + each));
+            taken += each;
+          }
+        }
+        const corrections = blocks.map(remainder);
+        const codewords = [];
+        for (let index = 0; index < Math.max(...blocks.map(block => block.length)); index++) {
+          blocks.forEach(block => index < block.length && codewords.push(block[index]));
+        }
+        for (let index = 0; index < ecCount; index++) {
+          corrections.forEach(correction => codewords.push(correction[index]));
+        }
+
+        // the square: fixed patterns first, then the codewords around them.
+        const size = version * 4 + 17;
+        const modules = Array.from({length: size}, () => Array(size).fill(false));
+        const fixed = Array.from({length: size}, () => Array(size).fill(false));
+        const set = (x, y, dark) => {
+          modules[y][x] = Boolean(dark);
+          fixed[y][x] = true;
+        };
+        for (let index = 0; index < size; index++) {
+          set(6, index, index % 2 === 0);
+          set(index, 6, index % 2 === 0);
+        }
+        for (const [cx, cy] of [[3, 3], [size - 4, 3], [3, size - 4]]) {
+          for (let dy = -4; dy <= 4; dy++) {
+            for (let dx = -4; dx <= 4; dx++) {
+              const ring = Math.max(Math.abs(dx), Math.abs(dy));
+              if (cx + dx >= 0 && cx + dx < size && cy + dy >= 0 && cy + dy < size) {
+                set(cx + dx, cy + dy, ring !== 2 && ring !== 4);
+              }
+            }
+          }
+        }
+        const centres = ALIGNMENT[version];
+        centres.forEach((cy, row) => centres.forEach((cx, column) => {
+          const last = centres.length - 1;
+          if ((row === 0 && column === 0) || (row === 0 && column === last) || (row === last && column === 0)) {
+            return; // a corner pattern is there
+          }
+          for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+              set(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+            }
+          }
+        }));
+        // level M and the mask, 15 bits, written twice.
+        const drawFormat = mask => {
+          let rest = mask;
+          for (let step = 0; step < 10; step++) {
+            rest = rest << 1 ^ (rest >>> 9) * 0x537;
+          }
+          const format = (mask << 10 | rest) ^ 0x5412;
+          const bit = index => format >>> index & 1;
+          for (let index = 0; index <= 5; index++) {
+            set(8, index, bit(index));
+          }
+          set(8, 7, bit(6));
+          set(8, 8, bit(7));
+          set(7, 8, bit(8));
+          for (let index = 9; index < 15; index++) {
+            set(14 - index, 8, bit(index));
+          }
+          for (let index = 0; index < 8; index++) {
+            set(size - 1 - index, 8, bit(index));
+          }
+          for (let index = 8; index < 15; index++) {
+            set(8, size - 15 + index, bit(index));
+          }
+          set(8, size - 8, true);
+        };
+        drawFormat(0);
+        if (version >= 7) {
+          let rest = version;
+          for (let step = 0; step < 12; step++) {
+            rest = rest << 1 ^ (rest >>> 11) * 0x1F25;
+          }
+          const info = version << 12 | rest;
+          for (let index = 0; index < 18; index++) {
+            const a = size - 11 + index % 3;
+            const b = Math.floor(index / 3);
+            set(a, b, info >>> index & 1);
+            set(b, a, info >>> index & 1);
+          }
+        }
+        // two columns at a time from the right, up then down, past the fixed parts.
+        let placed = 0;
+        for (let right = size - 1; right >= 1; right -= 2) {
+          if (right === 6) {
+            right = 5;
+          }
+          for (let step = 0; step < size; step++) {
+            for (let side = 0; side < 2; side++) {
+              const x = right - side;
+              const y = (right + 1 & 2) === 0 ? size - 1 - step : step;
+              if (!fixed[y][x] && placed < codewords.length * 8) {
+                modules[y][x] = (codewords[placed >>> 3] >>> 7 - (placed & 7) & 1) === 1;
+                placed++;
+              }
+            }
+          }
+        }
+
+        // the mask that leaves the calmest picture: few long runs and 2 by 2
+        // blocks of one colour, about as much dark as light.
+        const MASKS = [(x, y) => (x + y) % 2, (x, y) => y % 2, x => x % 3, (x, y) => (x + y) % 3,
+          (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2, (x, y) => x * y % 2 + x * y % 3,
+          (x, y) => (x * y % 2 + x * y % 3) % 2, (x, y) => ((x + y) % 2 + x * y % 3) % 2];
+        const applyMask = mask => {
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              if (!fixed[y][x] && MASKS[mask](x, y) === 0) {
+                modules[y][x] = !modules[y][x];
+              }
+            }
+          }
+        };
+        const penalty = () => {
+          let points = 0;
+          let dark = 0;
+          for (let a = 0; a < size; a++) {
+            for (const line of [modules[a], modules.map(row => row[a])]) {
+              for (let start = 0, end = 1; end <= size; end++) {
+                if (end === size || line[end] !== line[start]) {
+                  points += end - start >= 5 ? end - start - 2 : 0;
+                  start = end;
+                }
+              }
+            }
+            dark += modules[a].filter(Boolean).length;
+          }
+          for (let y = 0; y + 1 < size; y++) {
+            for (let x = 0; x + 1 < size; x++) {
+              if (modules[y][x] === modules[y][x + 1] && modules[y][x] === modules[y + 1][x] && modules[y][x] === modules[y + 1][x + 1]) {
+                points += 3;
+              }
+            }
+          }
+          return points + Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+        };
+        let best = 0;
+        let least = Infinity;
+        for (let mask = 0; mask < 8; mask++) {
+          applyMask(mask);
+          drawFormat(mask);
+          const points = penalty();
+          if (points < least) {
+            least = points;
+            best = mask;
+          }
+          applyMask(mask); // the same again takes it off
+        }
+        applyMask(best);
+        drawFormat(best);
+        return modules;
+      };
+
+      // the code drawn on the page: four modules of white all round it.
+      const drawQr = text => {
+        const modules = qrModules(text);
+        const canvas = $("two-step-qr");
+        canvas.hidden = !modules;
+        if (!modules) {
+          return;
+        }
+        const scale = 5;
+        const quiet = 4;
+        canvas.width = canvas.height = (modules.length + quiet * 2) * scale;
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = "#000";
+        modules.forEach((row, y) => row.forEach((dark, x) => dark && context.fillRect((x + quiet) * scale, (y + quiet) * scale, scale, scale)));
+      };
+
+      $("two-step-start").addEventListener("submit", async event => {
+        event.preventDefault();
+        const result = await api("act", {action: "twoStepStart", current: $("two-step-password").value});
+        $("two-step-password").value = "";
+        if (result.ok) {
+          twoStepSetup = result.data.setup;
+          account = result.data.account;
+          $("two-step-key").textContent = twoStepSetup.secret.replace(/(.{4})/g, "$1 ").trim();
+          drawQr(twoStepSetup.uri);
+          render();
+          $("two-step-code").focus();
+        }
+        setStatus("two-step-status", result.ok ? "" : result.data.error || "That did not work.", !result.ok);
+      });
+      $("two-step-cancel").addEventListener("click", () => {
+        twoStepSetup = null;
+        setStatus("two-step-status", "");
+        render();
+      });
+      $("two-step-confirm").addEventListener("submit", async event => {
+        event.preventDefault();
+        const result = await api("act", {action: "twoStepConfirm", code: $("two-step-code").value});
+        $("two-step-code").value = "";
+        if (result.ok) {
+          twoStepSetup = null;
+          twoStepCodes = result.data.recovery;
+          account = result.data.account;
+          $("two-step-recovery").textContent = twoStepCodes.join("\n");
+          render();
+        }
+        setStatus("two-step-status", result.ok ? result.data.ok : result.data.error || "That did not work.", !result.ok);
+      });
+      $("two-step-copy").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(twoStepCodes.join("\n"));
+          setStatus("two-step-status", "Copied.");
+        }
+        catch (err) {
+          setStatus("two-step-status", "Could not copy.", true);
+        }
+      });
+      $("two-step-done").addEventListener("click", () => {
+        twoStepCodes = null;
+        $("two-step-recovery").textContent = "";
+        setStatus("two-step-status", "");
+        render();
+      });
+      $("two-step-stop").addEventListener("submit", async event => {
+        event.preventDefault();
+        const done = await act({action: "twoStepOff", current: $("two-step-stop-password").value, code: $("two-step-stop-code").value.trim()}, "two-step-status");
+        $("two-step-stop-password").value = "";
+        $("two-step-stop-code").value = "";
+        return done;
+      });
+      $("forget-devices").addEventListener("click", () => act({action: "forgetDevices"}, "two-step-status"));
+
+      // time played, in the largest units that say it: "3 days 4 hours".
+      const played = seconds => {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor(seconds % 86400 / 3600);
+        const minutes = Math.floor(seconds % 3600 / 60);
+        const unit = (count, name) => `${count.toLocaleString()} ${name}${count === 1 ? "" : "s"}`;
+        if (days > 0) {
+          return hours > 0 ? `${unit(days, "day")} ${unit(hours, "hour")}` : unit(days, "day");
+        }
+        if (hours > 0) {
+          return minutes > 0 ? `${unit(hours, "hour")} ${unit(minutes, "minute")}` : unit(hours, "hour");
+        }
+        return unit(minutes, "minute");
+      };
+      $("playtime-public").addEventListener("click", async () => {
+        $("playtime-public").disabled = true;
+        await act({action: "playtimePublic", on: !account.playtimePublic}, "playtime-status");
+        $("playtime-public").disabled = false;
+      });
+
+      const bioCount = () => {
+        $("bio-count").textContent = `${[...$("bio-text").value.trim()].length} / ${account ? account.bioLimit : 200}`;
+      };
+      $("bio-text").addEventListener("input", bioCount);
+      $("bio-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        $("bio-text").blur();
+        await act({action: "bio", text: $("bio-text").value}, "bio-status");
+      });
+      $("bio-remove").addEventListener("click", () => act({action: "bio", text: ""}, "bio-status"));
+
+      ["chat-background", "chat-accent", "chat-text-colour", "chat-border", "chat-opacity", "chat-gradient", "chat-angle", "chat-strength", "chat-outline", "chat-animation", "chat-speed"].forEach(id => {
+        $(id).addEventListener("input", paintChatPreview);
+        $(id).addEventListener("change", paintChatPreview);
+      });
+      $("chat-style-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        await act({action: "chatStyle", style: styleValue()}, "chat-style-status");
+      });
+      $("chat-stop-add").addEventListener("click", () => {
+        if (chatStops.length >= 5) return;
+        let gapAt = 0;
+        for (let index = 1; index < chatStops.length - 1; index++) {
+          if (chatStops[index + 1].position - chatStops[index].position > chatStops[gapAt + 1].position - chatStops[gapAt].position) gapAt = index;
+        }
+        const before = chatStops[gapAt];
+        const after = chatStops[gapAt + 1];
+        const rgb = hex => [0, 2, 4].map(at => parseInt(hex.slice(at, at + 2), 16));
+        const mixed = rgb(before.color).map((part, index) => Math.round((part + rgb(after.color)[index]) / 2).toString(16).padStart(2, "0")).join("");
+        chatStops.splice(gapAt + 1, 0, {color: mixed, position: Math.round((before.position + after.position) / 2)});
+        renderChatStops();
+        paintChatPreview();
+      });
+      $("chat-style-swap").addEventListener("click", () => {
+        chatStops = chatStops.slice().reverse().map(stop => ({color: stop.color, position: 100 - stop.position}));
+        renderChatStops();
+        paintChatPreview();
+      });
+      $("chat-style-random").addEventListener("click", () => {
+        const randomColour = () => Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, "0");
+        chatStops.forEach(stop => { stop.color = randomColour(); });
+        renderChatStops();
+        paintChatPreview();
+      });
+      $("chat-style-reset").addEventListener("click", async () => {
+        fillChatStyle(DEFAULT_CHAT_STYLE);
+        await act({action: "chatStyle", style: DEFAULT_CHAT_STYLE}, "chat-style-status");
+      });
+
+      // off to Discord's sign-in; it comes back to /account?discord=<how it went>
+      $("discord-link").addEventListener("click", () => {
+        location.href = "/account/discord/link";
+      });
+      $("discord-remove").addEventListener("click", () => {
+        if (confirm("Unlink your Discord account? It comes off your card, and so does the Server Booster badge.")) {
+          act({action: "discord", name: ""}, "discord-status");
+        }
+      });
+      const DISCORD_RESULTS = {
+        linked: "Discord linked.",
+        cancelled: "Linking was cancelled.",
+        expired: "That took too long, or was started in another browser. Try again.",
+        taken: "That Discord account is linked to another Meadow account.",
+        discord: "Discord did not answer. Try again later.",
+        off: "Linking Discord is not available right now.",
+      };
+      const discordResult = new URLSearchParams(location.search).get("discord");
+
+      $("lock").addEventListener("click", () => {
+        if (!account.locked && !window.confirm("Lock the account? Nobody gets in until you unlock it here.")) {
+          return;
+        }
+        act({action: "lock", locked: !account.locked}, "lock-status");
+      });
+
+      $("everywhere").addEventListener("click", () => act({action: "signOutEverywhere"}, "history-status"));
+
+      // the trade offer form: their trade list and the player's own items.
+      let tradable = null;
+      const optionFor = item => {
+        const option = el("option", `${item.name}${item.type === 1 ? " (den item)" : ""}`);
+        option.value = `${item.type}:${item.inv}`;
+        return option;
+      };
+      const parseItem = value => ({type: Number(value.split(":")[0]), inv: Number(value.split(":")[1])});
+      const showGiven = () => {
+        const words = $("offer-filter").value.toLowerCase();
+        const picked = new Set([...$("offer-given").selectedOptions].map(option => option.value));
+        $("offer-given").replaceChildren(...tradable.mine
+          .filter(item => picked.has(`${item.type}:${item.inv}`) || item.name.toLowerCase().includes(words)).slice(0, 300).map(item => {
+            const option = optionFor(item);
+            option.selected = picked.has(option.value);
+            return option;
+          }));
+      };
+      $("offer-lookup").addEventListener("submit", async event => {
+        event.preventDefault();
+        const result = await api(`tradable?of=${encodeURIComponent($("offer-to").value.trim())}`);
+        $("offer-form").hidden = true;
+        if (!result.ok || !result.data.found) {
+          setStatus("offer-status", "No such player.", true);
+        }
+        else if (result.data.theirs.length === 0) {
+          setStatus("offer-status", "Their trade list is empty.", true);
+        }
+        else if (result.data.mine.length === 0) {
+          setStatus("offer-status", "You have nothing to give.", true);
+        }
+        else {
+          tradable = result.data;
+          $("offer-wanted").replaceChildren(...tradable.theirs.map(optionFor));
+          $("offer-filter").value = "";
+          $("offer-given").replaceChildren();
+          showGiven();
+          $("offer-form").hidden = false;
+          setStatus("offer-status", "");
+        }
+      });
+      $("offer-filter").addEventListener("input", showGiven);
+      $("offer-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const offered = [...$("offer-given").selectedOptions].map(option => parseItem(option.value));
+        if (await act({action: "offer", to: $("offer-to").value.trim(), wanted: parseItem($("offer-wanted").value), offered}, "offer-status")) {
+          $("offer-form").hidden = true;
+          $("offer-lookup").reset();
+        }
+      });
+
+      $("block-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (await act({action: "block", name: $("block-name").value}, "block-status")) {
+          event.target.reset();
+        }
+      });
+
+      $("delete-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (!window.confirm(`Delete ${account.username} and everything it owns? This cannot be undone.`)) {
+          return;
+        }
+        const result = await api("act", {action: "delete", current: $("delete-password").value, confirm: $("delete-confirm").value});
+        if (result.ok) {
+          account = null;
+          event.target.reset();
+          showGate("");
+          setStatus("gate-status", "Your account is deleted.", false);
+        }
+        else if (account) {
+          setStatus("delete-status", result.data.error || "That did not work.", true);
+        }
+      });
+
+      $("rename-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (await act({action: "newName", newName: $("rename-name").value}, "rename-status")) {
+          event.target.reset();
+        }
+      });
+
+      $("appeal-text").addEventListener("input", () => appealCount());
+      $("appeal-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (!window.confirm("Send this appeal? You can appeal once.")) {
+          return;
+        }
+        if (await act({action: "appeal", text: $("appeal-text").value}, "appeal-status")) {
+          $("appeal-text").value = "";
+        }
+      });
+
+      $("export").addEventListener("click", async () => {
+        $("export").disabled = true;
+        try {
+          const response = await fetch("/account/api/export");
+          if (!response.ok) {
+            throw new Error((await response.json().catch(() => ({}))).error || "That did not work.");
+          }
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(await response.blob());
+          link.download = `burrow-data-${account.username}.json`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+          setStatus("export-status", "Downloaded.");
+        }
+        catch (err) {
+          setStatus("export-status", err.message, true);
+        }
+        $("export").disabled = false;
+      });
+
+      $("feedback-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (await act({action: "feedback", kind: $("feedback-kind").value, text: $("feedback-text").value}, "feedback-status")) {
+          $("feedback-text").value = "";
+        }
+      });
+
+      load();
+    </script>
+  </body>
+</html>

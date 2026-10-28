@@ -1,0 +1,20 @@
+method
+   name "checkIfAnimatingOnTopOf"
+   flag HAS_PARAM_NAMES
+   param QName(PackageNamespace(""),"int")
+   paramname "userId"
+   returns QName(PackageNamespace(""),"void")
+
+   body
+      maxstack 1
+      localcount 2
+      initscopedepth 0
+      maxscopedepth 1
+
+      code
+         getlocal0
+         pushscope
+         returnvoid
+      end ; code
+   end ; body
+end ; method

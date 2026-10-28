@@ -1,0 +1,27 @@
+# Names nobody may sign up with: the ones that would pass for whoever runs
+# the game. One to a line; capitals, spaces, dots and dashes do not matter.
+#
+# A username is refused when it is one of these, or when one of its words is
+# ("Admin Bob", "AJHQ-Liza"): never for merely containing one ("Badminton"
+# is fine). The names of the Epic Dens are refused too (they are how a den
+# is asked for), and so is anything in public/filter/level1.txt. Read again
+# whenever it changes. The admin panel's own rename is not held to this.
+
+ajhq
+aj hq
+animal jam hq
+animaljam
+animal jam
+wildworks
+wild works
+moderator
+mod
+mods
+admin
+admins
+administrator
+staff
+owner
+developer
+support
+official

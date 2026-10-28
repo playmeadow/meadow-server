@@ -1,0 +1,177 @@
+package achievement
+{
+   import flash.display.DisplayObjectContainer;
+   import flash.display.MovieClip;
+   import flash.display.Sprite;
+   import flash.events.MouseEvent;
+   import flash.events.TimerEvent;
+   import flash.utils.Timer;
+   import loader.MediaHelper;
+   
+   public class AchievementManager
+   {
+      
+      private static var _newAchievements:Array;
+      
+      private static var _finishedCallbacks:Array;
+      
+      private static var _popupMediaHelper:MediaHelper;
+      
+      private static var _achievementPopup:MovieClip;
+      
+      private static var _achievementImg:Sprite;
+      
+      private static var _popupDisplayTimer:Timer;
+      
+      private static var _popupDelayTimer:Timer;
+      
+      private static var _state:int;
+      
+      private static var _fpsLayer:DisplayObjectContainer;
+      
+      private static const ACHIEVEMENT_POPUP_MEDIA_ID:int = 282;
+      
+      private static const STATE_IDLE:int = 0;
+      
+      private static const STATE_DISPLAYING:int = 1;
+      
+      public function AchievementManager()
+      {
+         super();
+      }
+      
+      public static function init(param1:DisplayObjectContainer) : void
+      {
+         _fpsLayer = param1;
+         _popupMediaHelper = new MediaHelper();
+         _popupMediaHelper.init(ACHIEVEMENT_POPUP_MEDIA_ID,popupHelperCallback);
+         _finishedCallbacks = [];
+         _newAchievements = [];
+         _popupDisplayTimer = new Timer(3000);
+         _popupDelayTimer = new Timer(500);
+         _state = STATE_IDLE;
+      }
+      
+      public static function destroy() : void
+      {
+         _newAchievements.splice(0,_newAchievements.length);
+         _newAchievements = null;
+         _finishedCallbacks.splice(0,_finishedCallbacks.length);
+         _finishedCallbacks = null;
+         if(_popupDisplayTimer)
+         {
+            _popupDisplayTimer.stop();
+            _popupDisplayTimer = null;
+         }
+         if(_popupDelayTimer)
+         {
+            _popupDelayTimer.stop();
+            _popupDelayTimer = null;
+         }
+      }
+      
+      public static function hasAchievement() : Boolean
+      {
+         return false;
+      }
+      
+      public static function displayNewAchievements(param1:Function = null) : void
+      {
+         if(param1 != null)
+         {
+            if(_finishedCallbacks.indexOf(param1) < 0 && _newAchievements.length > 0)
+            {
+               _finishedCallbacks.push(param1);
+            }
+            else
+            {
+               param1();
+            }
+         }
+         if(_state == STATE_IDLE && _newAchievements.length > 0)
+         {
+            _state = STATE_DISPLAYING;
+            displayNextAchievement();
+         }
+      }
+      
+      private static function finishedDisplayingNewAchievements() : void
+      {
+         var _loc1_:int = int(_finishedCallbacks.length);
+         var _loc2_:int = 0;
+         while(_loc2_ < _loc1_)
+         {
+            _finishedCallbacks[_loc2_]();
+            _loc2_++;
+         }
+         _finishedCallbacks.splice(0,_finishedCallbacks.length);
+      }
+      
+      private static function displayNextAchievement() : void
+      {
+         var _loc1_:Achievement = _newAchievements[0];
+         _achievementImg = _loc1_.image;
+         _loc1_.setScale(2);
+         _loc1_.setPosition(0.5,0.5);
+         _achievementPopup.achievementWindow.itemBlock.addChild(_achievementImg);
+         _achievementPopup.achievementWindow.acmtNameTxt.text = _loc1_.name;
+         _fpsLayer.addChild(_achievementPopup);
+         _achievementPopup.gotoAndPlay(1);
+         _achievementPopup.achievementWindow.gotoAndPlay(1);
+         AJAudio.playAchievementSound();
+         _popupDisplayTimer.start();
+         _popupDisplayTimer.addEventListener("timer",onDisplayTimerFinished,false,0,true);
+      }
+      
+      private static function onDisplayTimerFinished(param1:TimerEvent) : void
+      {
+         _popupDisplayTimer.stop();
+         _fpsLayer.removeChild(_achievementPopup);
+         _achievementPopup.achievementWindow.itemBlock.removeChild(_achievementImg);
+         _newAchievements.splice(0,1);
+         if(_newAchievements.length > 0)
+         {
+            _popupDelayTimer.start();
+            _popupDelayTimer.addEventListener("timer",onDelayTimerFinished,false,0,true);
+         }
+         else
+         {
+            _state = STATE_IDLE;
+            finishedDisplayingNewAchievements();
+         }
+      }
+      
+      private static function onDelayTimerFinished(param1:TimerEvent) : void
+      {
+         _popupDelayTimer.stop();
+         displayNextAchievement();
+      }
+      
+      private static function popupHelperCallback(param1:MovieClip) : void
+      {
+         if(param1)
+         {
+            _achievementPopup = new MovieClip();
+            _achievementPopup = param1;
+            _achievementPopup.visible = true;
+            _achievementPopup.addEventListener(MouseEvent.MOUSE_DOWN,onPopupDown,false,0,true);
+            _popupMediaHelper.destroy();
+            _popupMediaHelper = null;
+         }
+      }
+      
+      private static function onPopupDown(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+      }
+      
+      public static function addAchievement(param1:Achievement) : void
+      {
+         if(param1)
+         {
+            _newAchievements.push(param1);
+         }
+      }
+   }
+}
+

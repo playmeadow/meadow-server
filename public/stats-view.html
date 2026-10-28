@@ -1,0 +1,327 @@
+<!-- the Stats tab of the admin panel (admin.html) and the moderator panel
+     (mod.html), put in each where it says so by lib/panel.js and
+     lib/modpanel.js. the numbers are lib/stats.js's; the graphs are drawn
+     here, in white on black like the rest. hovering a bar or a point
+     names its numbers. -->
+<style>
+  .stats-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stats-tile { padding: 12px 14px 11px; border: 1px solid var(--line); border-radius: 18px; min-width: 0; }
+  .stats-tile .value { font-size: 24px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .stats-tile .name { margin-top: 2px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .stats-tile .sub { font-size: 12px; color: var(--muted); }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+  .stats-grid section { margin: 0; min-width: 0; }
+  .stats-chart { width: 100%; height: auto; display: block; }
+  .stats-chart text { fill: var(--muted); font: 11px "DigitalDelivery", system-ui, sans-serif; }
+  .stats-chart .axis { stroke: var(--line); stroke-width: 1; }
+  .stats-chart .bar { fill: var(--text); }
+  .stats-chart .bar.dim { fill: #6a2fa8; }
+  .stats-chart .hit { fill: transparent; }
+  .stats-chart .hit:hover + .bar, .stats-chart .bar:hover { fill: #b7a0d4; }
+  .stats-chart .line { fill: none; stroke: var(--text); stroke-width: 2; }
+  .stats-chart .line.dim { stroke: #6a2fa8; stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .stats-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .stats-legend span::before { content: ""; display: inline-block; width: 14px; height: 0; border-top: 2px solid #9d00ff; vertical-align: middle; margin-right: 6px; }
+  .stats-legend span.dim::before { border-top: 2px dashed #6a2fa8; }
+  .stats-legend span.box::before { height: 10px; border: 0; background: var(--text); }
+  .stats-legend span.box.dim::before { background: #6a2fa8; }
+  .stats-heat { display: grid; grid-template-columns: 34px repeat(24, 1fr); gap: 2px; font-size: 10px; color: var(--muted); }
+  .stats-heat div { aspect-ratio: 1; border-radius: 3px; min-width: 0; }
+  .stats-heat .label { aspect-ratio: auto; align-self: center; text-align: right; padding-right: 4px; }
+  .stats-heat .hour { aspect-ratio: auto; text-align: center; }
+  .stats-empty { color: var(--muted); padding: 24px 0; text-align: center; }
+</style>
+
+<section>
+  <div class="toolbar">
+    <select id="stats-range" aria-label="Time covered">
+      <option value="1">Last 24 hours</option>
+      <option value="7" selected>Last 7 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last year</option>
+    </select>
+    <span class="hint" id="stats-note">Times are in your time zone.</span>
+  </div>
+  <div class="stats-tiles" id="stats-tiles"></div>
+</section>
+
+<div class="stats-grid">
+  <section>
+    <h2>Players online</h2>
+    <div class="stats-legend"><span>Average</span><span class="dim">Most at once</span></div>
+    <div id="stats-online"></div>
+  </section>
+  <section>
+    <h2>Logins</h2>
+    <div class="stats-legend"><span class="box">Logins</span><span class="box dim">Different players</span></div>
+    <div id="stats-logins"></div>
+  </section>
+  <section>
+    <h2>New accounts</h2>
+    <div id="stats-new"></div>
+  </section>
+  <section>
+    <h2>Busiest hours</h2>
+    <p class="hint">Average players online at each hour of the day.</p>
+    <div id="stats-hours"></div>
+  </section>
+  <section>
+    <h2>Week at a glance</h2>
+    <p class="hint">Average players online by day and hour: the lighter, the busier.</p>
+    <div id="stats-week"></div>
+  </section>
+  <section>
+    <h2>Most time played</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Player</th><th class="num">Playtime</th></tr></thead>
+      <tbody id="stats-top"></tbody>
+    </table></div>
+    <div class="stats-empty" id="stats-no-top" hidden>No playtime counted yet.</div>
+  </section>
+</div>
+
+<script>
+  (() => {
+    const SVG = "http://www.w3.org/2000/svg";
+    const W = 640;
+    const H = 220;
+    const PAD = {left: 40, right: 10, top: 10, bottom: 28};
+    const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const byId = id => document.getElementById(id);
+
+    const svgEl = (tag, attrs = {}, text) => {
+      const node = document.createElementNS(SVG, tag);
+      for (const [name, value] of Object.entries(attrs)) {
+        node.setAttribute(name, value);
+      }
+      if (text !== undefined) {
+        node.textContent = text;
+      }
+      return node;
+    };
+    const htmlEl = (tag, text, className) => {
+      const node = document.createElement(tag);
+      if (text !== undefined) {
+        node.textContent = text;
+      }
+      if (className) {
+        node.className = className;
+      }
+      return node;
+    };
+
+    const played = seconds => {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor(seconds % 86400 / 3600);
+      const minutes = Math.floor(seconds % 3600 / 60);
+      if (days > 0) {
+        return `${days.toLocaleString()}d ${hours}h`;
+      }
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m`;
+    };
+    const when = (seconds, withTime = true) => (seconds
+      ? new Date(seconds * 1000).toLocaleString([], withTime ? {dateStyle: "medium", timeStyle: "short"} : {dateStyle: "medium"}) : "—");
+
+    // A round top for the y axis, and three steps up to it.
+    const scale = most => {
+      if (most <= 0) {
+        return {top: 1, ticks: [0, 1]};
+      }
+      const raw = most / 4;
+      const power = 10 ** Math.floor(Math.log10(raw));
+      const step = [1, 2, 2.5, 5, 10].map(f => f * power).find(f => f >= raw) || raw;
+      const nice = Math.max(1, step < 1 && Number.isInteger(most) ? 1 : step);
+      const top = Math.ceil(most / nice) * nice;
+      const ticks = [];
+      for (let tick = 0; tick <= top + 1e-9; tick += nice) {
+        ticks.push(Math.round(tick * 100) / 100);
+      }
+      return {top, ticks};
+    };
+
+    // the frame of a chart: the y axis's lines and numbers, and up to
+    // `labels` evenly spaced names along the bottom.
+    const frame = (top, ticks, names, every) => {
+      const svg = svgEl("svg", {viewBox: `0 0 ${W} ${H}`, class: "stats-chart", role: "img"});
+      const plotH = H - PAD.top - PAD.bottom;
+      for (const tick of ticks) {
+        const y = PAD.top + plotH - tick / top * plotH;
+        svg.append(svgEl("line", {x1: PAD.left, x2: W - PAD.right, y1: y, y2: y, class: "axis"}));
+        svg.append(svgEl("text", {x: PAD.left - 6, y: y + 4, "text-anchor": "end"}, tick.toLocaleString()));
+      }
+      const plotW = W - PAD.left - PAD.right;
+      names.forEach((name, index) => {
+        if (index % every === 0) {
+          svg.append(svgEl("text", {x: PAD.left + (index + 0.5) * plotW / names.length, y: H - 8, "text-anchor": "middle"}, name));
+        }
+      });
+      return svg;
+    };
+    const labelEvery = count => Math.max(1, Math.ceil(count / 8));
+
+    // bars, one or two to a slot: [{values, dim}], names under them, and
+    // what hovering a slot says.
+    const bars = (sets, names, tip) => {
+      const most = Math.max(0, ...sets.flatMap(set => set.values.filter(value => value !== null)));
+      const {top, ticks} = scale(most);
+      const svg = frame(top, ticks, names, labelEvery(names.length));
+      const plotW = W - PAD.left - PAD.right;
+      const plotH = H - PAD.top - PAD.bottom;
+      const slot = plotW / names.length;
+      const width = Math.max(1, slot * 0.8 / sets.length);
+      names.forEach((name, index) => {
+        const group = svgEl("g");
+        group.append(svgEl("title", {}, tip(index)));
+        group.append(svgEl("rect", {x: PAD.left + index * slot, y: PAD.top, width: slot, height: plotH, class: "hit"}));
+        sets.forEach((set, which) => {
+          const value = set.values[index] || 0;
+          const height = value / top * plotH;
+          group.append(svgEl("rect", {x: PAD.left + index * slot + slot * 0.1 + which * width, y: PAD.top + plotH - height, width, height,
+            class: set.dim ? "bar dim" : "bar"}));
+        });
+        svg.append(group);
+      });
+      return svg;
+    };
+
+    // lines through points (null leaves a gap): [{values, dim}].
+    const lines = (sets, names, tip) => {
+      const most = Math.max(0, ...sets.flatMap(set => set.values.filter(value => value !== null)));
+      const {top, ticks} = scale(most);
+      const svg = frame(top, ticks, names, labelEvery(names.length));
+      const plotW = W - PAD.left - PAD.right;
+      const plotH = H - PAD.top - PAD.bottom;
+      const x = index => PAD.left + (index + 0.5) * plotW / names.length;
+      const y = value => PAD.top + plotH - value / top * plotH;
+      for (const set of [...sets].reverse()) {
+        let d = "";
+        let drawing = false;
+        set.values.forEach((value, index) => {
+          if (value === null) {
+            drawing = false;
+            return;
+          }
+          d += `${drawing ? "L" : "M"}${x(index).toFixed(1)},${y(value).toFixed(1)}`;
+          drawing = true;
+        });
+        svg.append(svgEl("path", {d: d || "M0,0", class: set.dim ? "line dim" : "line"}));
+      }
+      const slot = plotW / names.length;
+      names.forEach((name, index) => {
+        const hit = svgEl("rect", {x: PAD.left + index * slot, y: PAD.top, width: slot, height: plotH, class: "hit"});
+        hit.append(svgEl("title", {}, tip(index)));
+        svg.append(hit);
+      });
+      return svg;
+    };
+
+    const render = data => {
+      const {summary} = data;
+      const hourly = data.bucketSeconds < 86400;
+      const tiles = [
+        [summary.online.toLocaleString(), "Online now"],
+        [summary.peak.count.toLocaleString(), "Most at once", summary.peak.at ? when(summary.peak.at) : ""],
+        [summary.peakEver.count.toLocaleString(), "Most ever", summary.peakEver.at ? when(summary.peakEver.at, false) : ""],
+        [summary.logins.toLocaleString(), "Logins"],
+        [summary.players.toLocaleString(), "Players", "who logged in"],
+        [summary.newAccounts.toLocaleString(), "New accounts", `${summary.firstLogins.toLocaleString()} played`],
+        [summary.averageSessionSeconds ? played(summary.averageSessionSeconds) : "—", "Average visit", `${summary.sessions.toLocaleString()} visits`],
+        [played(summary.playedSeconds), "Time played"],
+        [summary.accounts.toLocaleString(), "Accounts in all"],
+      ];
+      byId("stats-tiles").replaceChildren(...tiles.map(([value, name, sub]) => {
+        const tile = htmlEl("div", undefined, "stats-tile");
+        tile.append(htmlEl("div", value, "value"), htmlEl("div", name, "name"));
+        if (sub) {
+          tile.append(htmlEl("div", sub, "sub"));
+        }
+        return tile;
+      }));
+
+      const series = data.series;
+      const bucketName = at => {
+        const date = new Date(at * 1000);
+        return hourly ? date.toLocaleTimeString([], {hour: "numeric"}) : date.toLocaleDateString([], {month: "short", day: "numeric"});
+      };
+      // a day as "Sun, Oct 18, 2026". (weekday cannot go with dateStyle:
+      // the browser throws, and no graph of a week or more was drawn.)
+      const bucketLong = at => {
+        const date = new Date(at * 1000);
+        return hourly ? date.toLocaleString([], {weekday: "short", hour: "numeric", minute: "2-digit"})
+          : date.toLocaleDateString([], {weekday: "short", year: "numeric", month: "short", day: "numeric"});
+      };
+      const names = series.map(bucket => bucketName(bucket.at));
+      byId("stats-online").replaceChildren(lines(
+        [{values: series.map(bucket => bucket.average)}, {values: series.map(bucket => bucket.most), dim: true}], names,
+        index => `${bucketLong(series[index].at)}\naverage ${series[index].average ?? "—"} · most ${series[index].most ?? "—"}`));
+      byId("stats-logins").replaceChildren(bars(
+        [{values: series.map(bucket => bucket.logins)}, {values: series.map(bucket => bucket.players), dim: true}], names,
+        index => `${bucketLong(series[index].at)}\n${series[index].logins} logins · ${series[index].players} players`));
+      byId("stats-new").replaceChildren(bars(
+        [{values: series.map(bucket => bucket.newAccounts)}], names,
+        index => `${bucketLong(series[index].at)}\n${series[index].newAccounts} new`));
+
+      const hourName = hour => new Date(2000, 0, 1, hour).toLocaleTimeString([], {hour: "numeric"});
+      byId("stats-hours").replaceChildren(bars(
+        [{values: data.hours.map(hour => hour.average)}], data.hours.map((hour, index) => hourName(index)),
+        index => `${hourName(index)}\naverage ${data.hours[index].average ?? "—"} online · ${data.hours[index].logins} logins`));
+
+      const heat = htmlEl("div", undefined, "stats-heat");
+      const busiest = Math.max(0, ...data.week.flat().filter(value => value !== null));
+      heat.append(htmlEl("div", "", "label"));
+      for (let hour = 0; hour < 24; hour++) {
+        heat.append(htmlEl("div", hour % 6 === 0 ? String(hour) : "", "hour"));
+      }
+      // Monday first.
+      for (const day of [1, 2, 3, 4, 5, 6, 0]) {
+        heat.append(htmlEl("div", DAYS[day], "label"));
+        data.week[day].forEach((value, hour) => {
+          const cell = htmlEl("div");
+          const share = busiest > 0 && value !== null ? value / busiest : 0;
+          const level = value === null ? 20 : Math.round(26 + share * 229);
+          cell.style.background = `rgb(${level}, ${level}, ${level})`;
+          cell.title = `${DAYS[day]} ${hourName(hour)}: ${value === null ? "no data" : `average ${value}`}`;
+          heat.append(cell);
+        });
+      }
+      byId("stats-week").replaceChildren(heat);
+
+      byId("stats-top").replaceChildren(...data.topPlaytime.map(entry => {
+        const row = htmlEl("tr");
+        row.append(htmlEl("td", entry.username), htmlEl("td", played(entry.seconds), "num"));
+        return row;
+      }));
+      byId("stats-no-top").hidden = data.topPlaytime.length > 0;
+    };
+
+    let api = null;
+    let loadedAt = 0;
+    let loadedRange = null;
+    // `call` is the page's own: (path) -> {ok, data}. asked again at most
+    // once a minute, however often the page refreshes.
+    const load = async (call, force = false) => {
+      api = call;
+      const range = byId("stats-range").value;
+      if (!force && range === loadedRange && Date.now() - loadedAt < 60000) {
+        return;
+      }
+      const offset = -new Date().getTimezoneOffset();
+      const result = await call(`stats?days=${range}&offset=${offset}`);
+      if (result.ok) {
+        loadedAt = Date.now();
+        loadedRange = range;
+        render(result.data);
+      }
+    };
+    byId("stats-range").addEventListener("change", () => {
+      if (api) {
+        load(api, true);
+      }
+    });
+    window.statsView = {load};
+  })();
+</script>

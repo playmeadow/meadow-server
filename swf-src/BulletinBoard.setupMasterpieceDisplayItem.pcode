@@ -1,0 +1,56 @@
+method
+   name "setupMasterpieceDisplayItem"
+   returns QName(PackageNamespace(""),"void")
+   
+   body
+      maxstack 4
+      localcount 2
+      initscopedepth 0
+      maxscopedepth 1
+      
+      code
+         getlocal0
+         pushscope
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         iffalse ofs_none
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         getproperty Multiname("pool",[PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         iffalse ofs_none
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         getproperty Multiname("pool",[PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         getproperty QName(PackageNamespace(""),"length")
+         pushbyte 0
+         ifgt ofs_go
+ofs_none:
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_artSpiral")
+         iffalse ofs_ret
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_artSpiral")
+         callpropvoid QName(PackageNamespace(""),"destroy"), 0
+ofs_ret:
+         returnvoid
+ofs_go:
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         getproperty Multiname("pool",[PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         pushbyte 0
+         getproperty MultinameL([PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         coerce QName(PackageNamespace(""),"Object")
+         setlocal1
+         findpropstrict QName(PackageNamespace("masterpiece"),"MasterpieceDisplayItem")
+         constructprop QName(PackageNamespace("masterpiece"),"MasterpieceDisplayItem"), 0
+         findproperty QName(PrivateNamespace("gui:BulletinBoard"),"_masterpieceDisplayItem")
+         swap
+         setproperty QName(PrivateNamespace("gui:BulletinBoard"),"_masterpieceDisplayItem")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_masterpieceDisplayItem")
+         getlocal1
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"onMasterpieceDisplayItemLoaded")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_bulletinBoardPopup")
+         getproperty Multiname("masterpieceGallery",[PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         getproperty Multiname("itemLayer",[PrivateNamespace("gui:BulletinBoard"),ProtectedNamespace("gui:BulletinBoard"),StaticProtectedNs("gui:BulletinBoard"),StaticProtectedNs("Object"),PackageNamespace("gui"),PackageInternalNs("gui"),PrivateNamespace("FilePrivateNS:BulletinBoard"),PackageNamespace(""),Namespace("http://adobe.com/AS3/2006/builtin")])
+         callpropvoid QName(PackageNamespace(""),"initFromPool"), 3
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_masterpieceDisplayItem")
+         pushfalse
+         setproperty QName(PackageNamespace(""),"nameBarVisibility")
+         returnvoid
+      end ; code
+   end ; body
+end ; method

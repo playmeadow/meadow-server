@@ -1,0 +1,97 @@
+package gui
+{
+   import diamond.DiamondItem;
+   import diamond.DiamondXtCommManager;
+   import flash.display.MovieClip;
+   import flash.events.MouseEvent;
+   import item.Item;
+   import loader.MediaHelper;
+   import pet.PetManager;
+   
+   public class PetAdoptionBanner
+   {
+      
+      private static var _popupMediaHelper:MediaHelper;
+      
+      private static var _popup:MovieClip;
+      
+      private static var _diamondPetDef:int;
+      
+      public function PetAdoptionBanner()
+      {
+         super();
+      }
+      
+      public static function init(param1:int) : void
+      {
+         DarkenManager.showLoadingSpiral(true);
+         _diamondPetDef = param1;
+         _popupMediaHelper = new MediaHelper();
+         _popupMediaHelper.init(3759,onMediaLoaded);
+      }
+      
+      public static function destroy() : void
+      {
+         if(_popupMediaHelper)
+         {
+            _popupMediaHelper.destroy();
+            _popupMediaHelper = null;
+         }
+         if(_popup)
+         {
+            _popup.removeEventListener(MouseEvent.MOUSE_DOWN,onPopup);
+            _popup.bx.removeEventListener(MouseEvent.MOUSE_DOWN,onClose);
+            _popup.adoptBtn.removeEventListener(MouseEvent.MOUSE_DOWN,onAdoptBtn);
+            DarkenManager.unDarken(_popup);
+            if(Boolean(_popup.parent) && _popup.parent == GuiManager.guiLayer)
+            {
+               GuiManager.guiLayer.removeChild(_popup);
+            }
+            _popup = null;
+         }
+      }
+      
+      private static function onMediaLoaded(param1:MovieClip) : void
+      {
+         DarkenManager.showLoadingSpiral(false);
+         if(param1)
+         {
+            _popup = MovieClip(param1.getChildAt(0));
+            _popup.addEventListener(MouseEvent.MOUSE_DOWN,onPopup,false,0,true);
+            _popup.bx.addEventListener(MouseEvent.MOUSE_DOWN,onClose,false,0,true);
+            _popup.adoptBtn.addEventListener(MouseEvent.MOUSE_DOWN,onAdoptBtn,false,0,true);
+            _popup.x = MainFrame.VIEW_WIDTH * 0.5;
+            _popup.y = MainFrame.VIEW_HEIGHT * 0.5;
+            GuiManager.guiLayer.addChild(_popup);
+            DarkenManager.darken(_popup);
+         }
+      }
+      
+      private static function onPopup(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+      }
+      
+      private static function onClose(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         destroy();
+      }
+      
+      private static function onAdoptBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         var _loc2_:DiamondItem = DiamondXtCommManager.getDiamondItem(_diamondPetDef);
+         if(_loc2_)
+         {
+            PetManager.openPetFinder(PetManager.petNameForDefId(_loc2_.refDefId),onPetFinderClose,false,null,_loc2_,Item.DIAMOND_CURRENCY,214);
+         }
+      }
+      
+      private static function onPetFinderClose() : void
+      {
+         destroy();
+      }
+   }
+}
+

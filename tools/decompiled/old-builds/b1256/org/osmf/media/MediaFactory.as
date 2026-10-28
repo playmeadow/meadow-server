@@ -1,0 +1,279 @@
+package org.osmf.media
+{
+   import flash.events.EventDispatcher;
+   import flash.utils.Dictionary;
+   import org.osmf.elements.ProxyElement;
+   import org.osmf.events.MediaFactoryEvent;
+   import org.osmf.events.PluginManagerEvent;
+   import org.osmf.media.pluginClasses.PluginManager;
+   import org.osmf.utils.OSMFStrings;
+   
+   public class MediaFactory extends EventDispatcher
+   {
+      
+      private var pluginManager:PluginManager;
+      
+      private var allItems:Dictionary;
+      
+      public function MediaFactory()
+      {
+         super();
+         allItems = new Dictionary();
+      }
+      
+      private static function getItemsByResource(param1:MediaResourceBase, param2:Vector.<MediaFactoryItem>) : Vector.<MediaFactoryItem>
+      {
+         var _loc3_:Vector.<MediaFactoryItem> = new Vector.<MediaFactoryItem>();
+         for each(var _loc4_:MediaFactoryItem in param2)
+         {
+            if(_loc4_.canHandleResourceFunction(param1))
+            {
+               _loc3_.push(_loc4_);
+            }
+         }
+         return _loc3_;
+      }
+      
+      private static function getIndexOfItem(param1:String, param2:Vector.<MediaFactoryItem>) : int
+      {
+         var _loc4_:int = 0;
+         var _loc3_:MediaFactoryItem = null;
+         _loc4_ = 0;
+         while(_loc4_ < param2.length)
+         {
+            _loc3_ = param2[_loc4_] as MediaFactoryItem;
+            if(_loc3_.id == param1)
+            {
+               return _loc4_;
+            }
+            _loc4_++;
+         }
+         return -1;
+      }
+      
+      public function addItem(param1:MediaFactoryItem) : void
+      {
+         if(param1 == null || param1.id == null)
+         {
+            throw new ArgumentError(OSMFStrings.getString("invalidParam"));
+         }
+         var _loc2_:Vector.<MediaFactoryItem> = findOrCreateItems(param1.type);
+         var _loc3_:int = getIndexOfItem(param1.id,_loc2_);
+         if(_loc3_ != -1)
+         {
+            _loc2_[_loc3_] = param1;
+         }
+         else
+         {
+            _loc2_.push(param1);
+         }
+      }
+      
+      public function removeItem(param1:MediaFactoryItem) : void
+      {
+         var _loc3_:int = 0;
+         if(param1 == null || param1.id == null)
+         {
+            throw new ArgumentError(OSMFStrings.getString("invalidParam"));
+         }
+         var _loc2_:Vector.<MediaFactoryItem> = allItems[param1.type];
+         if(_loc2_ != null)
+         {
+            _loc3_ = _loc2_.indexOf(param1);
+            if(_loc3_ != -1)
+            {
+               _loc2_.splice(_loc3_,1);
+            }
+         }
+      }
+      
+      public function get numItems() : int
+      {
+         var _loc1_:* = undefined;
+         var _loc3_:int = 0;
+         for each(var _loc2_:String in MediaFactoryItemType.ALL_TYPES)
+         {
+            _loc1_ = allItems[_loc2_];
+            if(_loc1_ != null)
+            {
+               _loc3_ += _loc1_.length;
+            }
+         }
+         return _loc3_;
+      }
+      
+      public function getItemAt(param1:int) : MediaFactoryItem
+      {
+         var _loc3_:* = undefined;
+         var _loc2_:MediaFactoryItem = null;
+         if(param1 >= 0)
+         {
+            for each(var _loc4_:String in MediaFactoryItemType.ALL_TYPES)
+            {
+               _loc3_ = allItems[_loc4_];
+               if(_loc3_ != null)
+               {
+                  if(param1 < _loc3_.length)
+                  {
+                     _loc2_ = _loc3_[param1];
+                     break;
+                  }
+                  param1 -= _loc3_.length;
+               }
+            }
+         }
+         return _loc2_;
+      }
+      
+      public function getItemById(param1:String) : MediaFactoryItem
+      {
+         var _loc3_:* = undefined;
+         var _loc4_:int = 0;
+         var _loc2_:MediaFactoryItem = null;
+         for each(var _loc5_:String in MediaFactoryItemType.ALL_TYPES)
+         {
+            _loc3_ = allItems[_loc5_];
+            if(_loc3_ != null)
+            {
+               _loc4_ = getIndexOfItem(param1,_loc3_);
+               if(_loc4_ != -1)
+               {
+                  _loc2_ = _loc3_[_loc4_];
+                  break;
+               }
+            }
+         }
+         return _loc2_;
+      }
+      
+      public function loadPlugin(param1:MediaResourceBase) : void
+      {
+         createPluginManager();
+         pluginManager.loadPlugin(param1);
+      }
+      
+      public function createMediaElement(param1:MediaResourceBase) : MediaElement
+      {
+         var _loc2_:MediaElement = null;
+         createPluginManager();
+         var _loc3_:MediaElement = createMediaElementByResource(param1,"standard");
+         if(_loc3_ != null)
+         {
+            _loc2_ = createMediaElementByResource(_loc3_.resource,"proxy",_loc3_);
+            _loc3_ = _loc2_ != null ? _loc2_ : _loc3_;
+            dispatchEvent(new MediaFactoryEvent("mediaElementCreate",false,false,null,_loc3_));
+         }
+         return _loc3_;
+      }
+      
+      protected function resolveItems(param1:MediaResourceBase, param2:Vector.<MediaFactoryItem>) : MediaFactoryItem
+      {
+         var _loc5_:int = 0;
+         var _loc3_:MediaFactoryItem = null;
+         if(param1 == null || param2 == null)
+         {
+            return null;
+         }
+         var _loc4_:MediaFactoryItem = null;
+         _loc5_ = 0;
+         while(_loc5_ < param2.length)
+         {
+            _loc3_ = param2[_loc5_] as MediaFactoryItem;
+            if(_loc3_.id.indexOf("org.osmf") == -1)
+            {
+               return _loc3_;
+            }
+            if(_loc4_ == null)
+            {
+               _loc4_ = _loc3_;
+            }
+            _loc5_++;
+         }
+         return _loc4_;
+      }
+      
+      private function findOrCreateItems(param1:String) : Vector.<MediaFactoryItem>
+      {
+         if(allItems[param1] == null)
+         {
+            allItems[param1] = new Vector.<MediaFactoryItem>();
+         }
+         return allItems[param1] as Vector.<MediaFactoryItem>;
+      }
+      
+      private function createMediaElementByResource(param1:MediaResourceBase, param2:String, param3:MediaElement = null) : MediaElement
+      {
+         var _loc7_:MediaFactoryItem = null;
+         var _loc5_:MediaElement = null;
+         var _loc10_:int = 0;
+         var _loc9_:MediaFactoryItem = null;
+         var _loc4_:ProxyElement = null;
+         var _loc8_:MediaElement = null;
+         var _loc6_:Vector.<MediaFactoryItem> = getItemsByResource(param1,allItems[param2]);
+         if(param2 == "standard")
+         {
+            _loc7_ = resolveItems(param1,_loc6_) as MediaFactoryItem;
+            if(_loc7_ != null)
+            {
+               _loc8_ = invokeMediaElementCreationFunction(_loc7_);
+            }
+         }
+         else if(param2 == "proxy")
+         {
+            _loc5_ = param3;
+            _loc10_ = int(_loc6_.length);
+            while(_loc10_ > 0)
+            {
+               _loc9_ = _loc6_[_loc10_ - 1] as MediaFactoryItem;
+               _loc4_ = invokeMediaElementCreationFunction(_loc9_) as ProxyElement;
+               if(_loc4_ != null)
+               {
+                  _loc4_.proxiedElement = _loc5_;
+                  _loc5_ = _loc4_;
+               }
+               _loc10_--;
+            }
+            _loc8_ = _loc5_;
+         }
+         if(_loc8_ != null)
+         {
+            _loc8_.resource = param1;
+         }
+         return _loc8_;
+      }
+      
+      private function onPluginLoad(param1:PluginManagerEvent) : void
+      {
+         dispatchEvent(new MediaFactoryEvent("pluginLoad",false,false,param1.resource));
+      }
+      
+      private function onPluginLoadError(param1:PluginManagerEvent) : void
+      {
+         dispatchEvent(new MediaFactoryEvent("pluginLoadError",false,false,param1.resource));
+      }
+      
+      private function invokeMediaElementCreationFunction(param1:MediaFactoryItem) : MediaElement
+      {
+         var _loc2_:MediaElement = null;
+         try
+         {
+            _loc2_ = param1.mediaElementCreationFunction();
+         }
+         catch(error:Error)
+         {
+         }
+         return _loc2_;
+      }
+      
+      private function createPluginManager() : void
+      {
+         if(pluginManager == null)
+         {
+            pluginManager = new PluginManager(this);
+            pluginManager.addEventListener("pluginLoad",onPluginLoad);
+            pluginManager.addEventListener("pluginLoadError",onPluginLoadError);
+         }
+      }
+   }
+}
+

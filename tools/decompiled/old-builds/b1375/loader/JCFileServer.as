@@ -1,0 +1,50 @@
+package loader
+{
+   import com.sbi.loader.BaseFileServer;
+   
+   public class JCFileServer extends BaseFileServer
+   {
+      
+      private static const CONTENT_PATH:String = "ABSU/";
+      
+      private static var _instance:JCFileServer;
+      
+      public function JCFileServer(param1:Class)
+      {
+         super("ABSU/");
+         if(param1 != SingletonLock)
+         {
+            throw new Error("Invalid Singleton access.  Use JCFileServer.instance.");
+         }
+      }
+      
+      public static function get instance() : JCFileServer
+      {
+         if(!_instance)
+         {
+            _instance = new JCFileServer(SingletonLock);
+         }
+         return _instance;
+      }
+      
+      public function requestFileWithExtension(param1:Object, param2:Boolean = false, param3:int = 0, param4:String = "") : void
+      {
+         super.updatePath("ABSU/" + param4);
+         super.requestFile(param1,param2,param3,false);
+      }
+      
+      override public function clearFromCache(param1:String, param2:Object) : void
+      {
+         super.clearFromCache("ABSU/" + param1,param2);
+      }
+   }
+}
+
+class SingletonLock
+{
+   
+   public function SingletonLock()
+   {
+      super();
+   }
+}

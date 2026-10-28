@@ -1,0 +1,36 @@
+{
+  "server": [
+    "ajcontent.akamaized.net",
+    "burrow.moe",
+    "cdn.jsdelivr.net",
+    "challenges.cloudflare.com",
+    "discord.com",
+    "duckduckgo.com",
+    "play.burrow.moe",
+    "player.vimeo.com",
+    "vision.googleapis.com",
+    "www.cloudflare.com",
+    "www.w3.org",
+    "www.youtube-nocookie.com"
+  ],
+  "swf": [
+    "academy.animaljam.com",
+    "adobe.com",
+    "aj-color-picker.carrd.co",
+    "buddy.animaljam.com",
+    "crypto.hurlant.com",
+    "dailyexplorer.animaljam.com",
+    "dev-content.animaljam.com",
+    "jump.animaljam.com",
+    "ns.adobe.com",
+    "purl.org",
+    "shop.animaljam.com",
+    "ssl.google-analytics.com",
+    "wac.6a16.edgecastcdn.net",
+    "www.adobe.com",
+    "www.animaljam.com",
+    "www.google-analytics.com",
+    "www.osmf.org",
+    "www.w3.org"
+  ]
+}

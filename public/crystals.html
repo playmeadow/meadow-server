@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Earth Crystals</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* the account page's look (account.html): black and white, the game's
+         text font. Earth Crystals are lib/crystals.js; this page reads them
+         for the account signed in on the account page. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      body {
+        margin: 0;
+        padding: 32px 16px 48px;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      main { max-width: 720px; margin: 0 auto; }
+      h1 { margin: 0 0 4px; font-size: 26px; }
+      h2 { margin: 0 0 6px; font-size: 17px; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      section { margin-top: 18px; padding: 20px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; }
+      .balance { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 2px; }
+      .balance strong { font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+      dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 14px 0 0; }
+      dt { color: var(--muted); }
+      dd { margin: 0; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th { text-align: left; font-weight: 400; color: var(--muted); padding: 0 8px 6px 0; }
+      td { padding: 7px 8px 7px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+      h3 { margin: 18px 0 8px; font-size: 14px; color: var(--muted); font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; }
+      .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .item { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #12001f; }
+      .item.wearing { border-color: #9d00ff; }
+      .item b { font-size: 14px; }
+      .item small { color: var(--muted); font-size: 12px; line-height: 1.3; }
+      .item .price { font-variant-numeric: tabular-nums; }
+      .swatch { height: 64px; border-radius: 10px; display: grid; place-items: center; background: #2b0e4b; }
+      .swatch span { width: 34px; height: 34px; border-radius: 50%; background: #6a2fa8; }
+      .card-art { height: 120px; border-radius: 10px; background-size: cover; background-position: center; }
+      button { font: inherit; color: var(--text); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 7px; cursor: pointer; }
+      button:hover { border-color: #6a2fa8; }
+      button.main { color: #fff; background: #9d00ff; border-color: #9d00ff; font-weight: 700; }
+      button:disabled { opacity: 0.4; cursor: default; }
+      .colour-row { display: flex; align-items: center; gap: 8px; }
+      input[type="color"] { width: 40px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; }
+      .status { min-height: 20px; margin: 10px 0 0; color: var(--text); }
+      .bad::before { content: "! "; font-weight: 700; color: var(--text); }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Earth Crystals</h1>
+
+      <section id="signed-out" hidden>
+        <p class="bad">Sign in with the Meadow game you are playing, or on <a href="/account">your account page</a>.</p>
+        <p><button id="meadow-sign-in" class="main" type="button">Sign in with Meadow</button></p>
+        <p id="sign-in-status" role="status"></p>
+      </section>
+
+      <div id="signed-in" hidden>
+        <section>
+          <h2>Your crystals</h2>
+          <div class="balance"><strong id="balance">0</strong><span>Earth Crystals</span></div>
+          <dl>
+            <dt>Next weekly crystals</dt><dd id="next-week"></dd>
+            <dt>Playing for crystals</dt><dd id="can-stake"></dd>
+            <dt>Arena level</dt><dd id="arena-level"></dd>
+            <dt>Most you can stake</dt><dd id="stake-cap"></dd>
+          </dl>
+        </section>
+
+        <section>
+          <h2>Crystal shop</h2>
+          <p class="status" id="shop-status" role="status"></p>
+          <h3>Outlines</h3>
+          <div class="items" id="shop-outline"></div>
+          <h3>Glows</h3>
+          <div class="items" id="shop-glow"></div>
+          <h3>Player card backgrounds</h3>
+          <div class="items" id="shop-card"></div>
+        </section>
+
+        <section>
+          <h2>Recent</h2>
+          <table>
+            <thead><tr><th>When</th><th>Change</th><th>What</th><th>Balance</th></tr></thead>
+            <tbody id="recent"></tbody>
+          </table>
+          <p id="no-recent" hidden>Nothing yet.</p>
+        </section>
+      </div>
+    </main>
+    <script>
+      const $ = id => document.getElementById(id);
+      const WHAT = {start: "Welcome crystals", weekly: "This week's crystals", stake: "Staked", win: "Won", refund: "Stake back", reversed: "Undone by staff", grant: "Given", buy: "Bought", spin: "Daily spin"};
+      const cell = text => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        return td;
+      };
+      const hex = colour => "#" + Number(colour).toString(16).padStart(6, "0");
+      let shop = null;
+      const post = async (path, body) => {
+        const response = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+        const data = await response.json().catch(() => ({}));
+        $("shop-status").textContent = data.error || data.ok && data.ok !== true && data.ok || "";
+        if (data.shop) {
+          shop = data.shop;
+          drawShop();
+          $("balance").textContent = shop.balance.toLocaleString();
+        }
+      };
+      // "Sign in with Meadow": the Meadow client signs this browser in and
+      // opens this page again, signed in (lib/manage.js, client-start's
+      // `next`). opened from the game's settings (?meadow=1), it starts at once.
+      let waiting = false;
+      // the client opens the sign-in in a tab of its own (lib/manage.js,
+      // /account/client): this page, which asked for it, takes it over
+      // ("taken") and that tab closes, so the page is not open twice. a
+      // browser without BroadcastChannel is asked every 2 seconds instead.
+      const awaitMeadow = done => {
+        const here = location.pathname.replace(/\/$/, "");
+        let channel = null;
+        try {
+          channel = new BroadcastChannel("meadow-sign-in");
+        }
+        catch (err) {
+        }
+        if (channel) {
+          channel.onmessage = event => {
+            if (event.data && event.data.signedIn === here) {
+              channel.postMessage({taken: here});
+              channel.close();
+              done();
+            }
+          };
+          return;
+        }
+        const until = Date.now() + 120000;
+        const asking = setInterval(async () => {
+          if (Date.now() > until) {
+            clearInterval(asking);
+          }
+          else if ((await fetch("/account/api/me").catch(() => ({}))).ok) {
+            clearInterval(asking);
+            done();
+          }
+        }, 2000);
+      };
+      const signInWithMeadow = async () => {
+        const response = await fetch("/account/api/client-start", {method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({next: location.pathname})}).catch(() => null);
+        const data = response ? await response.json().catch(() => ({})) : {error: "The server did not answer."};
+        if (!response || !response.ok) {
+          $("sign-in-status").textContent = data.error || "That did not work.";
+          return;
+        }
+        $("sign-in-status").textContent = "Opening Meadow… Allow it if your browser asks. Meadow must be open and logged in.";
+        location.href = `meadow://account?n=${data.nonce}`;
+        if (!waiting) {
+          waiting = true;
+          awaitMeadow(() => location.replace(location.pathname));
+        }
+      };
+      $("meadow-sign-in").addEventListener("click", signInWithMeadow);
+      const drawShop = () => {
+        for (const kind of ["outline", "glow", "card"]) {
+          $(`shop-${kind}`).replaceChildren(...shop.catalog.filter(item => item.kind === kind).map(item => {
+            const owned = shop.owned.includes(item.id);
+            const wearing = shop.wearing[kind] === item.id;
+            const box = document.createElement("div");
+            box.className = wearing ? "item wearing" : "item";
+            const art = document.createElement("div");
+            if (kind === "card") {
+              art.className = "card-art";
+              art.style.backgroundImage = `url(${item.picture})`;
+            }
+            else {
+              art.className = "swatch";
+              const dot = document.createElement("span");
+              const colour = item.id === "outline" ? hex(shop.colour) : item.colour !== undefined ? hex(item.colour) : null;
+              dot.style.background = kind === "glow" ? "#444" : "transparent";
+              dot.style.boxShadow = item.id === "outline-rainbow" ? "0 0 0 4px #f00, 0 0 0 8px #f90, 0 0 0 12px #0c0, 0 0 0 16px #09f"
+                : kind === "glow" ? `0 0 22px 10px ${colour}` : `0 0 0 5px ${colour}`;
+              art.append(dot);
+            }
+            const name = document.createElement("b");
+            name.textContent = item.name;
+            const price = document.createElement("small");
+            price.className = "price";
+            price.textContent = owned ? "Yours" : `${item.price.toLocaleString()} Earth Crystals`;
+            const button = document.createElement("button");
+            button.type = "button";
+            if (!owned) {
+              button.textContent = "Buy";
+              button.className = "main";
+              button.disabled = shop.balance < item.price;
+              button.addEventListener("click", () => {
+                if (confirm(`Buy ${item.name} for ${item.price.toLocaleString()} Earth Crystals?`)) {
+                  post("/account/api/cosmetics/buy", {id: item.id});
+                }
+              });
+            }
+            else {
+              button.textContent = wearing ? "Take off" : "Wear";
+              button.addEventListener("click", () => post("/account/api/cosmetics/wear", {kind, id: wearing ? null : item.id}));
+            }
+            box.append(...(kind === "card" ? [art, name, price, button] : [art, name, price, button]));
+            // the one-colour outline: its colour, once it's theirs
+            if (item.id === "outline" && owned) {
+              const row = document.createElement("label");
+              row.className = "colour-row";
+              const picker = document.createElement("input");
+              picker.type = "color";
+              picker.value = hex(shop.colour);
+              picker.addEventListener("change", () => post("/account/api/cosmetics/wear", {kind, id: item.id, colour: picker.value}));
+              row.append(picker, "Colour");
+              box.append(row);
+            }
+            return box;
+          }));
+        }
+      };
+      (async () => {
+        const shopResponse = await fetch("/account/api/cosmetics");
+        if (shopResponse.ok) {
+          shop = await shopResponse.json();
+          drawShop();
+        }
+        const response = await fetch("/account/api/crystals");
+        if (!response.ok) {
+          $("signed-out").hidden = false;
+          if (new URLSearchParams(location.search).get("meadow") === "1") {
+            signInWithMeadow();
+          }
+          return;
+        }
+        const data = await response.json();
+        $("signed-in").hidden = false;
+        $("balance").textContent = data.balance.toLocaleString();
+        $("next-week").textContent = `${new Date(data.nextWeek * 1000).toLocaleString([], {weekday: "long", dateStyle: undefined, hour: "numeric", minute: "2-digit"})}`;
+        $("can-stake").textContent = data.canStake ? "Yes" : data.why;
+        $("arena-level").textContent = data.arenaLevel;
+        $("stake-cap").textContent = data.stakeCap.toLocaleString();
+        $("recent").replaceChildren(...data.recent.map(entry => {
+          const row = document.createElement("tr");
+          const what = (WHAT[entry.kind] || entry.kind) + (entry.other ? ` (${entry.other})` : entry.kind === "buy" ? ` (${entry.detail})` : "");
+          row.append(cell(new Date(entry.at * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"})),
+            cell((entry.change > 0 ? "+" : "") + entry.change.toLocaleString()), cell(what), cell(entry.balance.toLocaleString()));
+          return row;
+        }));
+        $("no-recent").hidden = data.recent.length > 0;
+      })();
+    </script>
+  </body>
+</html>

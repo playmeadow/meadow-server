@@ -1,0 +1,14 @@
+{
+  "about": "Items nuked from Meadow",
+  "clothing": [
+    {"id": 668, "name": "Broken Shackles"},
+    {"id": 243, "name": "Headdress"},
+    {"id": 490, "name": "Rare Headdress"},
+    {"id": 242, "name": "Head Feather"},
+    {"id": 489, "name": "Rare Head Feather"},
+    {"id": 1999, "name": "Custom Head Feather"}
+  ],
+  "den": [
+    {"id": 512, "name": "Israel"}
+  ]
+}

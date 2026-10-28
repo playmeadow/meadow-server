@@ -1,0 +1,701 @@
+package gui
+{
+   import avatar.AvatarManager;
+   import collection.AccItemCollection;
+   import collection.DenItemCollection;
+   import collection.IitemCollection;
+   import collection.IntItemCollection;
+   import collection.TradeItemCollection;
+   import com.sbi.popup.SBOkPopup;
+   import den.DenItem;
+   import den.DenXtCommManager;
+   import flash.display.DisplayObjectContainer;
+   import flash.display.MovieClip;
+   import flash.events.MouseEvent;
+   import gui.itemWindows.ItemWindowOriginal;
+   import inventory.Iitem;
+   import item.ItemXtCommManager;
+   import loader.MediaHelper;
+   import localization.LocalizationManager;
+   import pet.GuiPet;
+   import pet.PetItem;
+   import playerWall.PlayerWallManager;
+   
+   public class RecycleItems
+   {
+      
+      public static const RECYCLE_ACCESSORIES:int = 0;
+      
+      public static const RECYCLE_DEN_ITEMS:int = 1;
+      
+      public static const RECYCLE_DEN_AUDIO:int = 2;
+      
+      public static const RECYCLE_DEN_ITEMS_OCEAN_ONLY:int = 3;
+      
+      public static const RECYCLE_DEN_ITEMS_LAND_ONLY:int = 4;
+      
+      public static const RECYCLE_ACCESSORIES_OCEAN_ONLY:int = 5;
+      
+      public static const RECYCLE_ACCESSORIES_LAND_ONLY:int = 6;
+      
+      private static var _accessoriesScrollValue:Number = 0;
+      
+      private static var _accessoriesOceanOnlyScrollValue:Number = 0;
+      
+      private static var _accessoriesLandOnlyScrollValue:Number = 0;
+      
+      private static var _denScrollValue:Number = 0;
+      
+      private static var _denOceanOnlyScrollValue:Number = 0;
+      
+      private static var _denLandOnlyScrollValue:Number = 0;
+      
+      private static var _denAudioScrollValue:Number = 0;
+      
+      private static var _scrollValue:Number = 0;
+      
+      private const POPUP_MEDIA_ID:int = 4618;
+      
+      private const RECYCLE_TUT_LIST_ID:int = 52;
+      
+      private var _popupLayer:DisplayObjectContainer;
+      
+      private var _recyclePopup:MovieClip;
+      
+      private var _confirmPopup:MovieClip;
+      
+      private var _recycleInventory:IitemCollection;
+      
+      private var _itemsToRecycle:IitemCollection;
+      
+      private var _itemWindows:WindowAndScrollbarGenerator;
+      
+      private var _confirmWindows:WindowAndScrollbarGenerator;
+      
+      private var _mediaHelper:MediaHelper;
+      
+      private var _itemRecycleId:int;
+      
+      private var _savedTradeIndexes:IntItemCollection;
+      
+      private var _recycleOneItem:Boolean;
+      
+      private var _hasRecycled:Boolean;
+      
+      private var _isInCurrEnviro:Boolean;
+      
+      private var _recycleTotal:int;
+      
+      private var _closeCallback:Function;
+      
+      private var _onRecycleSuccessCallback:Function;
+      
+      public function RecycleItems()
+      {
+         super();
+      }
+      
+      private static function onInfoBtnOut(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         GuiManager.toolTip.resetTimerAndSetVisibility();
+      }
+      
+      public function init(param1:int, param2:DisplayObjectContainer, param3:Boolean = false, param4:Function = null, param5:int = 450, param6:int = 250, param7:Boolean = false) : void
+      {
+         DarkenManager.showLoadingSpiral(true);
+         _itemRecycleId = param1;
+         _popupLayer = param2;
+         _recycleOneItem = param3;
+         _isInCurrEnviro = param7;
+         _closeCallback = param4;
+         _mediaHelper = new MediaHelper();
+         _mediaHelper.init(4618,onPopupLoaded);
+      }
+      
+      public function destroy() : void
+      {
+         removeListeners();
+         confirmRemoveEventListeners();
+         if(_itemWindows)
+         {
+            _scrollValue = _itemWindows.scrollYValue;
+            switch(_itemRecycleId)
+            {
+               case 0:
+                  _accessoriesScrollValue = _scrollValue;
+                  break;
+               case 1:
+                  _denScrollValue = _scrollValue;
+                  break;
+               case 2:
+                  _denAudioScrollValue = _scrollValue;
+                  break;
+               case 3:
+                  _denOceanOnlyScrollValue = _scrollValue;
+                  break;
+               case 4:
+                  _denLandOnlyScrollValue = _scrollValue;
+                  break;
+               case 5:
+                  _accessoriesOceanOnlyScrollValue = _scrollValue;
+                  break;
+               case 6:
+                  _accessoriesLandOnlyScrollValue = _scrollValue;
+            }
+            _itemWindows.destroy();
+            _itemWindows = null;
+         }
+         DarkenManager.unDarken(_confirmPopup);
+         DarkenManager.unDarken(_recyclePopup);
+         _popupLayer.removeChild(_recyclePopup);
+         _hasRecycled = false;
+         _closeCallback = null;
+      }
+      
+      public function hasBeenInited() : Boolean
+      {
+         return _recyclePopup != null;
+      }
+      
+      private function onPopupLoaded(param1:MovieClip) : void
+      {
+         DarkenManager.showLoadingSpiral(false);
+         _recyclePopup = param1.getChildAt(0) as MovieClip;
+         _confirmPopup = _recyclePopup.confirmPopup;
+         _confirmPopup.visible = false;
+         _mediaHelper.destroy();
+         _mediaHelper = null;
+         _recyclePopup.recycleBtn.activateGrayState(true);
+         _recyclePopup.currencyToolTip.text = 0;
+         addListeners();
+         _recyclePopup.x = 900 * 0.5;
+         _recyclePopup.y = 550 * 0.5;
+         _popupLayer.addChild(_recyclePopup);
+         DarkenManager.darken(_recyclePopup);
+         _itemsToRecycle = new IitemCollection();
+         _savedTradeIndexes = new IntItemCollection();
+         AJAudio.playItemRecycledSound();
+         if(_itemRecycleId == 1 || _itemRecycleId == 3 || _itemRecycleId == 4)
+         {
+            if(gMainFrame.userInfo.playerUserInfo.denItemsFull.length <= 0)
+            {
+               DenXtCommManager.requestDenItems(fillInventory);
+            }
+            else
+            {
+               fillInventory();
+            }
+         }
+         else
+         {
+            fillInventory();
+         }
+      }
+      
+      private function fillInventory(param1:Boolean = false) : void
+      {
+         var _loc5_:int = 0;
+         var _loc3_:AccItemCollection = null;
+         var _loc4_:DenItemCollection = null;
+         var _loc2_:int = 0;
+         if(!param1)
+         {
+            _recycleInventory = new IitemCollection();
+            if(_itemRecycleId == 0)
+            {
+               _recycleInventory = new IitemCollection((gMainFrame.userInfo.playerAvatarInfo.getFullItems() as IitemCollection).concatCollection(null));
+               _scrollValue = _accessoriesScrollValue;
+            }
+            else if(_itemRecycleId == 6 || _itemRecycleId == 5)
+            {
+               _loc3_ = gMainFrame.userInfo.playerAvatarInfo.getFullItems();
+               if(_itemRecycleId == 6)
+               {
+                  _loc5_ = 0;
+                  while(_loc5_ < _loc3_.length)
+                  {
+                     if(_loc3_.getAccItem(_loc5_).enviroType == 0)
+                     {
+                        _recycleInventory.pushIitem(_loc3_.getAccItem(_loc5_).clone());
+                     }
+                     _loc5_++;
+                  }
+                  _scrollValue = _accessoriesLandOnlyScrollValue;
+               }
+               else
+               {
+                  _loc5_ = 0;
+                  while(_loc5_ < _loc3_.length)
+                  {
+                     if(_loc3_.getAccItem(_loc5_).enviroType == 1)
+                     {
+                        _recycleInventory.pushIitem(_loc3_.getAccItem(_loc5_).clone());
+                     }
+                     _loc5_++;
+                  }
+                  _scrollValue = _accessoriesOceanOnlyScrollValue;
+               }
+            }
+            else
+            {
+               _loc4_ = gMainFrame.userInfo.playerUserInfo.denItemsFull;
+               if(_itemRecycleId == 4 || _itemRecycleId == 3)
+               {
+                  if(_isInCurrEnviro)
+                  {
+                     _loc4_ = Utility.denItemListByEnviroType(_loc4_,AvatarManager.roomEnviroType);
+                  }
+               }
+               _loc5_ = 0;
+               while(_loc5_ < _loc4_.length)
+               {
+                  if(_itemRecycleId == 2)
+                  {
+                     if(_loc4_.getDenItem(_loc5_).sortId == 4 && _loc4_.getDenItem(_loc5_).defId != 617)
+                     {
+                        _recycleInventory.setIitem(_loc2_,_loc4_.getDenItem(_loc5_).clone());
+                        _loc2_++;
+                     }
+                  }
+                  else if(_loc4_.getDenItem(_loc5_).sortId != 4)
+                  {
+                     if(_itemRecycleId == 1 || _isInCurrEnviro)
+                     {
+                        _recycleInventory.setIitem(_loc2_,_loc4_.getDenItem(_loc5_).clone());
+                        _loc2_++;
+                     }
+                     else if(_itemRecycleId == 4 && _loc4_.getDenItem(_loc5_).enviroType == 0)
+                     {
+                        _recycleInventory.setIitem(_loc2_,_loc4_.getDenItem(_loc5_).clone());
+                        _loc2_++;
+                     }
+                     else if(_loc4_.getDenItem(_loc5_).enviroType == 1)
+                     {
+                        _recycleInventory.setIitem(_loc2_,_loc4_.getDenItem(_loc5_).clone());
+                        _loc2_++;
+                     }
+                  }
+                  _loc5_++;
+               }
+               if(_itemRecycleId == 2)
+               {
+                  _scrollValue = _denAudioScrollValue;
+               }
+               else if(_itemRecycleId == 1)
+               {
+                  _scrollValue = _denScrollValue;
+               }
+               else if(_itemRecycleId == 4)
+               {
+                  _scrollValue = _denLandOnlyScrollValue;
+               }
+               else if(_itemRecycleId == 3)
+               {
+                  _scrollValue = _denOceanOnlyScrollValue;
+               }
+            }
+         }
+         createWindows();
+      }
+      
+      private function createWindows() : void
+      {
+         if(_itemWindows)
+         {
+            _scrollValue = _itemWindows.scrollYValue;
+         }
+         if(_itemWindows)
+         {
+            _itemWindows.destroy();
+            _itemWindows = null;
+         }
+         while(_recyclePopup.itemBlock.numChildren > 1)
+         {
+            _recyclePopup.itemBlock.removeChildAt(_recyclePopup.itemBlock.numChildren - 1);
+         }
+         _itemWindows = new WindowAndScrollbarGenerator();
+         _itemWindows.init(_recyclePopup.itemBlock.width,_recyclePopup.itemBlock.height,4,_scrollValue,3,4,12,2,2,0,1,ItemWindowOriginal,_recycleInventory.getCoreArray(),"icon",0,{
+            "mouseDown":onItemWindowDown,
+            "mouseOver":onItemRollOver,
+            "mouseOut":onItemRollOut
+         },{"isRecycling":true},null,true,false,false);
+         _recyclePopup.itemBlock.addChild(_itemWindows);
+      }
+      
+      private function sendRecycleRequest(param1:Boolean) : void
+      {
+         var _loc4_:Array = null;
+         var _loc2_:IntItemCollection = null;
+         var _loc5_:TradeItemCollection = null;
+         var _loc3_:int = 0;
+         var _loc7_:int = 0;
+         var _loc6_:int = 0;
+         if(param1)
+         {
+            DarkenManager.showLoadingSpiral(true);
+            _loc4_ = _itemsToRecycle.getCoreArray();
+            _loc2_ = new IntItemCollection();
+            _loc5_ = gMainFrame.userInfo.getMyTradeList();
+            _loc3_ = -1;
+            _loc7_ = 0;
+            while(_loc7_ < _loc4_.length)
+            {
+               if(_loc4_[_loc7_])
+               {
+                  _loc3_ = (_loc4_[_loc7_] as Iitem).invIdx;
+                  _loc2_.pushIntItem(_loc3_);
+                  _loc6_ = 0;
+                  while(_loc6_ < _loc5_.length)
+                  {
+                     if(_loc5_.getTradeItem(_loc6_).itemType == _itemRecycleId && _loc5_.getTradeItem(_loc6_).invIdx == _loc3_)
+                     {
+                        _savedTradeIndexes.pushIntItem(_loc6_);
+                        break;
+                     }
+                     _loc6_++;
+                  }
+               }
+               _loc7_++;
+            }
+            if(_itemRecycleId == 0 || _itemRecycleId == 6 || _itemRecycleId == 5)
+            {
+               ItemXtCommManager.requestItemRecycle(_loc2_,confirmRecycle,onRecycleListCallback);
+            }
+            else
+            {
+               DenXtCommManager.requestRecycle(true,_loc2_,confirmRecycle,onRecycleListCallback);
+            }
+         }
+      }
+      
+      private function confirmRecycle(param1:int) : void
+      {
+         var _loc2_:int = 0;
+         if(param1 > 0)
+         {
+            if(_savedTradeIndexes.length > 0)
+            {
+               _loc2_ = 0;
+               while(_loc2_ < _savedTradeIndexes.length)
+               {
+                  gMainFrame.userInfo.removeFromMyTradeList(_savedTradeIndexes.getIntItem(_loc2_));
+                  if(_itemRecycleId == 0 || _itemRecycleId == 6 || _itemRecycleId == 5)
+                  {
+                     TradeManager.adjustByOnNumClothingItemsInMyTradeList(-1);
+                  }
+                  else if(_itemRecycleId == 1 || _itemRecycleId == 2 || _itemRecycleId == 4 || _itemRecycleId == 3)
+                  {
+                     TradeManager.adjustByOnNumDenItemsInMyTradeList(-1);
+                  }
+                  _loc2_++;
+               }
+            }
+         }
+         else
+         {
+            DarkenManager.showLoadingSpiral(false);
+         }
+         if(param1 < 2)
+         {
+            new SBOkPopup(_popupLayer,LocalizationManager.translateIdOnly(24788));
+         }
+         _savedTradeIndexes = new IntItemCollection();
+      }
+      
+      private function onRecycleListCallback() : void
+      {
+         var _loc2_:int = 0;
+         var _loc1_:IntItemCollection = null;
+         var _loc3_:int = 0;
+         DarkenManager.showLoadingSpiral(false);
+         _hasRecycled = true;
+         if(_onRecycleSuccessCallback != null)
+         {
+            _onRecycleSuccessCallback();
+         }
+         if(_recycleOneItem)
+         {
+            applyAndClose(true);
+         }
+         else
+         {
+            _loc1_ = new IntItemCollection();
+            _loc3_ = 0;
+            while(_loc3_ < _itemsToRecycle.length)
+            {
+               if(_itemsToRecycle.getIitem(_loc3_))
+               {
+                  if(_itemsToRecycle.getIitem(_loc3_).isCustom)
+                  {
+                     _loc1_.pushIntItem(_itemsToRecycle.getIitem(_loc3_).invIdx);
+                  }
+                  _itemWindows.deleteItem(_loc3_ - _loc2_,_recycleInventory.getCoreArray());
+                  _loc2_++;
+               }
+               _loc3_++;
+            }
+            if(_loc1_.length > 0)
+            {
+               PlayerWallManager.checkAndRemoveMasterpieceItems(_loc1_);
+            }
+            _itemsToRecycle = new IitemCollection();
+            _recycleTotal = 0;
+            _recyclePopup.currencyToolTip.text = Utility.convertNumberToString(_recycleTotal);
+            _recyclePopup.recycleBtn.activateGrayState(true);
+         }
+      }
+      
+      public function setOnRecycleSuccessCallback(param1:Function) : void
+      {
+         _onRecycleSuccessCallback = param1;
+      }
+      
+      private function applyAndClose(param1:Boolean = false) : void
+      {
+         ItemXtCommManager.recycleIlCallback = null;
+         DenXtCommManager.recycleDiCallback = null;
+         if(_closeCallback != null)
+         {
+            _closeCallback(param1);
+         }
+         else
+         {
+            destroy();
+         }
+      }
+      
+      private function onPopupDown(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+      }
+      
+      private function onClose(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         applyAndClose(_hasRecycled);
+      }
+      
+      private function onItemWindowDown(param1:MouseEvent) : void
+      {
+         var _loc3_:ItemWindowOriginal = null;
+         var _loc2_:Iitem = null;
+         param1.stopPropagation();
+         if(param1.currentTarget.name == "previewBtn")
+         {
+            _loc3_ = param1.currentTarget.parent.parent as ItemWindowOriginal;
+            _loc2_ = _loc3_.currItem as Iitem;
+            if(_loc2_ is DenItem)
+            {
+               GuiManager.openMasterpiecePreview((_loc2_ as DenItem).uniqueImageId,(_loc2_ as DenItem).uniqueImageCreator,(_loc2_ as DenItem).uniqueImageCreatorDbId,(_loc2_ as DenItem).uniqueImageCreatorUUID,(_loc2_ as DenItem).version);
+            }
+         }
+         else if(param1.currentTarget.name == "certBtn")
+         {
+            _loc2_ = param1.currentTarget.parent.parent.currItem;
+            if(_loc2_ is PetItem)
+            {
+               GuiManager.openPetCertificatePopup((_loc2_ as PetItem).largeIcon as GuiPet,null);
+            }
+         }
+         else
+         {
+            _loc3_ = param1.currentTarget as ItemWindowOriginal;
+            if((_loc3_.currItem as Iitem).isApproved)
+            {
+               if(_loc3_.cir.currentFrameLabel != "green" && _loc3_.cir.currentFrameLabel != "greenMouse")
+               {
+                  _loc3_.cir.gotoAndStop("greenMouse");
+                  _recycleTotal += (_loc3_.currItem as Iitem).recycleValue as int;
+                  _itemsToRecycle.setIitem(_loc3_.index,(_loc3_.currItem as Iitem).clone());
+                  _recyclePopup.recycleBtn.activateGrayState(false);
+               }
+               else
+               {
+                  if(_loc3_.isInUse)
+                  {
+                     _loc3_.cir.gotoAndStop("down");
+                  }
+                  else
+                  {
+                     _loc3_.cir.gotoAndStop("up");
+                  }
+                  _recycleTotal -= (_loc3_.currItem as Iitem).recycleValue as int;
+                  _itemsToRecycle.getCoreArray().splice(_loc3_.index,1);
+                  if(_recycleTotal <= 0)
+                  {
+                     _recyclePopup.recycleBtn.activateGrayState(true);
+                  }
+               }
+               _recyclePopup.currencyToolTip.text = Utility.convertNumberToString(_recycleTotal);
+            }
+            else
+            {
+               new SBOkPopup(_popupLayer,LocalizationManager.translateIdOnly(25196));
+            }
+         }
+      }
+      
+      private function onItemRollOver(param1:MouseEvent) : void
+      {
+         if(param1)
+         {
+            param1.stopPropagation();
+         }
+         if(param1.currentTarget.cir.currentFrameLabel == "down")
+         {
+            param1.currentTarget.cir.gotoAndStop("downMouse");
+         }
+         else if(param1.currentTarget.cir.currentFrameLabel == "green")
+         {
+            param1.currentTarget.cir.gotoAndStop("greenMouse");
+         }
+         else if(param1.currentTarget.cir.currentFrameLabel != "downMouse")
+         {
+            param1.currentTarget.cir.gotoAndStop("over");
+         }
+         AJAudio.playSubMenuBtnRollover();
+      }
+      
+      private function onItemRollOut(param1:MouseEvent) : void
+      {
+         if(param1)
+         {
+            param1.stopPropagation();
+         }
+         if(param1.currentTarget.cir.currentFrameLabel == "downMouse")
+         {
+            param1.currentTarget.cir.gotoAndStop("down");
+         }
+         else if(param1.currentTarget.cir.currentFrameLabel == "greenMouse")
+         {
+            param1.currentTarget.cir.gotoAndStop("green");
+         }
+         else if(param1.currentTarget.cir.currentFrameLabel != "down")
+         {
+            param1.currentTarget.cir.gotoAndStop("up");
+         }
+      }
+      
+      private function onRecycleBtn(param1:MouseEvent) : void
+      {
+         var _loc3_:IitemCollection = null;
+         var _loc2_:int = 0;
+         var _loc4_:int = 0;
+         param1.stopPropagation();
+         if(!param1.currentTarget.isGray)
+         {
+            if(gMainFrame.clientInfo.extCallsActive)
+            {
+               return;
+            }
+            DarkenManager.unDarken(_recyclePopup);
+            DarkenManager.darken(_confirmPopup,true);
+            _confirmPopup.visible = true;
+            confirmAddEventListeners();
+            _loc3_ = new IitemCollection();
+            _loc2_ = int(_itemsToRecycle.length);
+            _loc4_ = 0;
+            while(_loc4_ < _loc2_)
+            {
+               if(_itemsToRecycle.getIitem(_loc4_))
+               {
+                  _loc3_.pushIitem(_itemsToRecycle.getIitem(_loc4_));
+               }
+               _loc4_++;
+            }
+            _confirmWindows = new WindowAndScrollbarGenerator();
+            _confirmWindows.init(_confirmPopup.itemBlock.width,_confirmPopup.itemBlock.height,3,0,2,2,0,2,2,0,1,ItemWindowOriginal,_loc3_.getCoreArray(),"icon",0,{
+               "mouseDown":null,
+               "mouseOver":onItemRollOver,
+               "mouseOut":onItemRollOut
+            },{"isRecycling":true},null,true,false,false);
+            _confirmPopup.itemBlock.addChild(_confirmWindows);
+            LocalizationManager.translateIdAndInsert(_confirmPopup.bodyTxtCont.bodyTxt,_loc3_.length == 1 ? 11371 : 24764,Utility.convertNumberToString(_recycleTotal));
+            LocalizationManager.translateIdAndInsert(_confirmPopup.txtCounter_ba.counterTxt,_loc3_.length == 1 ? 23696 : 23695,_loc3_.length);
+            _loc3_ = null;
+         }
+      }
+      
+      private function onConfirmOkBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         onConfirmNoOrExit(param1);
+         sendRecycleRequest(true);
+      }
+      
+      private function onConfirmNoOrExit(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         DarkenManager.unDarken(_confirmPopup);
+         DarkenManager.darken(_recyclePopup);
+         _confirmPopup.visible = false;
+         while(_confirmPopup.itemBlock.numChildren > 2)
+         {
+            _confirmPopup.itemBlock.removeChildAt(_confirmPopup.itemBlock.numChildren - 1);
+         }
+         if(_confirmWindows)
+         {
+            _confirmWindows.destroy();
+            _confirmWindows = null;
+         }
+         confirmRemoveEventListeners();
+      }
+      
+      private function onInfoBtnDown(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         GenericListGuiManager.genericListVolumeClicked(52);
+      }
+      
+      private function onInfoBtnOver(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         GuiManager.toolTip.init(GuiManager.guiLayer,LocalizationManager.translateIdOnly(14678),param1.currentTarget.x + _recyclePopup.x,param1.currentTarget.y + _recyclePopup.y + param1.currentTarget.height);
+         GuiManager.toolTip.startTimer(param1);
+      }
+      
+      private function addListeners() : void
+      {
+         _recyclePopup.addEventListener("mouseDown",onPopupDown,false,0,true);
+         _recyclePopup.bx.addEventListener("mouseDown",onClose,false,0,true);
+         _recyclePopup.infoBtn.addEventListener("mouseDown",onInfoBtnDown,false,0,true);
+         _recyclePopup.infoBtn.addEventListener("mouseOver",onInfoBtnOver,false,0,true);
+         _recyclePopup.infoBtn.addEventListener("mouseOut",onInfoBtnOut,false,0,true);
+         _recyclePopup.recycleBtn.addEventListener("mouseDown",onRecycleBtn,false,0,true);
+      }
+      
+      private function confirmAddEventListeners() : void
+      {
+         if(_confirmPopup)
+         {
+            _confirmPopup.addEventListener("mouseDown",onPopupDown,false,0,true);
+            _confirmPopup.bx.addEventListener("mouseDown",onConfirmNoOrExit,false,0,true);
+            _confirmPopup.okBtn.addEventListener("mouseDown",onConfirmOkBtn,false,0,true);
+            _confirmPopup.noBtn.addEventListener("mouseDown",onConfirmNoOrExit,false,0,true);
+         }
+      }
+      
+      private function removeListeners() : void
+      {
+         _recyclePopup.removeEventListener("mouseDown",onPopupDown);
+         _recyclePopup.bx.removeEventListener("mouseDown",onClose);
+         _recyclePopup.infoBtn.removeEventListener("mouseDown",onInfoBtnDown);
+         _recyclePopup.infoBtn.removeEventListener("mouseOver",onInfoBtnOver);
+         _recyclePopup.infoBtn.removeEventListener("mouseOut",onInfoBtnOut);
+         _recyclePopup.recycleBtn.removeEventListener("mouseDown",onRecycleBtn);
+      }
+      
+      private function confirmRemoveEventListeners() : void
+      {
+         if(_confirmPopup)
+         {
+            _confirmPopup.removeEventListener("mouseDown",onPopupDown);
+            _confirmPopup.bx.removeEventListener("mouseDown",onConfirmNoOrExit);
+            _confirmPopup.okBtn.removeEventListener("mouseDown",onConfirmOkBtn);
+            _confirmPopup.noBtn.removeEventListener("mouseDown",onConfirmNoOrExit);
+         }
+      }
+   }
+}
+

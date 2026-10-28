@@ -1,0 +1,36 @@
+method
+   name "onMasterpiecesLoaded"
+   flag HAS_PARAM_NAMES
+   param QName(PackageNamespace(""),"String")
+   paramname "o"
+   returns QName(PackageNamespace(""),"void")
+   
+   body
+      maxstack 2
+      localcount 2
+      initscopedepth 0
+      maxscopedepth 1
+      
+      code
+         getlocal0
+         pushscope
+         getlocal1
+         pushstring ""
+         ifeq ofs0015
+         getlex QName(PackageNamespace(""),"JSON")
+         getlocal1
+         callproperty QName(PackageNamespace(""),"parse"), 1
+         jump ofs0018
+ofs0015:
+         pushstring ""
+         coerce_a
+ofs0018:
+         findproperty QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         swap
+         setproperty QName(PrivateNamespace("gui:BulletinBoard"),"_cachedMasterpieces")
+         findpropstrict QName(PrivateNamespace("gui:BulletinBoard"),"setupMasterpieceDisplayItem")
+         callpropvoid QName(PrivateNamespace("gui:BulletinBoard"),"setupMasterpieceDisplayItem"), 0
+         returnvoid
+      end ; code
+   end ; body
+end ; method

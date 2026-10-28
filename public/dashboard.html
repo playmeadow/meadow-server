@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meadow dashboard</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      @font-face { font-family: DigitalDelivery; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: DigitalDelivery; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root { color-scheme: dark; } * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #12001f; color: #fff; font: 16px/1.45 DigitalDelivery, system-ui, sans-serif; }
+      main { width: min(720px, 100%); padding: clamp(24px, 6vw, 48px); border: 1px solid #3e1a66; border-radius: 22px; background: #1d0833; }
+      header { display: flex; align-items: center; gap: 15px; margin-bottom: 28px; } header img { width: 54px; height: 54px; object-fit: contain; } h1 { margin: 0; font-size: 30px; } p { color: #b7a0d4; margin: 5px 0 0; }
+      .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; } a { display: block; padding: 20px; color: inherit; text-decoration: none; border: 1px solid #4a1a78; border-radius: 15px; background: #1d0833; } a:hover, a:focus-visible { background: #2b0e4b; border-color: #fff; outline: none; } strong { display: block; font-size: 19px; margin-bottom: 5px; } .hint { font-size: 13px; color: #b7a0d4; } footer { margin-top: 24px; font-size: 12px; color: #6a2fa8; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header><img src="/logo.png" alt=""><div><h1>Meadow dashboard</h1><p>One place for running and moderating your server.</p></div></header>
+      <div class="choices">
+        <a href="/dashboard/admin"><strong>Owner dashboard</strong><span class="hint">Server settings, accounts, logs, items, roles, and all administration.</span></a>
+        <a href="/dashboard/staff"><strong>Staff dashboard</strong><span class="hint">Player care, reports, moderation, review, and server health.</span></a>
+      </div>
+      <footer>Access remains role-based. Staff never receive owner controls.</footer>
+    </main>
+  </body>
+</html>

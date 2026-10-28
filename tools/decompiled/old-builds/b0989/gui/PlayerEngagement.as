@@ -1,0 +1,133 @@
+package gui
+{
+   import com.sbi.analytics.SBTracker;
+   import den.DenXtCommManager;
+   import flash.display.MovieClip;
+   import flash.events.*;
+   import loader.MediaHelper;
+   import room.RoomManagerWorld;
+   import room.RoomXtCommManager;
+   
+   public class PlayerEngagement
+   {
+      
+      private var _engagementMediaHelper:MediaHelper;
+      
+      private var _closeCallBack:Function;
+      
+      private var _engagementPopup:MovieClip;
+      
+      private var _currShardId:int;
+      
+      public function PlayerEngagement()
+      {
+         super();
+      }
+      
+      public function init(param1:Function) : void
+      {
+         this._currShardId = RoomManagerWorld.instance.shardId;
+         this._engagementMediaHelper = new MediaHelper();
+         this._engagementMediaHelper.init(1567,this.onEngagementLoaded);
+         this._closeCallBack = param1;
+      }
+      
+      public function destroy(param1:Boolean = false) : void
+      {
+         this.removeEventListeners();
+         DarkenManager.unDarken(this._engagementPopup);
+         GuiManager.guiLayer.removeChild(this._engagementPopup);
+         this._engagementPopup = null;
+         if(this._closeCallBack != null)
+         {
+            this._closeCallBack(param1);
+            this._closeCallBack = null;
+         }
+      }
+      
+      private function onEngagementLoaded(param1:MovieClip) : void
+      {
+         this._engagementMediaHelper.destroy();
+         this._engagementPopup = MovieClip(param1.getChildAt(0));
+         this._engagementPopup.x = MainFrame.VIEW_WIDTH * 0.5;
+         this._engagementPopup.y = MainFrame.VIEW_HEIGHT * 0.5;
+         GuiManager.guiLayer.addChild(this._engagementPopup);
+         DarkenManager.showLoadingSpiral(false);
+         DarkenManager.darken(this._engagementPopup);
+         this.addEventListeners();
+      }
+      
+      private function onDenBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         DarkenManager.showLoadingSpiral(true);
+         SBTracker.trackPageview("/game/play/popup/playerEngagement/#den");
+         DenXtCommManager.requestDenJoin(gMainFrame.userInfo.playerAvatarInfo.dbAvId);
+         this.destroy();
+      }
+      
+      private function onVideoBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         DarkenManager.showLoadingSpiral(true);
+         SBTracker.trackPageview("/game/play/popup/playerEngagement/#video");
+         RoomXtCommManager.sendNonDenRoomJoinRequest("sarepia.movie_theater#" + this._currShardId);
+         this.destroy();
+      }
+      
+      private function onGamesBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         DarkenManager.showLoadingSpiral(true);
+         SBTracker.trackPageview("/game/play/popup/playerEngagement/#games");
+         RoomXtCommManager.sendNonDenRoomJoinRequest("jamaa_township.room_arcade#" + this._currShardId);
+         this.destroy();
+      }
+      
+      private function onExploreBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         SBTracker.trackPageview("/game/play/popup/playerEngagement/#explore");
+         this.destroy();
+      }
+      
+      private function onCloseBtn(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         SBTracker.trackPageview("/game/play/popup/playerEngagement/#close");
+         this.destroy();
+      }
+      
+      private function onPopup(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+      }
+      
+      private function addEventListeners() : void
+      {
+         with(this._engagementPopup)
+         {
+            denBtn.addEventListener(MouseEvent.MOUSE_DOWN,onDenBtn,false,0,true);
+            videoBtn.addEventListener(MouseEvent.MOUSE_DOWN,onVideoBtn,false,0,true);
+            gamesBtn.addEventListener(MouseEvent.MOUSE_DOWN,onGamesBtn,false,0,true);
+            exploreBtn.addEventListener(MouseEvent.MOUSE_DOWN,onExploreBtn,false,0,true);
+            bx.addEventListener(MouseEvent.MOUSE_DOWN,onCloseBtn,false,0,true);
+            addEventListener(MouseEvent.MOUSE_DOWN,onPopup,false,0,true);
+         }
+      }
+      
+      private function removeEventListeners() : void
+      {
+         with(this._engagementPopup)
+         {
+            denBtn.removeEventListener(MouseEvent.MOUSE_DOWN,onDenBtn);
+            videoBtn.removeEventListener(MouseEvent.MOUSE_DOWN,onVideoBtn);
+            gamesBtn.removeEventListener(MouseEvent.MOUSE_DOWN,onGamesBtn);
+            exploreBtn.removeEventListener(MouseEvent.MOUSE_DOWN,onExploreBtn);
+            bx.removeEventListener(MouseEvent.MOUSE_DOWN,onCloseBtn);
+            removeEventListener(MouseEvent.MOUSE_DOWN,onPopup);
+         }
+      }
+   }
+}
+

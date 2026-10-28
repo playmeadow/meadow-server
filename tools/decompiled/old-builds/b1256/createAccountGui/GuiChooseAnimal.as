@@ -1,0 +1,907 @@
+package createAccountGui
+{
+   import avatar.Avatar;
+   import avatar.AvatarUtility;
+   import avatar.NewWorldAvatar;
+   import com.sbi.analytics.SBTracker;
+   import com.sbi.popup.SBOkPopup;
+   import com.sbi.popup.SBScreen;
+   import com.sbi.popup.SBWizard;
+   import createAccountFlow.CreateAccountGui;
+   import currency.UserCurrency;
+   import flash.display.MovieClip;
+   import flash.events.Event;
+   import flash.events.MouseEvent;
+   import flash.text.TextField;
+   import gui.ItemWindowAvatarOrPetSelect;
+   import gui.LoadingSpiral;
+   import gui.SBScrollbar;
+   import gui.UpsellManager;
+   import gui.WindowGenerator;
+   import localization.LocalizationManager;
+   
+   public class GuiChooseAnimal extends SBScreen
+   {
+      
+      private var _chooseScreen:MovieClip;
+      
+      private var _voBtn:MovieClip;
+      
+      private var _backBtn:MovieClip;
+      
+      private var _nextBtn:MovieClip;
+      
+      private var _playBtn:MovieClip;
+      
+      private var _itemWindow:MovieClip;
+      
+      private var _avatarHolder:MovieClip;
+      
+      private var _currAvatarImage:MovieClip;
+      
+      private var _currAvt:Avatar;
+      
+      private var _buyBtnGreen:MovieClip;
+      
+      private var _buyBtnRed:MovieClip;
+      
+      private var _buyBtnDiamondGreen:MovieClip;
+      
+      private var _buyBtnDiamondRed:MovieClip;
+      
+      private var _tag:MovieClip;
+      
+      private var _amlNameTxt:TextField;
+      
+      private var _titleText:TextField;
+      
+      private var _avatarWindows:WindowGenerator;
+      
+      private var _scrollBar:SBScrollbar;
+      
+      private var _itemsLoadingSpiral:LoadingSpiral;
+      
+      private var _currAvatarIconIds:Array;
+      
+      private var _currAvatarTypes:Array;
+      
+      private var _currCreationAvatars:Array;
+      
+      private var _oceanOnlyIconIds:Array;
+      
+      private var _oceanOnlyTypes:Array;
+      
+      private var _usableAvatarIconIds:Array;
+      
+      private var _usableAvatarTypes:Array;
+      
+      private var _usableCreationAvatars:Array;
+      
+      private var _currBG:String;
+      
+      private var _avatarNamesByType:Object;
+      
+      private var _newAvatarFacilitator:NewWorldAvatar;
+      
+      private var _currType:int;
+      
+      private var _myCurrencyCount:int;
+      
+      private var _currCost:int;
+      
+      private var _currIndex:int;
+      
+      private var _isChoosingOceanAvatars:Boolean;
+      
+      private var _isChoosingFirstNonMember:Boolean;
+      
+      private var _isFromWorld:Boolean;
+      
+      private var _hasEnoughGems:Boolean;
+      
+      private var _wizard:SBWizard;
+      
+      private var _isCreatingWithoutChoosing:Boolean;
+      
+      private var _diamondCost:int;
+      
+      private var _currencyType:int;
+      
+      private var _scrollYValue:int;
+      
+      private var _originalWindowsHeight:int;
+      
+      private var _originalWindowsWidth:int;
+      
+      private var _isMovingScreens:Boolean;
+      
+      private var _registrationPanel:MovieClip;
+      
+      private var _avatarSelect:MovieClip;
+      
+      private var _isFastPass:Boolean;
+      
+      public function GuiChooseAnimal(param1:Object, param2:SBWizard, param3:Boolean, param4:Boolean = false)
+      {
+         _chooseScreen = param3 ? param1.registrationPanel.chooseAnimal : param1.registrationPanel.chooseAnimal;
+         super(_chooseScreen,param2);
+         _registrationPanel = MovieClip(_chooseScreen.parent);
+         _avatarSelect = MovieClip(_chooseScreen.parent.parent);
+         _amlNameTxt = _chooseScreen.animalNameText;
+         _itemWindow = _chooseScreen.itemWindow;
+         _titleText = _chooseScreen.titleText;
+         _isFromWorld = param3;
+         _wizard = param2;
+         _isFastPass = param4;
+         _voBtn = _chooseScreen.vo_btn;
+         _playBtn = param1.play_btn;
+         _backBtn = param1.back_btn;
+         _nextBtn = param1.next_btn;
+         _avatarHolder = param1.allAvatars;
+         if(param3)
+         {
+            _buyBtnGreen = param1.buy_btn_green;
+            _buyBtnRed = param1.buy_btn_red;
+            _buyBtnDiamondGreen = param1.diamond_buy_btn_green;
+            _buyBtnDiamondRed = param1.diamond_buy_btn_red;
+            _tag = _chooseScreen.tag;
+         }
+      }
+      
+      public function init() : void
+      {
+         onEnterFromNext = enterFromNext;
+         onEnterFromPrev = enterFromPrev;
+         onLeaveToPrev = leaveToPrev;
+         onLeaveToNext = leaveToNext;
+         onClose = leaveToPrev;
+         updateScreen = updateScreenAssets;
+         if(!_isFromWorld || _isFastPass)
+         {
+            _voBtn.stop();
+            _voBtn.gotoAndStop(1);
+            _voBtn.addEventListener("click",voBtnClickHandler,false,0,true);
+         }
+         if(_isFromWorld)
+         {
+            _buyBtnGreen.visible = false;
+            _buyBtnRed.visible = false;
+            _buyBtnDiamondGreen.visible = false;
+            _buyBtnDiamondRed.visible = false;
+            _tag.visible = false;
+            _voBtn.visible = _isFastPass;
+            _chooseScreen.reg.visible = !_isFastPass;
+            _chooseScreen.fastTrack.visible = _isFastPass;
+         }
+         _backBtn.visible = false;
+         _playBtn.visible = false;
+         _amlNameTxt.text = "";
+         _myCurrencyCount = UserCurrency.getCurrency(0);
+         _newAvatarFacilitator = new NewWorldAvatar();
+         _usableAvatarIconIds = [];
+         _usableAvatarTypes = [];
+         _usableCreationAvatars = [];
+         _currAvatarIconIds = [];
+         _currAvatarTypes = [];
+         _currCreationAvatars = [];
+         _avatarNamesByType = [];
+         _oceanOnlyIconIds = [];
+         _itemsLoadingSpiral = new LoadingSpiral(_itemWindow,_itemWindow.width * 0.5,_itemWindow.height * 0.5);
+         _itemsLoadingSpiral.visible = true;
+         setupIcons();
+         if((!_isFromWorld || _isFastPass) && CreateAccountGui.vo1Sound)
+         {
+            CreateAccountGui.vo1Sound.play();
+            if(CreateAccountGui.vo1Sound.sc)
+            {
+               CreateAccountGui.vo1Sound.sc.addEventListener("soundComplete",stopVOButton,false,0,true);
+               _voBtn.play();
+            }
+         }
+      }
+      
+      override public function destroy() : void
+      {
+         if(_avatarWindows)
+         {
+            _avatarWindows.destroy();
+            _avatarWindows = null;
+         }
+         if(_scrollBar)
+         {
+            _scrollBar.destroy();
+            _scrollBar = null;
+         }
+         super.destroy();
+      }
+      
+      public function destroyReloadedItems() : void
+      {
+         if(_avatarWindows)
+         {
+            _avatarWindows.destroy();
+            _avatarWindows = null;
+         }
+         if(_scrollBar)
+         {
+            _scrollBar.destroy();
+            _scrollBar = null;
+         }
+      }
+      
+      public function setup(param1:Boolean, param2:Boolean, param3:int = -1, param4:Boolean = false, param5:Boolean = false) : void
+      {
+         _isMovingScreens = false;
+         _currencyType = currencyType;
+         _isFastPass = param5;
+         setupIcons(true);
+         _myCurrencyCount = UserCurrency.getCurrency(currencyType);
+         _isChoosingOceanAvatars = param1;
+         _isChoosingFirstNonMember = param2;
+         _nextBtn.visible = true;
+         _buyBtnGreen.visible = false;
+         _buyBtnRed.visible = false;
+         _buyBtnDiamondGreen.visible = false;
+         _buyBtnDiamondRed.visible = false;
+         _backBtn.visible = false;
+         _isCreatingWithoutChoosing = param4;
+         if(_isChoosingOceanAvatars)
+         {
+            _currAvatarIconIds = _oceanOnlyIconIds;
+            _currAvatarTypes = _oceanOnlyTypes;
+         }
+         else
+         {
+            _currAvatarIconIds = _usableAvatarIconIds;
+            _currAvatarTypes = _usableAvatarTypes;
+            _currCreationAvatars = _usableCreationAvatars;
+         }
+         pickRandomAvatar(param3);
+         _wizard.creationAssets.creationWiz.step = param4 ? 2 : 1;
+         if(_currAvatarImage && _currBG)
+         {
+            if(!param4)
+            {
+               enterFromPrev();
+               _nextBtn.visible = true;
+               _tag.visible = true;
+            }
+            else
+            {
+               _nextBtn.visible = false;
+               _tag.visible = false;
+            }
+         }
+         if(!param4)
+         {
+            createAvatarWindows();
+         }
+      }
+      
+      public function enterFromNext() : void
+      {
+         _registrationPanel.gotoAndPlay("backChooseAnAnimal");
+         _currAvatarImage.gotoAndPlay("backChooseAnAnimal");
+         _avatarSelect.bg[_currBG + "Bg"].gotoAndPlay("backChooseAnAnimal");
+         if(_isFromWorld)
+         {
+            _buyBtnGreen.visible = false;
+            _buyBtnRed.visible = false;
+            _buyBtnDiamondGreen.visible = false;
+            _buyBtnDiamondRed.visible = false;
+            _nextBtn.visible = true;
+         }
+         enterFromBoth();
+      }
+      
+      public function enterFromPrev() : void
+      {
+         _registrationPanel.gotoAndStop("intro");
+         if(_currAvatarImage)
+         {
+            _currAvatarImage.gotoAndStop("chooseAnAnimal");
+         }
+         if(_currBG)
+         {
+            _avatarSelect.bg[_currBG + "Bg"].gotoAndPlay("intro");
+         }
+         enterFromBoth();
+      }
+      
+      public function enterFromBoth() : void
+      {
+         if((!_isFromWorld || _isFastPass) && CreateAccountGui.vo1Sound)
+         {
+            if(!CreateAccountGui.vo1Sound.isPlaying)
+            {
+               CreateAccountGui.vo1Sound.play();
+               if(CreateAccountGui.vo1Sound.sc)
+               {
+                  CreateAccountGui.vo1Sound.sc.addEventListener("soundComplete",stopVOButton,false,0,true);
+                  _voBtn.play();
+               }
+            }
+         }
+         _isMovingScreens = false;
+         if(_isFromWorld)
+         {
+            SBTracker.trackPageview("/game/play/popup/avatarCreation/ChooseAnimal");
+         }
+         else
+         {
+            CreateAccountGui.trackUserCreateAccountPageChange("ChooseAnimal");
+         }
+      }
+      
+      public function leaveToNext() : Boolean
+      {
+         var _loc1_:Object = null;
+         if(_nextBtn.isGray)
+         {
+            return false;
+         }
+         if(!_isFromWorld || _isFastPass)
+         {
+            if(CreateAccountGui.vo1Sound)
+            {
+               CreateAccountGui.vo1Sound.stop();
+            }
+            _voBtn.stop();
+            _voBtn.gotoAndStop(1);
+         }
+         if(!gMainFrame.userInfo.isMember)
+         {
+            _loc1_ = AvatarUtility.findAvDefByType(_currType,currCustomAvId);
+            if(_loc1_.isMemberOnly)
+            {
+               if(_isCreatingWithoutChoosing)
+               {
+                  if(_registrationPanel.currentFrameLabel != "chooseAName")
+                  {
+                     _registrationPanel.gotoAndStop("chooseAName");
+                  }
+                  if(_currAvatarImage.currentFrameLabel != "chooseAName")
+                  {
+                     _currAvatarImage.gotoAndStop("chooseAName");
+                  }
+                  if(_avatarSelect.bg[_currBG + "Bg"].currentFrameLabel != "chooseAName")
+                  {
+                     _avatarSelect.bg[_currBG + "Bg"].gotoAndStop("chooseAName");
+                  }
+                  return true;
+               }
+               UpsellManager.displayPopup(3,"createMembersOnlyAvatar");
+            }
+            else if(AvatarUtility.numNonMemberAvatars() >= 2 && !_isChoosingFirstNonMember)
+            {
+               UpsellManager.displayPopup(4,"buyThirdAvatar");
+            }
+            else
+            {
+               if(!(_isChoosingFirstNonMember && _loc1_.enviroFlag == 2))
+               {
+                  if(_isCreatingWithoutChoosing)
+                  {
+                     _registrationPanel.gotoAndStop("chooseAName");
+                     _currAvatarImage.gotoAndStop("chooseAName");
+                     _avatarSelect.bg[_currBG + "Bg"].gotoAndStop("chooseAName");
+                  }
+                  else
+                  {
+                     _registrationPanel.gotoAndPlay("playChooseAName");
+                     _currAvatarImage.gotoAndPlay("playChooseAName");
+                     _avatarSelect.bg[_currBG + "Bg"].gotoAndPlay("playChooseAName");
+                  }
+                  _isMovingScreens = true;
+                  return true;
+               }
+               new SBOkPopup(_avatarSelect.parent.parent,LocalizationManager.translateIdOnly(14689));
+            }
+            return false;
+         }
+         if(_isCreatingWithoutChoosing)
+         {
+            _registrationPanel.gotoAndStop("chooseAName");
+            _currAvatarImage.gotoAndStop("chooseAName");
+            _avatarSelect.bg[_currBG + "Bg"].gotoAndStop("chooseAName");
+         }
+         else
+         {
+            _registrationPanel.gotoAndPlay("playChooseAName");
+            _currAvatarImage.gotoAndPlay("playChooseAName");
+            _avatarSelect.bg[_currBG + "Bg"].gotoAndPlay("playChooseAName");
+         }
+         _isMovingScreens = true;
+         return true;
+      }
+      
+      public function leaveToPrev() : Boolean
+      {
+         if(!_isFromWorld || _isFastPass)
+         {
+            if(CreateAccountGui.vo1Sound)
+            {
+               CreateAccountGui.vo1Sound.stop();
+            }
+            _voBtn.stop();
+            _voBtn.gotoAndStop(1);
+         }
+         _newAvatarFacilitator.nameTypeScreenDone();
+         _isMovingScreens = true;
+         return true;
+      }
+      
+      public function leaveToBoth() : Boolean
+      {
+         return true;
+      }
+      
+      public function updateScreenAssets(param1:Boolean = false) : void
+      {
+         _chooseScreen = _registrationPanel.chooseAnimal;
+         _amlNameTxt = _chooseScreen.animalNameText;
+         _itemWindow = _chooseScreen.itemWindow;
+         _titleText = _chooseScreen.titleText;
+         _voBtn = _chooseScreen.vo_btn;
+         if(_isFromWorld)
+         {
+            _tag = _chooseScreen.tag;
+            _buyBtnGreen = _avatarSelect.buy_btn_green;
+            _buyBtnRed = _avatarSelect.buy_btn_red;
+            _buyBtnDiamondGreen = _avatarSelect.diamond_buy_btn_green;
+            _buyBtnDiamondRed = _avatarSelect.diamond_buy_btn_red;
+         }
+         if(param1)
+         {
+            setupAvatarTextItems();
+            createAvatarWindows();
+            if(_isFromWorld)
+            {
+               _buyBtnGreen.visible = false;
+               _buyBtnRed.visible = false;
+               _buyBtnDiamondGreen.visible = false;
+               _buyBtnDiamondRed.visible = false;
+               _tag.visible = true;
+            }
+            if(!_isFromWorld || _isFastPass)
+            {
+               _playBtn.visible = false;
+               _voBtn.stop();
+               _voBtn.gotoAndStop(1);
+               _voBtn.addEventListener("click",voBtnClickHandler,false,0,true);
+               _voBtn = _chooseScreen.vo_btn;
+            }
+            if((!_isFromWorld || _isFastPass) && CreateAccountGui.vo1Sound)
+            {
+               if(CreateAccountGui.vo1Sound.sc)
+               {
+                  _voBtn.play();
+               }
+            }
+         }
+      }
+      
+      public function get currencyType() : int
+      {
+         return _currencyType;
+      }
+      
+      public function get isCreatingWithoutChoosing() : Boolean
+      {
+         return _isCreatingWithoutChoosing;
+      }
+      
+      public function get currAvatarImage() : MovieClip
+      {
+         return _currAvatarImage;
+      }
+      
+      public function get currAvatar() : Avatar
+      {
+         return _currAvt;
+      }
+      
+      public function get currBG() : String
+      {
+         return _currBG;
+      }
+      
+      public function get currType() : int
+      {
+         return _currType;
+      }
+      
+      public function get currCustomAvId() : int
+      {
+         if(_currAvt)
+         {
+            return _currAvt.customAvId;
+         }
+         return -1;
+      }
+      
+      public function get hasEnoughGems() : Boolean
+      {
+         return _hasEnoughGems;
+      }
+      
+      public function get currAvatarCost() : int
+      {
+         return _diamondCost == -1 ? _currCost : _diamondCost;
+      }
+      
+      public function get currAvatarName() : String
+      {
+         return LocalizationManager.translateIdOnly(_avatarNamesByType[_currType + (currCustomAvId == -1 ? "0" : "1")]);
+      }
+      
+      public function get isDiamondAvatar() : Boolean
+      {
+         return AvatarUtility.findAvDefByType(_currType,currCustomAvId).isDiamond;
+      }
+      
+      public function get avatarDiamondDefId() : int
+      {
+         return AvatarUtility.findAvDefByType(_currType,currCustomAvId).diamondDefId;
+      }
+      
+      private function setCurrAvatarNameText() : void
+      {
+         var _loc1_:int = parseInt(_currType + (currCustomAvId == -1 ? "0" : "1"));
+         if(_avatarNamesByType[_loc1_])
+         {
+            LocalizationManager.translateId(_amlNameTxt,_avatarNamesByType[_loc1_]);
+         }
+      }
+      
+      private function setupIcons(param1:Boolean = false) : void
+      {
+         var _loc5_:int = 0;
+         var _loc4_:Object = null;
+         var _loc2_:Avatar = null;
+         var _loc6_:int = 0;
+         var _loc3_:Array = AvatarUtility.creationAvatarsList;
+         _usableAvatarIconIds = [];
+         _usableAvatarTypes = [];
+         _oceanOnlyIconIds = [];
+         _oceanOnlyTypes = [];
+         _loc6_ = 0;
+         for(; _loc6_ < _loc3_.length; _loc6_++)
+         {
+            try
+            {
+               _loc4_ = AvatarUtility.getAvatarDefByIndex(_loc6_);
+               if(_loc4_)
+               {
+                  _loc2_ = _loc3_[_loc6_];
+                  _loc5_ = int(gMainFrame.userInfo.getAvatarDefByAvatar(_loc2_).iconMediaId);
+                  if(_isFastPass && (_loc4_.isDiamond || _loc4_.isMemberOnly || !Utility.isLand(_loc4_.enviroFlag)))
+                  {
+                     continue;
+                  }
+                  if((!_isFromWorld || _isFastPass) && (AvatarUtility.isEndangered(_loc4_.availability) || AvatarUtility.isExtinct(_loc4_.availability)))
+                  {
+                     continue;
+                  }
+                  if(_loc4_.isDiamond || AvatarUtility.getAvatarDefIsViewable(_loc2_,_loc2_.customAvId != -1))
+                  {
+                     _usableAvatarIconIds.push(_loc5_);
+                     _usableAvatarTypes.push(_loc2_.avTypeId);
+                     _usableCreationAvatars.push(_loc2_);
+                     if(Utility.isOcean(_loc4_.enviroFlag) && !_isFastPass)
+                     {
+                        _oceanOnlyIconIds.push(_loc5_);
+                        _oceanOnlyTypes.push(_loc2_.avTypeId);
+                     }
+                  }
+                  _avatarNamesByType[_loc2_.avTypeId + (_loc2_.customAvId != -1 ? "1" : "0")] = gMainFrame.userInfo.getAvatarDefByAvatar(_loc2_).titleStrRef;
+                  if(_currType && _loc2_.avTypeId == _currType)
+                  {
+                     setCurrAvatarNameText();
+                  }
+               }
+            }
+            catch(e:Error)
+            {
+            }
+         }
+         _currAvatarIconIds = _usableAvatarIconIds;
+         _currAvatarTypes = _usableAvatarTypes;
+         _currCreationAvatars = _usableCreationAvatars;
+         if((!_isFromWorld || _isFastPass) && !param1)
+         {
+            pickRandomAvatar();
+            createAvatarWindows();
+         }
+      }
+      
+      private function pickRandomAvatar(param1:int = -1) : void
+      {
+         var _loc2_:int = 0;
+         if(param1 == -1)
+         {
+            _currIndex = Math.floor(Math.random() * (_currAvatarTypes.length - 1 - 0 + 1)) + 0;
+            param1 = int(_currAvatarTypes[_currIndex]);
+         }
+         else
+         {
+            _loc2_ = 0;
+            while(_loc2_ < _currAvatarTypes.length)
+            {
+               if(_currAvatarTypes[_loc2_] == param1)
+               {
+                  _currIndex = _loc2_;
+                  break;
+               }
+               _loc2_++;
+            }
+         }
+         _currType = param1;
+         _currAvt = _currCreationAvatars[_currIndex];
+         setupCurrAvatar();
+      }
+      
+      private function createAvatarWindows() : void
+      {
+         if(_avatarWindows && _avatarWindows.numWindowsCreated > 0)
+         {
+            _itemWindow.addChild(_avatarWindows);
+            if(_isFromWorld && !_isFastPass)
+            {
+               if(_scrollBar)
+               {
+                  _scrollYValue = _scrollBar.scrollYValue;
+                  _scrollBar.destroy();
+                  _scrollBar = null;
+               }
+               _scrollBar = new SBScrollbar();
+               _scrollBar.init(_avatarWindows,_originalWindowsWidth,_avatarWindows.boxHeight * 3 + 6,12,"scrollbar2",_avatarWindows.boxHeight + 2,_scrollYValue,_originalWindowsHeight);
+            }
+            return;
+         }
+         _itemsLoadingSpiral.visible = true;
+         if(_scrollBar)
+         {
+            _scrollYValue = _scrollBar.scrollYValue;
+            _scrollBar.destroy();
+            _scrollBar = null;
+         }
+         if(_avatarWindows)
+         {
+            _avatarWindows.destroy();
+            _avatarWindows = null;
+         }
+         _avatarWindows = new WindowGenerator();
+         _avatarWindows.init(3,3,_currAvatarIconIds.length,2,2,2,ItemWindowAvatarOrPetSelect,_currAvatarIconIds,"",{
+            "mouseDown":winMouseDown,
+            "mouseOver":winMouseOver,
+            "mouseOut":winMouseOut
+         },{
+            "forCreation":!_isFromWorld || _isFastPass,
+            "avTypes":_currAvatarTypes,
+            "creationAvatars":_currCreationAvatars,
+            "selectedIndex":_currIndex
+         },onAvatarIconWindowsLoaded,false,false);
+         _itemWindow.addChild(_avatarWindows);
+      }
+      
+      private function onAvatarIconWindowsLoaded() : void
+      {
+         if(_isFromWorld && !_isFastPass && _scrollBar == null)
+         {
+            _originalWindowsHeight = _avatarWindows.height;
+            _originalWindowsWidth = _avatarWindows.width;
+            _scrollBar = new SBScrollbar();
+            _scrollBar.init(_avatarWindows,_originalWindowsWidth,_avatarWindows.boxHeight * 3 + 6,12,"scrollbar2",_avatarWindows.boxHeight + 2,_scrollYValue,_originalWindowsHeight);
+            _scrollBar.scrollToElement(_currIndex / 3,true);
+         }
+         _itemsLoadingSpiral.visible = false;
+      }
+      
+      private function winMouseDown(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(!_isMovingScreens && _currIndex != param1.currentTarget.index)
+         {
+            MovieClip(_avatarWindows.bg.getChildAt(_currIndex)).deselect();
+            _currIndex = param1.currentTarget.index;
+            _currType = _currAvatarTypes[param1.currentTarget.index];
+            _currAvt = _currCreationAvatars[_currIndex];
+            if(param1.currentTarget.currWindow.currentFrameLabel != (param1.currentTarget.isDiamond ? "diamond_down" : "down"))
+            {
+               param1.currentTarget.currWindow.gotoAndStop(param1.currentTarget.isDiamond ? "diamond_down" : "down");
+            }
+            param1.currentTarget.setupLayers();
+            setupCurrAvatar();
+         }
+      }
+      
+      private function setupCurrAvatar() : void
+      {
+         var _loc1_:Array = null;
+         var _loc5_:int = 0;
+         var _loc2_:Array = _avatarHolder.currentLabels;
+         var _loc4_:String = currCustomAvId != -1 ? "special_" : "";
+         var _loc3_:int = currCustomAvId != -1 ? currCustomAvId : _currType;
+         _loc5_ = 0;
+         while(_loc5_ < _loc2_.length)
+         {
+            _loc1_ = _loc2_[_loc5_].name.split("_");
+            if(_loc4_ == "" && _loc1_[1] == _loc3_ || _loc4_.indexOf(_loc1_[0]) >= 0 && _loc1_[2] == _loc3_)
+            {
+               _currBG = _loc4_ == "" ? _loc1_[0] : _loc1_[1];
+               _avatarHolder.gotoAndStop(_loc4_ + _currBG + "_" + _loc3_);
+               _currAvatarImage = _avatarHolder[_loc4_ + "avatar" + _loc3_];
+               break;
+            }
+            _loc5_++;
+         }
+         if(_currAvatarImage)
+         {
+            _currAvatarImage.gotoAndPlay("intro");
+            setupAvatarTextItems();
+         }
+         if(_currBG)
+         {
+            if(_avatarSelect.bg.currentFrameLabel != _currBG)
+            {
+               _avatarSelect.bg.gotoAndStop(_currBG);
+               _avatarSelect.bg[_currBG + "Bg"].gotoAndPlay("intro");
+            }
+         }
+      }
+      
+      private function setupAvatarTextItems() : void
+      {
+         var _loc2_:Object = null;
+         var _loc1_:Boolean = false;
+         if(_currAvatarImage)
+         {
+            setCurrAvatarNameText();
+            _loc2_ = AvatarUtility.findAvDefByType(_currType,currCustomAvId);
+            if(_isFromWorld)
+            {
+               _loc1_ = _loc2_.isDiamond && !AvatarUtility.getAvatarDefIsViewableWithAvId(_currType,currCustomAvId != -1);
+               if(_loc1_)
+               {
+                  _myCurrencyCount = UserCurrency.getCurrency(3);
+                  _diamondCost = _loc2_.diamondCost;
+               }
+               else
+               {
+                  _myCurrencyCount = UserCurrency.getCurrency(0);
+                  _diamondCost = -1;
+               }
+               _currCost = _diamondCost == -1 ? _loc2_.cost : _diamondCost;
+               if(!_isChoosingFirstNonMember)
+               {
+                  _tag.txt.text = Utility.convertNumberToString(_currCost);
+                  if(_myCurrencyCount < _currCost)
+                  {
+                     _hasEnoughGems = false;
+                     _tag.gotoAndStop(_loc1_ ? "diamondRed" : "red");
+                     _tag.txt.textColor = "0x800000";
+                  }
+                  else
+                  {
+                     _hasEnoughGems = true;
+                     _tag.gotoAndStop(_loc1_ ? "diamondGreen" : "green");
+                     _tag.textColor = "0xFFFFFFFF";
+                  }
+               }
+               else
+               {
+                  _hasEnoughGems = true;
+                  LocalizationManager.translateId(_tag.txt,11176);
+               }
+            }
+            if(AvatarUtility.isEndangered(_loc2_.availability))
+            {
+               if(_currType == 13 || _currType == 16 || _currType == 26)
+               {
+                  LocalizationManager.translateId(_avatarSelect.endangeredSign.txt,11177);
+               }
+               else if(_currType == 6)
+               {
+                  LocalizationManager.translateId(_avatarSelect.endangeredSign.txt,14226);
+               }
+               else
+               {
+                  LocalizationManager.translateId(_avatarSelect.endangeredSign.txt,11178);
+               }
+               _avatarSelect.endangeredSign.visible = true;
+            }
+            else
+            {
+               _avatarSelect.endangeredSign.visible = false;
+            }
+            if(AvatarUtility.isEndangered(_loc2_.availability) || AvatarUtility.isExtinct(_loc2_.availability))
+            {
+               _nextBtn.activateGrayState(true);
+               if(_isFromWorld)
+               {
+                  _tag.visible = false;
+                  _nextBtn.sparkle.visible = false;
+               }
+            }
+            else
+            {
+               _nextBtn.activateGrayState(false);
+               if(_isFromWorld)
+               {
+                  _nextBtn.sparkle.visible = _loc2_.isDiamond;
+                  _tag.visible = true;
+               }
+            }
+         }
+      }
+      
+      private function winMouseOver(param1:MouseEvent) : void
+      {
+         if(param1)
+         {
+            param1.stopPropagation();
+         }
+         var _loc2_:String = param1.currentTarget.isDiamond ? "diamond_" : "";
+         if(param1.currentTarget.currWindow.currentFrameLabel == _loc2_ + "down")
+         {
+            param1.currentTarget.currWindow.gotoAndStop(_loc2_ + "downMouse");
+         }
+         else if(param1.currentTarget.currWindow.currentFrameLabel != _loc2_ + "downMouse")
+         {
+            param1.currentTarget.currWindow.gotoAndStop(_loc2_ + "over");
+         }
+         param1.currentTarget.setupLayers();
+         AJAudio.playSubMenuBtnRollover();
+      }
+      
+      private function winMouseOut(param1:MouseEvent) : void
+      {
+         if(param1)
+         {
+            param1.stopPropagation();
+         }
+         var _loc2_:String = param1.currentTarget.isDiamond ? "diamond_" : "";
+         if(param1.currentTarget.currWindow.currentFrameLabel == _loc2_ + "downMouse")
+         {
+            param1.currentTarget.currWindow.gotoAndStop(_loc2_ + "down");
+         }
+         else if(param1.currentTarget.currWindow.currentFrameLabel != _loc2_ + "down")
+         {
+            param1.currentTarget.currWindow.gotoAndStop(_loc2_ + "up");
+         }
+         param1.currentTarget.setupLayers();
+      }
+      
+      private function stopVOButton(param1:Event) : void
+      {
+         if(CreateAccountGui)
+         {
+            CreateAccountGui.vo1Sound.stop();
+         }
+         _voBtn.stop();
+         _voBtn.gotoAndStop(1);
+      }
+      
+      private function voBtnClickHandler(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         if(CreateAccountGui.vo1Sound.isPlaying)
+         {
+            CreateAccountGui.vo1Sound.stop();
+            _voBtn.stop();
+            _voBtn.gotoAndStop(1);
+         }
+         else
+         {
+            CreateAccountGui.vo1Sound.play();
+            if(CreateAccountGui.vo1Sound.sc)
+            {
+               CreateAccountGui.vo1Sound.sc.addEventListener("soundComplete",stopVOButton,false,0,true);
+               _voBtn.play();
+            }
+         }
+      }
+   }
+}
+

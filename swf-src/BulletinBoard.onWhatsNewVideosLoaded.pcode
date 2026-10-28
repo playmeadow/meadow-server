@@ -1,0 +1,56 @@
+method
+   name "onWhatsNewVideosLoaded"
+   flag HAS_PARAM_NAMES
+   param QName(PackageNamespace(""),"int")
+   param QName(PackageNamespace("collection"),"StreamDefCollection")
+   paramname "glId"
+   paramname "streamDefs"
+   returns QName(PackageNamespace(""),"void")
+   
+   body
+      maxstack 4
+      localcount 3
+      initscopedepth 0
+      maxscopedepth 1
+      
+      code
+         getlocal0
+         pushscope
+         getlocal2
+         iffalse ofs_empty
+         getlocal2
+         getproperty QName(PackageNamespace(""),"length")
+         pushbyte 0
+         ifgt ofs_go
+ofs_empty:
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_whatsNewVideoLoadingSpiral")
+         iffalse ofs_ret
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_whatsNewVideoLoadingSpiral")
+         callpropvoid QName(PackageNamespace(""),"destroy"), 0
+ofs_ret:
+         returnvoid
+ofs_go:
+         getlocal2
+         pushbyte 0
+         callproperty QName(PackageNamespace(""),"getStreamDefItem"), 1
+         findproperty QName(PrivateNamespace("gui:BulletinBoard"),"_currWhatsNewStreamDef")
+         swap
+         setproperty QName(PrivateNamespace("gui:BulletinBoard"),"_currWhatsNewStreamDef")
+         findpropstrict QName(PackageNamespace("loader"),"MediaHelper")
+         constructprop QName(PackageNamespace("loader"),"MediaHelper"), 0
+         findproperty QName(PrivateNamespace("gui:BulletinBoard"),"_loadingMediaHelper")
+         swap
+         setproperty QName(PrivateNamespace("gui:BulletinBoard"),"_loadingMediaHelper")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_loadingMediaHelper")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_currWhatsNewStreamDef")
+         getproperty QName(PackageNamespace(""),"thumbnailId")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"onMediaItemLoaded")
+         pushtrue
+         callpropvoid QName(PackageNamespace(""),"init"), 3
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_mediaHelpers")
+         getlex QName(PrivateNamespace("gui:BulletinBoard"),"_loadingMediaHelper")
+         callpropvoid QName(Namespace("http://adobe.com/AS3/2006/builtin"),"push"), 1
+         returnvoid
+      end ; code
+   end ; body
+end ; method

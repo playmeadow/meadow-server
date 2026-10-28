@@ -1,0 +1,503 @@
+package createAccountGui
+{
+   import com.sbi.corelib.Utils;
+   import com.sbi.popup.SBScreen;
+   import com.sbi.popup.SBWizard;
+   import createAccountFlow.CreateAccountGui;
+   import flash.display.MovieClip;
+   import flash.events.Event;
+   import flash.events.KeyboardEvent;
+   import flash.events.MouseEvent;
+   import flash.text.TextField;
+   import gui.DarkenManager;
+   import gui.GuiStatusIcon;
+   
+   public class GuiEmailScreen extends SBScreen
+   {
+      
+      public static const MAX_EMAIL_LENGTH:int = 50;
+      
+      private var _emailTxt:TextField;
+      
+      private var _confirmTxt:TextField;
+      
+      private var _emailBar:MovieClip;
+      
+      private var _confirmBar:MovieClip;
+      
+      private var _emailSts:MovieClip;
+      
+      private var _confirmSts:MovieClip;
+      
+      private var _voBtn:MovieClip;
+      
+      private var _login:Object;
+      
+      private const _commonDomains:Array = ["yahoo.com","hotmail.com","gmail.com","comcast.net","sbcglobal.net","att.net","msn.com","microsoft.com","aim.com","charter.net","aol.com","cox.net","live.com","live.ca","verizon.net","xtra.co.nz","shaw.ca","bellsouth.net","roadrunner.com","hotmail.co.uk","yahoo.co.uk","optonline.net","centurylink.net","centurytel.net","mail.com","mac.com","google.com","googlemail.com","compuserve.com","myspace.com","facebook.com","youtube.com","netscape.net","emailaccount.com","earthlink.net","rocketmail.com","broadband.com","ymail.com","supermail.com","junkmail.com","mindspring.com","juno.com","prodigy.net","excite.com","frontiernet.net","frontier.com","frontiernet.net","epix.net","love.com","hellokitty.com","sky.com","pacbell.net","champmail.com","heartmail.com","dragon.com","computer.org","digis.net","yahoo.ca","hotmail.ca","googlemail.co.uk","msn.ca","msn.co.uk","microsoft.co.uk","microsoft.ca","aol.co.uk","live.co.uk","compuserve.co.uk","netscape.ca"];
+      
+      private var _validationPending:Boolean;
+      
+      private var _continueClicked:Boolean;
+      
+      private var _validatedEmail:String;
+      
+      private var _lastCheckedEmail:String;
+      
+      private var _validatedConfirmEmail:String;
+      
+      private var _prevConfirmTxt:String;
+      
+      private var _emailScreen:MovieClip;
+      
+      private var _playBtn:MovieClip;
+      
+      private var _nextBtn:MovieClip;
+      
+      private var _registrationPanel:MovieClip;
+      
+      private var _emailText:String;
+      
+      private var _confirmText:String;
+      
+      private var _emailStsTracking:Object;
+      
+      private var _confirmStsTracking:Object;
+      
+      public function GuiEmailScreen(param1:Object, param2:SBWizard)
+      {
+         this._login = param1;
+         this._emailScreen = param1.accountCreation.registrationPanel.email_popup;
+         this._registrationPanel = MovieClip(this._emailScreen.parent);
+         super(this._emailScreen,param2);
+         this._emailTxt = this._emailScreen.email_txt;
+         this._emailTxt.maxChars = MAX_EMAIL_LENGTH;
+         this._confirmTxt = this._emailScreen.confirm_txt;
+         this._confirmTxt.maxChars = MAX_EMAIL_LENGTH;
+         this._emailBar = this._emailScreen.textBar;
+         this._confirmBar = this._emailScreen.confirmTextBar;
+         this._emailSts = this._emailScreen.email_status;
+         this._confirmSts = this._emailScreen.confirm_status;
+         this._emailStsTracking = {
+            "xTracking":false,
+            "waitTracking":false,
+            "checkTracking":false
+         };
+         this._confirmStsTracking = {
+            "xTracking":false,
+            "waitTracking":false,
+            "checkTracking":false
+         };
+         GuiStatusIcon.initClipOff(this._emailSts,this._emailStsTracking);
+         GuiStatusIcon.initClipOff(this._confirmSts,this._confirmStsTracking);
+         this._voBtn = this._emailScreen.vo_btn;
+         this._playBtn = this._login.accountCreation.play_btn;
+         this._nextBtn = this._login.accountCreation.next_btn;
+         this._nextBtn.gotoAndStop(1);
+      }
+      
+      public function init() : void
+      {
+         onEnterFromPrev = this.enterFromPrev;
+         onEnterFromNext = this.enterFromNext;
+         onLeaveToPrev = this.leaveToPrev;
+         onLeaveToNext = this.leaveToNext;
+         onPlay = null;
+         updateScreen = this.updateScreenAssets;
+         this._validationPending = false;
+         this._continueClicked = false;
+         this._prevConfirmTxt = "";
+         this._emailText = "";
+         this._confirmText = "";
+         this._emailTxt.addEventListener(KeyboardEvent.KEY_UP,this.emailKeyUpHandler,false,0,true);
+         this._confirmTxt.addEventListener(KeyboardEvent.KEY_UP,this.confirmKeyUpHandler,false,0,true);
+         this._confirmTxt.addEventListener(Event.CHANGE,this.onTextInput,false,0,true);
+         this._confirmTxt.addEventListener(MouseEvent.MOUSE_DOWN,this.onConfirmText,false,0,true);
+         this._voBtn.stop();
+         this._voBtn.addEventListener(MouseEvent.MOUSE_DOWN,this.voBtnClickHandler,false,0,true);
+      }
+      
+      override public function destroy() : void
+      {
+         this._voBtn.removeEventListener(MouseEvent.MOUSE_DOWN,this.voBtnClickHandler);
+         super.destroy();
+      }
+      
+      public function onTextInput(param1:Event) : void
+      {
+         param1.stopPropagation();
+         if(this._confirmTxt.text.substring(0,this._confirmTxt.text.length - 1) == this._prevConfirmTxt)
+         {
+            this._prevConfirmTxt = this._confirmTxt.text;
+            return;
+         }
+         if(this._confirmTxt.text == this._prevConfirmTxt.substring(0,this._prevConfirmTxt.length - 1))
+         {
+            this._prevConfirmTxt = this._confirmTxt.text;
+            return;
+         }
+         this._confirmTxt.text = this._prevConfirmTxt;
+         this._confirmTxt.setSelection(this._confirmTxt.text.length,this._confirmTxt.text.length);
+         this._confirmText = this._confirmTxt.text;
+      }
+      
+      public function onConfirmText(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         this._confirmTxt.setSelection(this._confirmTxt.text.length,this._confirmTxt.text.length);
+      }
+      
+      public function enterFromNext() : void
+      {
+         if(Boolean(this._emailSts["_check"].visible) && Boolean(this._confirmSts["_check"].visible))
+         {
+            this._nextBtn.visible = true;
+         }
+         else
+         {
+            this._nextBtn.visible = false;
+         }
+         CreateAccountGui.trackUserCreateAccountPageChange("ParentEmail");
+         CreateAccountGui.vo4Sound.play();
+         if(CreateAccountGui.vo4Sound.sc)
+         {
+            CreateAccountGui.vo4Sound.sc.addEventListener(Event.SOUND_COMPLETE,this.stopVO,false,0,true);
+            this._voBtn.play();
+         }
+         CreateAccountGui.hideNotifyPopup();
+      }
+      
+      public function enterFromPrev() : void
+      {
+         this.enterFromNext();
+         MovieClip(this._emailScreen.parent).gotoAndPlay("playPlayerAccountTwo");
+         CreateAccountGui.currAvatar().gotoAndPlay("playPlayerAccountTwo");
+         MovieClip(this._emailScreen.parent.parent).bg[CreateAccountGui.currBG() + "Bg"].gotoAndPlay("playPlayerAccountTwo");
+      }
+      
+      public function enterFromBoth() : void
+      {
+      }
+      
+      public function leaveToPrev() : Boolean
+      {
+         this._nextBtn.visible = true;
+         CreateAccountGui.vo4Sound.stop();
+         this._voBtn.stop();
+         MovieClip(this._emailScreen.parent).gotoAndPlay("backAccountOne");
+         CreateAccountGui.currAvatar().gotoAndPlay("backAccountOne");
+         MovieClip(this._emailScreen.parent.parent).bg[CreateAccountGui.currBG() + "Bg"].gotoAndPlay("backAccountOne");
+         return true;
+      }
+      
+      public function leaveToNext() : Boolean
+      {
+         CreateAccountGui.vo4Sound.stop();
+         this._voBtn.stop();
+         this._voBtn.gotoAndStop(1);
+         CreateAccountGui.hideNotifyPopup();
+         return this.nextBtnHandler();
+      }
+      
+      public function updateScreenAssets(param1:Boolean = false) : void
+      {
+         this._emailScreen = this._registrationPanel.email_popup;
+         this._emailTxt = this._emailScreen.email_txt;
+         this._emailTxt.maxChars = MAX_EMAIL_LENGTH;
+         this._emailTxt.text = this._emailText;
+         this._confirmTxt = this._emailScreen.confirm_txt;
+         this._confirmTxt.maxChars = MAX_EMAIL_LENGTH;
+         this._confirmTxt.text = this._confirmText;
+         this._emailBar = this._emailScreen.textBar;
+         this._confirmBar = this._emailScreen.confirmTextBar;
+         this._emailSts = this._emailScreen.email_status;
+         this._confirmSts = this._emailScreen.confirm_status;
+         GuiStatusIcon.setVisBasedOnTrackers(this._emailSts,this._emailStsTracking);
+         GuiStatusIcon.setVisBasedOnTrackers(this._confirmSts,this._confirmStsTracking);
+         this._voBtn = this._emailScreen.vo_btn;
+         this._playBtn = this._login.accountCreation.play_btn;
+         this._nextBtn = this._login.accountCreation.next_btn;
+         this._nextBtn.gotoAndStop(1);
+         if(param1)
+         {
+            this._emailTxt.addEventListener(KeyboardEvent.KEY_UP,this.emailKeyUpHandler,false,0,true);
+            this._confirmTxt.addEventListener(KeyboardEvent.KEY_UP,this.confirmKeyUpHandler,false,0,true);
+            this._confirmTxt.addEventListener(Event.CHANGE,this.onTextInput,false,0,true);
+            this._confirmTxt.addEventListener(MouseEvent.MOUSE_DOWN,this.onConfirmText,false,0,true);
+            if(CreateAccountGui.vo4Sound.sc)
+            {
+               this._voBtn.play();
+            }
+            else
+            {
+               this._voBtn.stop();
+            }
+            this._voBtn.addEventListener(MouseEvent.MOUSE_DOWN,this.voBtnClickHandler,false,0,true);
+            if(Boolean(this._emailSts["_check"].visible) && Boolean(this._confirmSts["_check"].visible))
+            {
+               this._nextBtn.visible = true;
+            }
+            else
+            {
+               this._nextBtn.visible = false;
+            }
+            this._playBtn.visible = false;
+         }
+      }
+      
+      public function get currEmail() : String
+      {
+         return this._emailTxt.text;
+      }
+      
+      public function stopVO(param1:Event) : void
+      {
+         if(CreateAccountGui)
+         {
+            CreateAccountGui.vo4Sound.stop();
+         }
+         this._voBtn.stop();
+         this._voBtn.gotoAndStop(1);
+      }
+      
+      public function emailValidCallback(param1:Boolean, param2:Boolean) : void
+      {
+         DarkenManager.showLoadingSpiral(false);
+         this._validationPending = false;
+         this._emailSts.visible = true;
+         if(param2)
+         {
+            this._validatedEmail = null;
+            GuiStatusIcon.showX(this._emailSts,this._emailStsTracking);
+            this._nextBtn.visible = false;
+            if(this._emailTxt.text == "")
+            {
+               GuiStatusIcon.initClipOff(this._emailSts,this._emailStsTracking);
+               this._emailBar.visible = true;
+            }
+            else
+            {
+               this._emailBar.visible = false;
+            }
+         }
+         else
+         {
+            GuiStatusIcon.showCheck(this._emailSts,this._emailStsTracking);
+            if(this._confirmSts["_check"].visible)
+            {
+               this._nextBtn.visible = true;
+            }
+            this._emailBar.visible = true;
+            if(!param1)
+            {
+               this._validatedEmail = this._emailTxt.text;
+            }
+         }
+         this._continueClicked = false;
+      }
+      
+      public function confirmValidCallback(param1:Boolean) : void
+      {
+         this._confirmSts.visible = true;
+         if(param1)
+         {
+            this._validatedConfirmEmail = null;
+            GuiStatusIcon.showX(this._confirmSts,this._confirmStsTracking);
+            this._nextBtn.visible = false;
+            if(this._confirmTxt.text == "")
+            {
+               GuiStatusIcon.initClipOff(this._confirmSts,this._confirmStsTracking);
+               this._confirmBar.visible = true;
+            }
+            else
+            {
+               this._confirmBar.visible = false;
+            }
+         }
+         else if(this._emailSts["_check"].visible)
+         {
+            GuiStatusIcon.showCheck(this._confirmSts,this._confirmStsTracking);
+            this._nextBtn.visible = true;
+            this._confirmBar.visible = true;
+            this._validatedConfirmEmail = this._confirmTxt.text;
+            if(this._continueClicked)
+            {
+               this.nextBtnHandler();
+            }
+         }
+         this._continueClicked = false;
+      }
+      
+      private function emailMarkEmptyAsError() : void
+      {
+         if(this._emailTxt.text == "")
+         {
+            GuiStatusIcon.showX(this._emailSts,this._emailStsTracking);
+            this._emailSts.visible = true;
+            this._emailBar.visible = false;
+         }
+      }
+      
+      private function confirmMarkEmptyAsError() : void
+      {
+         if(this._confirmTxt.text == "")
+         {
+            GuiStatusIcon.showX(this._confirmSts,this._confirmStsTracking);
+            this._confirmSts.visible = true;
+            this._confirmBar.visible = false;
+         }
+      }
+      
+      private function emailKeyUpHandler(param1:KeyboardEvent) : void
+      {
+         var _loc2_:Array = null;
+         var _loc3_:Boolean = false;
+         var _loc4_:Boolean = false;
+         var _loc5_:int = 0;
+         var _loc6_:int = 0;
+         var _loc7_:String = null;
+         var _loc8_:Array = null;
+         var _loc9_:Array = null;
+         var _loc10_:int = 0;
+         this._emailText = this._emailTxt.text;
+         if(this._emailTxt.text == "")
+         {
+            GuiStatusIcon.initClipOff(this._emailSts,this._emailStsTracking);
+            this._emailBar.visible = true;
+            this._lastCheckedEmail = this._emailTxt.text;
+            this._validatedEmail = null;
+            return;
+         }
+         if(this._emailTxt.text != this._lastCheckedEmail)
+         {
+            this._validationPending = true;
+            this._lastCheckedEmail = this._emailTxt.text;
+            _loc2_ = this._emailTxt.text.split("@");
+            if(_loc2_.length > 1 && _loc2_[0].toLowerCase() == this._login.validatedUserName.toLowerCase())
+            {
+               parentWizard.prev();
+               return;
+            }
+            _loc3_ = Boolean(!RegExp(/\A([^;:,\(\)\[\]@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i)["exec"](this._emailTxt.text) || this._emailTxt.text.length > MAX_EMAIL_LENGTH);
+            if(!_loc3_)
+            {
+               _loc4_ = false;
+               _loc5_ = 0;
+               _loc6_ = int(this._commonDomains.length);
+               _loc7_ = this._emailTxt.text.substr(this._emailTxt.text.indexOf("@") + 1).toLowerCase();
+               while(_loc5_ < _loc6_)
+               {
+                  if(_loc7_ == this._commonDomains[_loc5_])
+                  {
+                     _loc4_ = true;
+                     CreateAccountGui.hideNotifyPopup();
+                     break;
+                  }
+                  _loc5_++;
+               }
+               if(!_loc4_)
+               {
+                  _loc8_ = new Array();
+                  _loc9_ = _loc7_.split("");
+                  _loc5_ = 0;
+                  while(_loc5_ < _loc6_)
+                  {
+                     _loc10_ = Utils.damerauLevenshteinDistance(_loc9_,this._commonDomains[_loc5_].split(""),64);
+                     if(_loc10_ == 1)
+                     {
+                        _loc8_.push(this._commonDomains[_loc5_]);
+                     }
+                     _loc5_++;
+                  }
+                  if(_loc8_.length > 0)
+                  {
+                     CreateAccountGui.showEmailDomainMisspelledWarning(_loc8_);
+                  }
+                  else
+                  {
+                     CreateAccountGui.hideNotifyPopup();
+                  }
+               }
+            }
+            this.emailValidCallback(_loc3_,_loc3_);
+            if(this._confirmTxt.text != "")
+            {
+               this.confirmKeyUpHandler(null);
+            }
+         }
+      }
+      
+      private function confirmKeyUpHandler(param1:KeyboardEvent) : void
+      {
+         this._confirmText = this._confirmTxt.text;
+         if(this._confirmTxt.text == "")
+         {
+            GuiStatusIcon.initClipOff(this._confirmSts,this._confirmStsTracking);
+            this._validatedConfirmEmail = null;
+            return;
+         }
+         if(param1 != null)
+         {
+            CreateAccountGui.hideNotifyPopup();
+         }
+         if(this._emailTxt.text == this._confirmTxt.text)
+         {
+            this.confirmValidCallback(false);
+         }
+         else
+         {
+            this.confirmValidCallback(true);
+         }
+      }
+      
+      private function voBtnClickHandler(param1:MouseEvent) : void
+      {
+         if(CreateAccountGui.vo4Sound.isPlaying)
+         {
+            CreateAccountGui.vo4Sound.stop();
+            this._voBtn.stop();
+            this._voBtn.gotoAndStop(1);
+         }
+         else
+         {
+            CreateAccountGui.vo4Sound.play();
+            if(CreateAccountGui.vo4Sound.sc)
+            {
+               CreateAccountGui.vo4Sound.sc.addEventListener(Event.SOUND_COMPLETE,this.stopVO,false,0,true);
+               this._voBtn.play();
+            }
+         }
+      }
+      
+      private function nextBtnHandler() : Boolean
+      {
+         if(this._validationPending)
+         {
+            this._continueClicked = true;
+            return false;
+         }
+         if(this._validatedEmail != null)
+         {
+            if(this._validatedConfirmEmail != null)
+            {
+               this.stopVO(null);
+               this._continueClicked = true;
+               this._validationPending = false;
+               return true;
+            }
+            if(this._confirmTxt.text == "")
+            {
+               this.confirmMarkEmptyAsError();
+            }
+            CreateAccountGui.showMustConfirmMsg();
+            return false;
+         }
+         CreateAccountGui.showUsernameExistsMsg(CreateAccountGui.MSG_ID_EMAIL_INVALID,false);
+         if(this._emailTxt.text == "")
+         {
+            this.emailMarkEmptyAsError();
+         }
+         return false;
+      }
+   }
+}
+

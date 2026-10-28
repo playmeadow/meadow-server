@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Item giver</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* black and white throughout, in the game's own text font: the look of
+         the client (its app/index.html). Nothing is said by colour: what
+         went wrong is white with a "!" before it, and what cannot be undone
+         has a dashed edge. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --raised: #2b0e4b;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      ::selection { background: #9d00ff; color: #fff; }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 3px solid var(--bg); }
+      body {
+        margin: 0;
+        padding: 24px 16px 48px;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0.01em; }
+      h2 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+      h3 { font-size: 14px; font-weight: 700; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 13px; }
+      .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+      input, select, textarea {
+        font: inherit;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 9px 14px 10px;
+        transition: border-color 0.12s;
+      }
+      input::placeholder, textarea::placeholder { color: #8a74a8; }
+      input:hover, select:hover, textarea:hover { border-color: #6a2fa8; }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: #9d00ff; }
+      input:disabled, select:disabled, textarea:disabled { opacity: 0.4; }
+      select:not([multiple]) {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 34px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+        background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 0 6px 0 0;
+        padding: 0;
+        vertical-align: -4px;
+        border: 1px solid #6a2fa8;
+        border-radius: 6px;
+        background: var(--panel);
+        cursor: pointer;
+      }
+      input[type="checkbox"]:hover { border-color: #9d00ff; }
+      input[type="checkbox"]:checked {
+        border-color: #9d00ff;
+        background: #9d00ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 16px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s, border-color 0.12s, color 0.12s;
+      }
+      button:hover { background: var(--raised); border-color: #6a2fa8; }
+      button:disabled { opacity: 0.45; cursor: default; }
+      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid #9d00ff; outline-offset: 2px; }
+      button.primary { font-weight: 700; color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      button.primary:hover { background: #b33cff; border-color: #b33cff; }
+      button.primary:disabled, button.primary:disabled:hover { background: #4a1a78; border-color: #4a1a78; color: #9b86b8; }
+      button.danger { border-style: dashed; border-color: #6a2fa8; }
+      button.danger:hover { border-style: solid; border-color: #9d00ff; }
+      .status, #status { min-height: 20px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+      .status.bad, #status.bad { color: var(--text); }
+      .status.bad::before, #status.bad::before, .notice::before {
+        content: "!";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: #9d00ff;
+        color: #fff;
+        font-weight: 700;
+        line-height: 17px;
+        text-align: center;
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+      main { max-width: 860px; margin: 0 auto; }
+      h1 { margin: 0 0 4px; }
+      p.lede { margin: 0 0 20px; color: var(--muted); }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      @media (max-width: 620px) { .controls { grid-template-columns: 1fr; } }
+      button.give { font-weight: 700; color: #fff; background: #9d00ff; border-color: #9d00ff; white-space: nowrap; padding: 4px 14px 5px; }
+      button.give:hover { background: #b33cff; border-color: #b33cff; }
+      button.give:disabled { opacity: 0.45; }
+      #status { margin: 6px 0 12px; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+      tr:last-child td { border-bottom: 0; }
+      th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 400; }
+      td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+      td.kind { color: var(--muted); }
+      td.actions { text-align: right; white-space: nowrap; }
+      td.actions select { padding: 5px 30px 6px 12px; margin-right: 6px; background-color: var(--bg); }
+      .logo { display: block; height: 72px; margin: 0 0 12px; }
+      .mark { height: 34px; flex: none; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="/logo.png" alt="">
+      <h1>Item giver</h1>
+      <p class="lede">Search every clothing and den item by name or id and add it to an account for free. In-game shops only stock a slice of the catalogue each.</p>
+
+      <div class="controls">
+        <input id="query" type="search" placeholder="Name or id, e.g. top hat or 3012" autofocus aria-label="Item name or id">
+        <select id="kind" aria-label="Item kind">
+          <option value="all">All items</option>
+          <option value="clothing">Clothing</option>
+          <option value="den">Den items</option>
+        </select>
+        <select id="account" aria-label="Account to give to"></select>
+      </div>
+      <div id="status" role="status"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="num">Id</th><th>Name</th><th>Kind</th><th class="num">Price</th><th></th></tr>
+          </thead>
+          <tbody id="results"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      "use strict";
+
+      const queryInput = document.getElementById("query");
+      const kindSelect = document.getElementById("kind");
+      const accountSelect = document.getElementById("account");
+      const statusLine = document.getElementById("status");
+      const resultsBody = document.getElementById("results");
+
+      const setStatus = (text, bad = false) => {
+        statusLine.textContent = text;
+        statusLine.classList.toggle("bad", bad);
+      };
+
+      const loadAccounts = async () => {
+        const accounts = await (await fetch("/api/accounts")).json();
+        const previous = accountSelect.value;
+        accountSelect.replaceChildren(...accounts.map(account => {
+          const option = document.createElement("option");
+          option.value = account.username;
+          option.textContent = account.online ? `${account.username} (online)` : account.username;
+          return option;
+        }));
+        // default to whoever is playing right now.
+        const online = accounts.find(account => account.online);
+        accountSelect.value = accounts.some(account => account.username === previous) ? previous : (online ? online.username : accountSelect.value);
+        if (!accounts.length) {
+          setStatus("No accounts yet. Log in to the game once to create one.", true);
+        }
+      };
+
+      const give = async (item, colorIndex, button) => {
+        if (!accountSelect.value) {
+          setStatus("Pick an account first.", true);
+          return;
+        }
+        button.disabled = true;
+        try {
+          const response = await fetch("/api/give", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username: accountSelect.value, kind: item.kind, id: item.id, colorIndex}),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            setStatus(body.error || "Could not give the item.", true);
+          }
+          else {
+            setStatus(`Gave ${item.name || "item " + item.id} to ${accountSelect.value}.`
+              + (body.online ? "" : " They are offline; it will be there at next login."));
+          }
+        }
+        catch (err) {
+          setStatus("The server did not answer.", true);
+        }
+        button.disabled = false;
+      };
+
+      const row = item => {
+        const tr = document.createElement("tr");
+        const cell = (text, className) => {
+          const td = document.createElement("td");
+          td.textContent = text;
+          if (className) {
+            td.className = className;
+          }
+          tr.append(td);
+          return td;
+        };
+        cell(item.id, "num");
+        cell(item.name || "(unnamed)");
+        cell(item.kind === "den" ? "Den item" : "Clothing", "kind");
+        cell(item.cost.toLocaleString(), "num");
+        const actions = cell("", "actions");
+        let colorSelect = null;
+        if (item.colors > 1) {
+          colorSelect = document.createElement("select");
+          colorSelect.setAttribute("aria-label", "Colour");
+          for (let i = 0; i < item.colors; i++) {
+            const option = document.createElement("option");
+            option.value = i;
+            option.textContent = `Colour ${i + 1}`;
+            colorSelect.append(option);
+          }
+          actions.append(colorSelect);
+        }
+        const button = document.createElement("button");
+        button.className = "give";
+        button.textContent = "Give";
+        button.addEventListener("click", () => give(item, colorSelect ? Number(colorSelect.value) : 0, button));
+        actions.append(button);
+        return tr;
+      };
+
+      let latestSearch = 0;
+      const search = async () => {
+        const id = ++latestSearch;
+        const query = queryInput.value.trim();
+        if (!query) {
+          resultsBody.replaceChildren();
+          setStatus("Type a name or an id to search.");
+          return;
+        }
+        try {
+          const params = new URLSearchParams({q: query, kind: kindSelect.value});
+          const body = await (await fetch(`/api/search?${params}`)).json();
+          if (id !== latestSearch) {
+            return;
+          }
+          resultsBody.replaceChildren(...body.results.map(row));
+          setStatus(body.total === 0 ? "Nothing matches."
+            : body.total > body.results.length ? `Showing ${body.results.length} of ${body.total} matches; narrow the search to see the rest.`
+            : `${body.total} match${body.total === 1 ? "" : "es"}.`);
+        }
+        catch (err) {
+          setStatus("The server did not answer.", true);
+        }
+      };
+
+      let debounce = null;
+      queryInput.addEventListener("input", () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(search, 150);
+      });
+      kindSelect.addEventListener("change", search);
+      // pick up newly created accounts and who is online when coming back to this tab.
+      window.addEventListener("focus", () => loadAccounts().catch(() => {}));
+
+      loadAccounts().then(search).catch(() => setStatus("The server did not answer.", true));
+    </script>
+  </body>
+</html>

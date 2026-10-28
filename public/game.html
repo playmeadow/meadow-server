@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Game Client</title>
+  </head>
+  <body>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #flash-content {
+        position: relative;
+        z-index: 1;
+      }
+      /* the theatre's screen, as the game says where it is (ajTheatreScreen):
+         laid over the stage as Flash's "showAll" draws it, every size in
+         stage pixels times --s. the room's video (staff) and the player's
+         own both sit on it. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      #theatre {
+        --s: 1;
+        --px: calc(var(--s) * 1px);
+        position: fixed;
+        z-index: 2;
+        overflow: hidden;
+        pointer-events: none;
+        font-family: "DigitalDelivery", Arial, Helvetica, sans-serif;
+      }
+      #theatre[hidden], #theatre [hidden] {
+        display: none !important;
+      }
+      /* no ring around a button that was clicked (the desktop client's
+         Chromium 87 still draws one); the keyboard's still shows */
+      #theatre button:focus:not(:focus-visible) {
+        outline: none;
+      }
+      /* the game draws over it just now (ajTheatreScreen) */
+      #theatre .covered {
+        visibility: hidden;
+      }
+      .theatre-screen {
+        position: absolute;
+        border: 0;
+        background: #000;
+        pointer-events: auto;
+      }
+      #theatre-video {
+        display: none;
+      }
+      #theatre-video.visible {
+        display: block;
+      }
+      #own-video > * {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      /* in the game's own colours: cream panels, brown edges, a green "go" */
+      #theatre-pills {
+        position: absolute;
+        display: flex;
+        gap: calc(8 * var(--px));
+      }
+      .theatre-pill {
+        pointer-events: auto;
+        font: 700 calc(13 * var(--px)) / 1 "DigitalDelivery", Arial, sans-serif;
+        color: #6d4330;
+        background: linear-gradient(#fffbe6, #ffe9a6);
+        border: calc(2 * var(--px)) solid #7f6744;
+        border-radius: 999px;
+        padding: calc(6 * var(--px)) calc(14 * var(--px));
+        box-shadow: 0 calc(2 * var(--px)) 0 #7f6744;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .theatre-pill:hover {
+        background: linear-gradient(#fffef5, #fff0be);
+      }
+      .theatre-pill:active {
+        transform: translateY(calc(2 * var(--px)));
+        box-shadow: none;
+      }
+      /* the theatre browser's bar (experimental; the desktop client draws
+         the page itself, over the screen) */
+      #browser-bar {
+        position: absolute;
+        pointer-events: auto;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: calc(5 * var(--px));
+        height: calc(30 * var(--px));
+        padding: 0 calc(5 * var(--px));
+        background: #fff2c4;
+        border: calc(2 * var(--px)) solid #7f6744;
+        border-radius: 999px;
+        box-shadow: 0 calc(2 * var(--px)) 0 #7f6744;
+      }
+      .aj-round {
+        flex: none;
+        width: calc(22 * var(--px));
+        height: calc(22 * var(--px));
+        padding: 0;
+        font: 700 calc(12 * var(--px)) / 1 Arial, sans-serif;
+        color: #6d4330;
+        background: linear-gradient(#fffbe6, #ffe39a);
+        border: calc(2 * var(--px)) solid #7f6744;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      .aj-round:hover {
+        background: linear-gradient(#fffef5, #fff0be);
+      }
+      .aj-round:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      #browser-address {
+        flex: 1;
+        min-width: 0;
+        height: calc(20 * var(--px));
+        box-sizing: border-box;
+        font: 400 calc(12 * var(--px)) / 1 Arial, Helvetica, sans-serif;
+        color: #3d2716;
+        background: #fff;
+        border: calc(2 * var(--px)) solid #c9a86a;
+        border-radius: 999px;
+        padding: 0 calc(9 * var(--px));
+        outline: none;
+      }
+      #browser-address:focus {
+        border-color: #7f6744;
+      }
+      /* a site the client keeps out of the theatre (its own list): offered
+         in the player's own browser instead */
+      #browser-blocked {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font: 400 calc(12 * var(--px)) / 1 Arial, Helvetica, sans-serif;
+        color: #3d2716;
+        cursor: text;
+      }
+      #browser-bar .aj-button {
+        min-width: 0;
+        font-size: calc(12 * var(--px));
+        padding: calc(4 * var(--px)) calc(11 * var(--px));
+      }
+      #browser-close {
+        background: radial-gradient(circle at 50% 35%, #ff7a5c, #c8321a 70%);
+        border-color: #8e2b16;
+        color: #fff;
+      }
+      .aj-box {
+        position: absolute;
+        pointer-events: auto;
+        box-sizing: border-box;
+        width: calc(360 * var(--px));
+        padding: calc(14 * var(--px)) calc(16 * var(--px)) calc(12 * var(--px));
+        color: #6d4330;
+        font-size: calc(13 * var(--px));
+        background: #fff2c4;
+        border: calc(4 * var(--px)) solid #7f6744;
+        border-radius: calc(18 * var(--px));
+        box-shadow: inset 0 0 0 calc(2 * var(--px)) #ffe39a, 0 calc(4 * var(--px)) 0 rgba(0, 0, 0, 0.35);
+      }
+      .aj-box h2 {
+        margin: 0 calc(24 * var(--px)) calc(10 * var(--px)) 0;
+        font-size: calc(20 * var(--px));
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.02em;
+        text-shadow: 0 0 calc(2 * var(--px)) #6d4330, calc(1.5 * var(--px)) calc(1.5 * var(--px)) 0 #6d4330, calc(-1.5 * var(--px)) calc(1.5 * var(--px)) 0 #6d4330, calc(1.5 * var(--px)) calc(-1.5 * var(--px)) 0 #6d4330, calc(-1.5 * var(--px)) calc(-1.5 * var(--px)) 0 #6d4330;
+      }
+      .aj-box input {
+        box-sizing: border-box;
+        width: 100%;
+        font: 400 calc(13 * var(--px)) / 1.2 Arial, Helvetica, sans-serif;
+        color: #3d2716;
+        background: #fff;
+        border: calc(2 * var(--px)) solid #c9a86a;
+        border-radius: calc(9 * var(--px));
+        padding: calc(7 * var(--px)) calc(9 * var(--px));
+        box-shadow: inset 0 calc(2 * var(--px)) calc(3 * var(--px)) rgba(109, 67, 48, 0.25);
+        outline: none;
+      }
+      .aj-box input:focus {
+        border-color: #7f6744;
+      }
+      .aj-box input::placeholder {
+        color: #a88f6a;
+      }
+      .own-video-buttons {
+        display: flex;
+        justify-content: center;
+        gap: calc(10 * var(--px));
+        margin-top: calc(10 * var(--px));
+      }
+      .aj-button {
+        min-width: calc(88 * var(--px));
+        font: 700 calc(15 * var(--px)) / 1 "DigitalDelivery", Arial, sans-serif;
+        color: #fff;
+        border-radius: 999px;
+        padding: calc(7 * var(--px)) calc(16 * var(--px));
+        cursor: pointer;
+        text-shadow: 0 calc(1.5 * var(--px)) 0 rgba(0, 0, 0, 0.45);
+      }
+      .aj-button:active {
+        transform: translateY(calc(2 * var(--px)));
+        box-shadow: none !important;
+      }
+      .aj-button.go {
+        background: linear-gradient(#a6e05a, #4fa52f);
+        border: calc(2 * var(--px)) solid #2f7420;
+        box-shadow: inset 0 calc(2 * var(--px)) 0 rgba(255, 255, 255, 0.45), 0 calc(2 * var(--px)) 0 #2f7420;
+      }
+      .aj-button.go:hover {
+        background: linear-gradient(#b5ea6c, #5cb43a);
+      }
+      .aj-button.stop {
+        background: linear-gradient(#f59a6a, #d4482a);
+        border: calc(2 * var(--px)) solid #8e2b16;
+        box-shadow: inset 0 calc(2 * var(--px)) 0 rgba(255, 255, 255, 0.4), 0 calc(2 * var(--px)) 0 #8e2b16;
+      }
+      .aj-button.stop:hover {
+        background: linear-gradient(#ffab7c, #e05634);
+      }
+      .aj-box-close {
+        position: absolute;
+        top: calc(-10 * var(--px));
+        right: calc(-10 * var(--px));
+        width: calc(30 * var(--px));
+        height: calc(30 * var(--px));
+        padding: 0;
+        font: 700 calc(18 * var(--px)) / 1 Arial, sans-serif;
+        color: #fff;
+        background: radial-gradient(circle at 50% 35%, #ff7a5c, #c8321a 70%);
+        border: calc(3 * var(--px)) solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 calc(2 * var(--px)) #7f6744, 0 calc(2 * var(--px)) 0 calc(2 * var(--px)) rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+      }
+      .aj-box-close:hover {
+        background: radial-gradient(circle at 50% 35%, #ff8f74, #d93d22 70%);
+      }
+      /* a video spot's box (ajVideoSpot): a screen of the theatre's size with
+         a link box under it, over the middle of the stage */
+      #spot {
+        --s: 1;
+        --px: calc(var(--s) * 1px);
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        font-family: "DigitalDelivery", Arial, Helvetica, sans-serif;
+      }
+      #spot[hidden], #spot [hidden] {
+        display: none !important;
+      }
+      #spot-box {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(548 * var(--px));
+      }
+      #spot-screen {
+        width: calc(512 * var(--px));
+        height: calc(288 * var(--px));
+        background: #000;
+        border: calc(2 * var(--px)) solid #7f6744;
+        border-radius: calc(6 * var(--px));
+        overflow: hidden;
+        margin-bottom: calc(10 * var(--px));
+      }
+      #spot-screen > * {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+      }
+      .aj-box-said {
+        min-height: calc(15 * var(--px));
+        margin: calc(8 * var(--px)) 0 0;
+        font: 400 calc(12 * var(--px)) / 1.25 Arial, Helvetica, sans-serif;
+        color: #a3341c;
+        text-align: center;
+      }
+    </style>
+    <embed id="flash-content"></embed>
+    <div id="theatre" hidden>
+      <iframe id="theatre-video" class="theatre-screen" title="Theatre video" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div id="own-video" class="theatre-screen" hidden></div>
+      <div id="theatre-pills">
+        <button type="button" id="own-video-open" class="theatre-pill">&#9654; Your Video</button>
+        <button type="button" id="browser-open" class="theatre-pill" hidden title="Experimental: a web browser on the screen, for you alone">&#127760; Browser</button>
+      </div>
+      <form id="browser-bar" hidden>
+        <button type="button" id="browser-back" class="aj-round" aria-label="Back" disabled>&#9664;</button>
+        <button type="button" id="browser-forward" class="aj-round" aria-label="Forward" disabled>&#9654;</button>
+        <button type="button" id="browser-reload" class="aj-round" aria-label="Reload">&#8635;</button>
+        <input id="browser-address" type="text" placeholder="Search or type an address" autocomplete="off" spellcheck="false" aria-label="Address">
+        <button type="submit" id="browser-go" class="aj-button go">Go</button>
+        <span id="browser-blocked" role="status" hidden></span>
+        <button type="button" id="browser-elsewhere" class="aj-button go" hidden>Open in your browser</button>
+        <button type="button" id="browser-close" class="aj-round" aria-label="Close the browser">&times;</button>
+      </form>
+      <form id="own-video-box" class="aj-box" hidden>
+        <h2>Your Video</h2>
+        <button type="button" id="own-video-close" class="aj-box-close" aria-label="Close">&times;</button>
+        <input id="own-video-url" type="url" placeholder="Paste a link: YouTube, Vimeo, .mp4, .webm, .mp3" autocomplete="off" spellcheck="false" aria-label="Video link">
+        <div class="own-video-buttons">
+          <button type="submit" class="aj-button go">Play</button>
+          <button type="button" id="own-video-stop" class="aj-button stop">Stop</button>
+        </div>
+        <p id="own-video-said" class="aj-box-said" role="status"></p>
+      </form>
+    </div>
+    <div id="spot" hidden>
+      <form id="spot-box" class="aj-box">
+        <h2>Your Video</h2>
+        <button type="button" id="spot-close" class="aj-box-close" aria-label="Close">&times;</button>
+        <div id="spot-screen"></div>
+        <input id="spot-url" type="url" placeholder="Paste a link: YouTube, Vimeo, .mp4, .webm, .mp3" autocomplete="off" spellcheck="false" aria-label="Video link">
+        <div class="own-video-buttons">
+          <button type="submit" class="aj-button go">Play</button>
+          <button type="button" id="spot-stop" class="aj-button stop">Stop</button>
+        </div>
+        <p id="spot-said" class="aj-box-said" role="status"></p>
+      </form>
+    </div>
+    <script>
+      "use strict";
+
+      // local stand-in for desktop.animaljam.com/gameClient/game/index.html.
+      // same contract with the launcher (gui/gamePreload.js) and the SWF.
+
+      const flashContent = document.getElementById("flash-content");
+      const theatreVideo = document.getElementById("theatre-video");
+      // only a SWF from this server may call into this page. with "always"
+      // any SWF the game came to load, from anywhere, could: and this page
+      // is handed the player's login token.
+      flashContent.setAttribute("allowScriptAccess", "sameDomain");
+      // The theatre's staff-controlled browser video must be able to appear
+      // over the SWF screen. "window" puts Flash above every HTML element;
+      // opaque keeps the normal game drawing while allowing that overlay.
+      flashContent.setAttribute("wmode", "opaque");
+      flashContent.style.width = "100vw";
+      flashContent.style.height = "100vh";
+
+      window.ipc.on("flashVarsReady", (event, flashVars) => {
+        const flashVarsParams = Object.entries(flashVars)
+          .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
+          .join("&");
+
+        flashContent.setAttribute("FlashVars", flashVarsParams);
+        // the game from the address this page came from, whatever name the
+        // server knows itself by: "sameDomain" above goes by that.
+        const client = new URL(flashVars.clientURL, location.href);
+        flashContent.src = location.origin + client.pathname + client.search;
+        flashContent.style.display = "block";
+      });
+
+      window.ipc.on("removed", () => document.body.innerHTML = "");
+
+      // the client's top bar: the game's HUD shown or hidden (AJClient.setHudShown
+      // in the patched SWF).
+      window.ipc.on("hud", (event, shown) => {
+        try {
+          flashContent.ajHud(shown === true);
+        }
+        catch (err) {
+          // not this server's SWF, or the game is not up yet.
+        }
+      });
+
+      window.addEventListener("resize", resize);
+
+      // ExternalInterface functions called by the SWF.
+      function complete_signup(username, password) {
+        window.ipc.sendToHost("signupCompleted", {username, password});
+      }
+
+      function aj_initialized() {
+        // the game has read its start values; the login token among them
+        // need not stay in the page.
+        flashContent.removeAttribute("FlashVars");
+        window.ipc.sendToHost("initialized");
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => resize(), i * 500);
+        }
+      }
+
+      // pictures drawn in the last second, told by the patched SWF once a
+      // second (AJClient.onSmoothFrame), for the client's top bar.
+      function ajFps(count) {
+        window.ipc.sendToHost("fps", count);
+      }
+
+      // an address the SWF wants open (AJClient.finderLink): the client opens
+      // it in the system browser, being a webview that may open no window.
+      function ajOpenPage(url) {
+        // https anywhere, or this server's own pages however it is reached
+        // (a server tried on this machine has no https)
+        const link = String(url);
+        if (/^https:\/\//.test(link) || link.startsWith(`${location.origin}/`)) {
+          window.ipc.sendToHost("openPage", link);
+        }
+      }
+
+      // where the player is, for the client's Discord rich presence
+      // (AJClient.presenceRoom): a short line such as "In Jamaa Township".
+      function ajPresence(text) {
+        window.ipc.sendToHost("presence", String(text).slice(0, 100));
+      }
+
+      // the theatre's screen, from the game (AJClient.reportTheatreScreen):
+      // "x,y,width,height" in its 900 by 550 stage, or "" with none shown.
+      // the stage fills the page as Flash's "showAll" draws it: as big as
+      // fits, in the middle.
+      //
+      // after it, "|columns|row,row,..." when the game draws something over
+      // the screen (or just under it): a hex row of bits per COVER_CELL
+      // stage pixels. a web page is always drawn over the game, so those
+      // cells are cut out of the videos, and the button and box step aside.
+      const STAGE_W = 900;
+      const STAGE_H = 550;
+      const COVER_CELL = 4;
+      const theatre = document.getElementById("theatre");
+      let theatreScreen = null;
+      let theatreCover = []; // {x, y, w, h} in stage pixels from the screen's corner
+      function ajTheatreScreen(text) {
+        const parts = String(text || "").split("|");
+        const numbers = parts[0].split(",").map(Number);
+        theatreScreen = numbers.length === 4 && numbers.every(Number.isFinite) && numbers[2] > 0 && numbers[3] > 0
+          ? {x: numbers[0], y: numbers[1], w: numbers[2], h: numbers[3]} : null;
+        theatreCover = theatreScreen && parts.length === 3 ? coverRects(Number(parts[1]), parts[2].split(",")) : [];
+        placeTheatre();
+        // the screen gone for a moment (the room redrawing it) is no reason
+        // to stop the player's video and put its box away: only gone for good.
+        clearTimeout(theatreLeftTimer);
+        if (theatreScreen !== null) {
+          ownVideo.inTheatre(true);
+          browserPage.inTheatre(true);
+        }
+        else {
+          theatreLeftTimer = setTimeout(() => {
+            if (theatreScreen === null) {
+              ownVideo.inTheatre(false);
+              browserPage.inTheatre(false);
+            }
+          }, THEATRE_GONE_MS);
+        }
+      }
+      const THEATRE_GONE_MS = 1500;
+      let theatreLeftTimer = null;
+
+      // the covered cells as rectangles: runs along each row, and a run
+      // that the row above has too made taller.
+      function coverRects(columns, rows) {
+        const rects = [];
+        let above = new Map(); // "from,to" of the row above -> its rectangle
+        rows.forEach((hex, row) => {
+          const here = new Map();
+          let from = -1;
+          for (let column = 0; column <= columns; column++) {
+            const digit = column < columns ? parseInt(hex[column >> 2] || "0", 16) : 0;
+            const covered = column < columns && Boolean(digit & (8 >> (column & 3)));
+            if (covered && from < 0) {
+              from = column;
+            }
+            else if (!covered && from >= 0) {
+              const key = `${from},${column}`;
+              let rect = above.get(key);
+              if (rect) {
+                rect.h += COVER_CELL;
+              }
+              else {
+                rect = {x: from * COVER_CELL, y: row * COVER_CELL, w: (column - from) * COVER_CELL, h: COVER_CELL};
+                rects.push(rect);
+              }
+              here.set(key, rect);
+              from = -1;
+            }
+          }
+          above = here;
+        });
+        return rects;
+      }
+
+      // the screen with the covered rectangles cut out ("evenodd": each one
+      // is a hole, reached from the corner and back).
+      function coverClip(scale) {
+        if (!theatreCover.length) {
+          return "none";
+        }
+        const px = value => `${Math.round(value * scale * 10) / 10}px`;
+        const points = ["0 0", "100% 0", "100% 100%", "0 100%", "0 0"];
+        for (const {x, y, w, h} of theatreCover) {
+          points.push(`${px(x)} ${px(y)}`, `${px(x + w)} ${px(y)}`, `${px(x + w)} ${px(y + h)}`, `${px(x)} ${px(y + h)}`, `${px(x)} ${px(y)}`, "0 0");
+        }
+        return `polygon(evenodd, ${points.join(", ")})`;
+      }
+
+      // is any of this element (placed in #theatre) under the game's drawing?
+      function underCover(element, scale) {
+        if (element.hidden) {
+          return false;
+        }
+        const left = element.offsetLeft / scale - theatreScreen.x;
+        const top = element.offsetTop / scale - theatreScreen.y;
+        const right = left + element.offsetWidth / scale;
+        const bottom = top + element.offsetHeight / scale;
+        return theatreCover.some(rect => rect.x < right && rect.x + rect.w > left && rect.y < bottom && rect.y + rect.h > top);
+      }
+
+      const BUTTON_ROOM = 34; // stage pixels the button wants under the screen
+      const BOX_W = 360; // #own-video-box's width in stage pixels
+      const BOX_H = 170; // and about its height
+      function placeTheatre() {
+        theatre.hidden = theatreScreen === null;
+        if (!theatreScreen) {
+          return;
+        }
+        const scale = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
+        const place = (element, x, y, w, h) => {
+          element.style.left = `${x * scale}px`;
+          element.style.top = `${y * scale}px`;
+          if (w !== undefined) {
+            element.style.width = `${w * scale}px`;
+            element.style.height = `${h * scale}px`;
+          }
+        };
+        theatre.style.left = `${(window.innerWidth - STAGE_W * scale) / 2}px`;
+        theatre.style.top = `${(window.innerHeight - STAGE_H * scale) / 2}px`;
+        theatre.style.width = `${STAGE_W * scale}px`;
+        theatre.style.height = `${STAGE_H * scale}px`;
+        theatre.style.setProperty("--s", String(scale));
+        const {x, y, w, h} = theatreScreen;
+        place(theatreVideo, x, y, w, h);
+        place(document.getElementById("own-video"), x, y, w, h);
+        // the button under the screen's left corner, or inside it when the
+        // stage ends first; the box over the middle of the screen.
+        const below = y + h + 8 + BUTTON_ROOM <= STAGE_H;
+        const barY = below ? y + h + 8 : y + h - BUTTON_ROOM;
+        place(document.getElementById("theatre-pills"), x + 4, barY);
+        const bar = document.getElementById("browser-bar");
+        place(bar, x, barY);
+        bar.style.width = `${w * scale}px`;
+        place(document.getElementById("own-video-box"), x + (w - BOX_W) / 2, Math.max(4, y + (h - BOX_H) / 2));
+        const clip = coverClip(scale);
+        theatreVideo.style.clipPath = clip;
+        document.getElementById("own-video").style.clipPath = clip;
+        // the browser is drawn by the desktop client: told where, in this
+        // page's pixels, and above the bar when the bar is on the screen.
+        browserPage.place({
+          x: theatre.offsetLeft + x * scale, y: theatre.offsetTop + y * scale,
+          w: w * scale, h: (below ? h : h - BUTTON_ROOM) * scale, clip,
+        });
+        // (not the Your Video box: the player opened it, and with it open the
+        // button is away, so hiding it too left nothing to click)
+        for (const id of ["theatre-pills", "browser-bar"]) {
+          const element = document.getElementById(id);
+          element.classList.toggle("covered", underCover(element, scale));
+        }
+      }
+      window.addEventListener("resize", placeTheatre);
+
+      function ajPrint(imageData) {
+        window.ipc.sendToHost("printImage", imageData);
+      }
+
+      // a picture of the whole room: asked for by the client's top bar
+      // ("roomShot"), drawn by the game (AJClient.takeRoomPicture), which
+      // gives it back here, {image, a PNG in base64; width; height} or
+      // {error}, for the client to save
+      window.ipc.on("roomShot", () => {
+        try {
+          flashContent.ajRoomShot();
+        }
+        catch (err) {
+          window.ipc.sendToHost("roomPicture", {error: "The game is not ready for a room picture."});
+        }
+      });
+      function ajRoomPicture(picture) {
+        window.ipc.sendToHost("roomPicture", picture);
+      }
+
+      // the colour panel's dropper (ColorTable in the patched SWF): a colour
+      // from anywhere on the screen. the client (1.0.0 and on: ipc.pickColour)
+      // shows each screen to pick from; a browser's own EyeDropper does where
+      // there is one. false: neither, and the game picks from itself. the
+      // answer goes back by ajScreenColour: "#RRGGBB", "" when none was taken,
+      // "!" when it could not be picked after all.
+      function ajScreenColour(colour) {
+        try {
+          flashContent.ajScreenColour(colour);
+        }
+        catch (err) {
+          // the game is gone
+        }
+      }
+      window.ipc.on("pickedColour", (event, colour) => {
+        console.warn(`[colour] the client picked ${colour || "nothing"}`);
+        ajScreenColour(/^#[0-9A-F]{6}$/i.test(String(colour)) || colour === "!" ? String(colour) : "");
+      });
+      function ajPickScreenColour() {
+        console.warn(`[colour] the game asks for a colour from the screen; the client can pick: ${window.ipc.pickColour === true}`);
+        if (window.ipc.pickColour === true) {
+          window.ipc.sendToHost("pickColour");
+          return true;
+        }
+        if (typeof window.EyeDropper === "function") {
+          new EyeDropper().open()
+            .then(picked => ajScreenColour(/^#[0-9a-f]{6}$/i.test(picked.sRGBHex) ? picked.sRGBHex : "!"))
+            .catch(err => ajScreenColour(err && err.name === "AbortError" ? "" : "!"));
+          return true;
+        }
+        return false;
+      }
+
+      // The server validates the id and decides who in the theatre gets this
+      // call. The page merely displays it over the theatre's screen area.
+      function ajTheatreVideo(videoId) {
+        const id = String(videoId || "");
+        if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+          theatreVideo.removeAttribute("src");
+          theatreVideo.classList.remove("visible");
+          ownVideo.roomVideo(false);
+          browserPage.roomVideo(false);
+          return;
+        }
+        theatreVideo.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+        theatreVideo.classList.add("visible");
+        // what staff play for the room comes first; the player's own waits.
+        ownVideo.roomVideo(true);
+        browserPage.roomVideo(true);
+      }
+
+      // a link of the player's own, to play: YouTube and Vimeo links in those
+      // sites' own players; any other http(s) address in a <video>, which
+      // plays a media file or nothing (a web page in it runs no script and
+      // asks nobody for anything). {frame}, {file} or {error}; null for no link.
+      const videoEmbedFor = text => {
+        let url;
+        try {
+          url = new URL(text);
+        }
+        catch (err) {
+          return null;
+        }
+        if (url.protocol !== "https:" && url.protocol !== "http:") {
+          return null;
+        }
+        const host = url.hostname.replace(/^(?:www\.|m\.)/, "").toLowerCase();
+        let match = null;
+        if (host === "youtu.be") {
+          match = /^\/([A-Za-z0-9_-]{11})/.exec(url.pathname);
+        }
+        else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+          match = url.pathname === "/watch" ? /^([A-Za-z0-9_-]{11})$/.exec(url.searchParams.get("v") || "")
+            : /^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/.exec(url.pathname);
+        }
+        if (match) {
+          return {frame: `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`};
+        }
+        if (host === "vimeo.com" || host === "player.vimeo.com") {
+          match = /^\/(?:video\/)?(\d{1,12})(?:\/|$)/.exec(url.pathname);
+          return match ? {frame: `https://player.vimeo.com/video/${match[1]}?autoplay=1`} : {error: "That Vimeo link has no video in it."};
+        }
+        if (host.endsWith("youtube.com")) {
+          return {error: "That YouTube link has no video in it."};
+        }
+        return {file: url.href};
+      };
+
+      // the desktop client loads nothing for this page from elsewhere but
+      // what it is told the player chose (client 1.3.2, app/main.js): it
+      // says when that address may load. an older client never answers.
+      const CLIENT_WAIT_MS = 1500;
+      let videoCleared = null; // {link, go}
+      window.ipc.on("ownVideoReady", (event, link) => {
+        if (videoCleared && videoCleared.link === link) {
+          videoCleared.go();
+        }
+      });
+      const whenVideoCleared = link => new Promise(resolve => {
+        const timer = setTimeout(resolve, CLIENT_WAIT_MS);
+        videoCleared = {link, go: () => {
+          clearTimeout(timer);
+          resolve();
+        }};
+        window.ipc.sendToHost("ownVideo", link);
+      });
+
+      // the element that plays `found` (videoEmbedFor). a file starts once
+      // the client lets it, and only while `stillWanted(element)`;
+      // `failed` hears of a file that would not play.
+      const videoElementFor = (found, stillWanted, failed, started) => {
+        if (found.frame) {
+          const frame = document.createElement("iframe");
+          frame.title = "Your video";
+          frame.allow = "autoplay; encrypted-media; fullscreen";
+          frame.referrerPolicy = "strict-origin-when-cross-origin";
+          frame.src = found.frame;
+          return frame;
+        }
+        const video = document.createElement("video");
+        video.controls = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.addEventListener("error", failed);
+        whenVideoCleared(found.file).then(() => {
+          if (stillWanted(video)) {
+            video.src = found.file;
+            started();
+          }
+        });
+        return video;
+      };
+      const VIDEO_DID_NOT_PLAY = "That link did not play. It has to be a video or sound file (.mp4, .webm, .mp3), and the site has to allow it.";
+
+      // a playing element stopped: a file's sound with it, and the client told.
+      const stopVideoElement = element => {
+        if (element instanceof HTMLMediaElement) {
+          element.pause();
+          element.removeAttribute("src");
+          element.load();
+          window.ipc.sendToHost("ownVideo", "");
+        }
+      };
+
+      // a video of the player's own choosing on the theatre screen, seen by
+      // them alone: nothing of it goes to the server.
+      const ownVideo = (() => {
+        const $ = id => document.getElementById(id);
+        const screen = $("own-video");
+        const opener = $("own-video-open");
+        const box = $("own-video-box");
+        const input = $("own-video-url");
+        const said = $("own-video-said");
+        const SAVED = "ownVideoUrl";
+        let here = false; // in a theatre
+        let roomPlaying = false;
+        let playing = null; // the element showing it
+
+        const show = () => {
+          screen.hidden = !playing || !here || roomPlaying;
+          if (playing instanceof HTMLMediaElement) {
+            if (screen.hidden) {
+              playing.pause();
+            }
+            else {
+              playing.play().catch(() => {});
+            }
+          }
+        };
+
+        const stop = () => {
+          stopVideoElement(playing);
+          screen.replaceChildren();
+          playing = null;
+          show();
+        };
+
+        const open = () => {
+          box.hidden = false;
+          opener.hidden = true;
+          placeTheatre();
+          if (!input.value) {
+            try {
+              input.value = localStorage.getItem(SAVED) || "";
+            }
+            catch (err) {
+            }
+          }
+          input.focus();
+          input.select();
+        };
+        // the box away and the button back: the two are never gone at once.
+        const close = () => {
+          box.hidden = true;
+          opener.hidden = false;
+          placeTheatre();
+          said.textContent = "";
+        };
+
+        const play = text => {
+          const found = videoEmbedFor(String(text || "").trim());
+          if (!found || found.error) {
+            said.textContent = found ? found.error : "Paste a link starting with https://";
+            return;
+          }
+          stop();
+          browserPage.close();
+          const element = videoElementFor(found, video => playing === video, () => {
+            open();
+            said.textContent = VIDEO_DID_NOT_PLAY;
+          }, show);
+          playing = element;
+          screen.append(playing);
+          try {
+            localStorage.setItem(SAVED, input.value.trim());
+          }
+          catch (err) {
+          }
+          // the box goes once it plays, the button back to change it
+          if (roomPlaying) {
+            said.textContent = "It plays when the theatre's own video stops.";
+          }
+          else {
+            close();
+          }
+          show();
+        };
+
+        opener.addEventListener("click", () => {
+          if (box.hidden) {
+            open();
+          }
+          else {
+            close();
+          }
+        });
+        $("own-video-close").addEventListener("click", close);
+        $("own-video-stop").addEventListener("click", () => {
+          stop();
+          said.textContent = "";
+        });
+        box.addEventListener("submit", event => {
+          event.preventDefault();
+          play(input.value);
+        });
+        input.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            close();
+          }
+        });
+
+        return {
+          open,
+          // the browser takes the screen: the player's own video and its box go.
+          giveWay() {
+            stop();
+            close();
+          },
+          // in a theatre or not; out of one, the video is gone.
+          inTheatre(yes) {
+            if (yes === here) {
+              return;
+            }
+            here = yes;
+            if (!here) {
+              stop();
+              close();
+            }
+            show();
+          },
+          roomVideo(on) {
+            roomPlaying = on;
+            if (!on) {
+              said.textContent = "";
+            }
+            show();
+          },
+        };
+      })();
+
+      // a video spot of the game's (a screen in a room, a "videos" button,
+      // the trade list's help): its videos came from the official server,
+      // and here the spot opens a box for a video of the player's own, over
+      // the middle of the stage, seen by them alone. the game says when
+      // (AJClient's GenericListGuiManager.openVideoSpot).
+      const spotVideo = (() => {
+        const $ = id => document.getElementById(id);
+        const spot = $("spot");
+        const screen = $("spot-screen");
+        const input = $("spot-url");
+        const said = $("spot-said");
+        const SAVED = "ownVideoUrl";
+        let playing = null;
+
+        const fit = () => {
+          spot.style.setProperty("--s", String(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H)));
+        };
+        const stop = () => {
+          stopVideoElement(playing);
+          screen.replaceChildren();
+          playing = null;
+        };
+        const play = text => {
+          const found = videoEmbedFor(String(text || "").trim());
+          if (!found || found.error) {
+            said.textContent = found ? found.error : "Paste a link starting with https://";
+            return;
+          }
+          stop();
+          said.textContent = "";
+          playing = videoElementFor(found, video => playing === video, () => {
+            said.textContent = VIDEO_DID_NOT_PLAY;
+          }, () => {});
+          screen.append(playing);
+        };
+        const close = () => {
+          stop();
+          spot.hidden = true;
+          said.textContent = "";
+        };
+
+        $("spot-close").addEventListener("click", close);
+        $("spot-stop").addEventListener("click", () => {
+          stop();
+          said.textContent = "";
+        });
+        $("spot-box").addEventListener("submit", event => {
+          event.preventDefault();
+          play(input.value);
+          try {
+            localStorage.setItem(SAVED, input.value.trim());
+          }
+          catch (err) {
+          }
+        });
+        input.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            close();
+          }
+        });
+        window.addEventListener("resize", fit);
+
+        return {
+          close,
+          // `videoId`: a YouTube video to play at once, or none
+          open(videoId) {
+            fit();
+            spot.hidden = false;
+            said.textContent = "";
+            if (videoId) {
+              input.value = "";
+              play(`https://youtu.be/${videoId}`);
+              return;
+            }
+            if (!input.value) {
+              try {
+                input.value = localStorage.getItem(SAVED) || "";
+              }
+              catch (err) {
+              }
+            }
+            input.focus();
+            input.select();
+          },
+        };
+      })();
+
+      // from the game: a video spot clicked ("" or a YouTube id of ours to
+      // play), or "close" (the player left the room). in a theatre, its own
+      // Your Video box.
+      function ajVideoSpot(text) {
+        const wanted = String(text || "");
+        if (wanted === "close") {
+          spotVideo.close();
+          return;
+        }
+        if (/^[A-Za-z0-9_-]{11}$/.test(wanted)) {
+          spotVideo.open(wanted);
+        }
+        else if (theatreScreen !== null) {
+          ownVideo.open();
+        }
+        else {
+          spotVideo.open("");
+        }
+      }
+
+      // the theatre's browser (experimental): a web page on the screen, for
+      // the player alone, when the admin has turned it on (the server marks
+      // this page so: lib/panel.js). the desktop client (1.3.3) draws it in a
+      // webview of its own over this page, which says where, what the game
+      // draws over it, and where to go. nothing of it goes to the server; the page it shows sees nothing
+      // of the game, nor this page of it but its address.
+      const browserPage = (() => {
+        const $ = id => document.getElementById(id);
+        const opener = $("browser-open");
+        const bar = $("browser-bar");
+        const address = $("browser-address");
+        const pills = $("theatre-pills");
+        const START = "https://duckduckgo.com/";
+        const serverAllows = document.documentElement.dataset.theatreBrowser === "on";
+        let allowed = false; // and the client can
+        let open = false;
+        let roomPlaying = false;
+        let where = null; // the last place told, without `shown`
+        let told = "";
+        // an address the client would not show here (the old browser engine
+        // it needs for Flash shows only the sites it lists): the bar offers
+        // to open it in the player's own browser instead. "" when none.
+        let elsewhere = "";
+
+        const tell = message => window.ipc.sendToHost("browser", message);
+        const placeMessage = () => ({...where, shown: open && theatreScreen !== null && !roomPlaying});
+        const sendPlace = () => {
+          if (!open || !where) {
+            return;
+          }
+          const message = placeMessage();
+          const text = JSON.stringify(message);
+          if (text !== told) {
+            told = text;
+            tell({action: "place", where: message});
+          }
+        };
+
+        // what was typed: an address (with or without https://), else a search.
+        const addressFor = text => {
+          const typed = String(text || "").trim();
+          if (/^https?:\/\//i.test(typed)) {
+            return typed;
+          }
+          if (/^[^\s/]+\.[a-z]{2,}(?:[/:?#]\S*)?$/i.test(typed)) {
+            return `https://${typed}`;
+          }
+          return `https://duckduckgo.com/?q=${encodeURIComponent(typed)}`;
+        };
+
+        const show = () => {
+          opener.hidden = !allowed;
+          pills.hidden = open;
+          bar.hidden = !open;
+          address.hidden = elsewhere !== "";
+          $("browser-go").hidden = elsewhere !== "";
+          $("browser-blocked").hidden = elsewhere === "";
+          $("browser-elsewhere").hidden = elsewhere === "";
+        };
+
+        const showElsewhere = (url, sites) => {
+          let host = "";
+          try {
+            host = new URL(url).hostname;
+          }
+          catch (err) {
+            url = "";
+          }
+          elsewhere = url;
+          $("browser-blocked").textContent = elsewhere ? `${host} opens in your own browser, not here.` : "";
+          $("browser-blocked").title = sites.length ? `The theatre shows only ${sites.join(", ")}.` : "";
+          show();
+        };
+
+        const close = () => {
+          if (!open) {
+            return;
+          }
+          open = false;
+          told = "";
+          elsewhere = "";
+          tell({action: "close"});
+          show();
+        };
+
+        opener.addEventListener("click", () => {
+          ownVideo.giveWay();
+          open = true;
+          show();
+          placeTheatre();
+          tell({action: "go", url: START, where: placeMessage()});
+          address.value = "";
+          address.focus();
+        });
+        $("browser-close").addEventListener("click", close);
+        // the client opens http and https addresses in the system browser
+        $("browser-elsewhere").addEventListener("click", () => {
+          if (/^https?:\/\//.test(elsewhere)) {
+            window.ipc.sendToHost("openPage", elsewhere);
+          }
+          showElsewhere("", []);
+        });
+        // back to the address, to go somewhere else
+        $("browser-blocked").addEventListener("click", () => {
+          showElsewhere("", []);
+          address.focus();
+        });
+        $("browser-back").addEventListener("click", () => tell({action: "back"}));
+        $("browser-forward").addEventListener("click", () => tell({action: "forward"}));
+        $("browser-reload").addEventListener("click", () => tell({action: "reload"}));
+        bar.addEventListener("submit", event => {
+          event.preventDefault();
+          if (address.value.trim()) {
+            tell({action: "go", url: addressFor(address.value)});
+            address.blur();
+          }
+        });
+        address.addEventListener("keydown", event => {
+          if (event.key === "Escape") {
+            address.blur();
+          }
+        });
+
+        // the desktop client says it can; an older one never does.
+        window.ipc.on("browserSupported", (event, on) => {
+          allowed = serverAllows && on === true;
+          if (!allowed) {
+            close();
+          }
+          show();
+        });
+        // where the browser is now, for the bar
+        window.ipc.on("browserState", (event, state) => {
+          if (!open || !state || typeof state !== "object") {
+            return;
+          }
+          if (document.activeElement !== address) {
+            address.value = String(state.url || "") === "about:blank" ? "" : String(state.url || "");
+          }
+          $("browser-back").disabled = state.back !== true;
+          $("browser-forward").disabled = state.forward !== true;
+          const blocked = typeof state.blocked === "string" && /^https?:\/\//.test(state.blocked) ? state.blocked : "";
+          if (blocked !== elsewhere) {
+            showElsewhere(blocked, Array.isArray(state.sites) ? state.sites.map(String).slice(0, 10) : []);
+          }
+        });
+
+        return {
+          close,
+          // from placeTheatre: {x, y, w, h, clip} in this page's pixels
+          place(next) {
+            where = next;
+            sendPlace();
+          },
+          roomVideo(on) {
+            roomPlaying = on;
+            sendPlace();
+          },
+          inTheatre(yes) {
+            if (!yes) {
+              close();
+            }
+          },
+        };
+      })();
+
+      // The native theatre sign calls this through ExternalInterface. The
+      // SWF performs its own permission check before showing the controls.
+      function ajOpenTheatreControl() {
+        if (flashContent && typeof flashContent.openTheatreControl === "function") {
+          try {
+            flashContent.openTheatreControl();
+          }
+          catch (err) {
+          }
+        }
+      }
+
+      function reloadSwfOrGetIP(reloadSwf, params) {
+        window.ipc.sendToHost("reloadGame", reloadSwf, params);
+      }
+
+      // moderator remote-control and analytics hooks; nothing to do locally.
+      function mrc() {}
+      function handleGAEvent() {}
+      function handleKey() {}
+
+      function resize() {
+        if (flashContent && flashContent.handleResize) {
+          try {
+            flashContent.handleResize(window.innerWidth, window.innerHeight);
+          }
+          catch (err) {
+          }
+        }
+      }
+
+      window.addEventListener("error", event => {
+        window.ipc.sendToHost("reportError", (event.error && event.error.stack) || event.message);
+      });
+
+      window.addEventListener("beforeunload", event => {
+        if (flashContent && typeof flashContent.unloadAJClient === "function") {
+          try {
+            flashContent.unloadAJClient();
+          }
+          catch (err) {
+          }
+        }
+        delete event["returnValue"];
+      });
+    </script>
+  </body>
+</html>

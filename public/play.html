@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Meadow in the browser</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <link rel="manifest" href="/play/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/logo-square.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Meadow">
+    <style>
+      /* the look of the client's sign-in (its app/index.html) and of the
+         server's other pages: black and white, in the game's own font. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+        --raised: #2b0e4b;
+        --bar-height: 30px;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #sign-in {
+        max-width: 360px;
+        margin: 0 auto;
+        padding: 48px 16px;
+      }
+      #sign-in img { display: block; width: 96px; margin: 0 auto 16px; }
+      h1 { margin: 0 0 4px; font-size: 24px; text-align: center; }
+      p { margin: 0 0 12px; color: var(--muted); font-size: 13px; text-align: center; }
+      label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 13px; }
+      input[type=text], input[type=password] {
+        width: 100%;
+        font: inherit;
+        color: var(--text);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 9px 14px 10px;
+      }
+      input:focus { outline: none; border-color: #9d00ff; }
+      .captcha { margin-top: 12px; }
+      .captcha:empty { margin-top: 0; }
+      .check { display: flex; gap: 8px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 13px; }
+      button {
+        width: 100%;
+        margin-top: 18px;
+        font: inherit;
+        font-weight: 700;
+        color: #fff;
+        background: #9d00ff;
+        border: 0;
+        border-radius: 14px;
+        padding: 10px;
+        cursor: pointer;
+      }
+      button:disabled { opacity: 0.4; cursor: default; }
+      #said { min-height: 20px; margin-top: 14px; }
+      #said:not(:empty)::before { content: "! "; }
+      #game { position: fixed; inset: 0; display: flex; flex-direction: column; }
+      #game ruffle-player { width: 100%; height: 100%; display: block; }
+
+      /* the client's top bar (its app/index.html, #bar): who, the server at
+         a glance, and the buttons. */
+      #bar {
+        flex: 0 0 var(--bar-height);
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 6px 0 12px;
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        border-bottom: 1px solid #1d0833;
+      }
+      #who { color: var(--text); font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+      #glance { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: 12px; overflow: hidden; }
+      #note { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+      #bar button {
+        width: auto;
+        margin: 0;
+        border: 0;
+        border-radius: 14px;
+        padding: 3px 10px 4px;
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--muted);
+        background: none;
+      }
+      #bar button:hover { color: var(--text); background: var(--raised); }
+      #bar button[aria-pressed="true"], #bar button[aria-expanded="true"] { color: #fff; background: #9d00ff; }
+      .badge {
+        padding: 1px 9px 2px;
+        border: 1px dashed var(--line);
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      body.fullscreen #bar, body.fullscreen #stats { display: none; }
+      #stage { position: relative; flex: 1; min-height: 0; background: #12001f; }
+      #stats {
+        position: absolute;
+        z-index: 1;
+        top: 8px;
+        right: 8px;
+        width: 290px;
+        padding: 14px 16px;
+        background: rgba(18, 0, 31, 0.94);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        font-size: 14px;
+      }
+      #stats h2 { margin: 12px 0 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+      #stats h2:first-child { margin-top: 0; }
+      #stats dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; margin: 0; }
+      #stats dt { color: var(--muted); white-space: nowrap; }
+      #stats dd { margin: 0; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+      /* on a phone or tablet (body.touch): the game fills the screen, the
+         bar's buttons are in a menu behind a round button in the corner,
+         and nothing under a finger scrolls, zooms or gets selected. Ruffle
+         turns a tap into a click, and brings up the keyboard itself when
+         the chat bar is tapped. */
+      body.touch { overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+      body.touch #game { touch-action: none; }
+      body.touch #bar { display: none; }
+      /* down the left edge, in the black beside the game where it is wide enough */
+      #touch-controls { position: fixed; z-index: 3; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 8px; }
+      #touch-controls button, #touch-menu button {
+        width: auto;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-weight: 400;
+      }
+      #touch-controls button {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        background: rgba(29, 8, 51, 0.82);
+        border: 1px solid #6a2fa8;
+        box-shadow: 0 2px 10px rgba(18, 0, 31, 0.6);
+      }
+      #touch-controls button[aria-expanded="true"] { background: #9d00ff; border-color: #9d00ff; }
+      #touch-controls svg { width: 22px; height: 22px; }
+      #touch-menu {
+        position: fixed;
+        z-index: 3;
+        top: max(8px, env(safe-area-inset-top));
+        left: calc(max(8px, env(safe-area-inset-left)) + 52px);
+        width: 230px;
+        max-height: calc(100dvh - 16px);
+        overflow-y: auto;
+        padding: 8px;
+        background: rgba(18, 0, 31, 0.96);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(18, 0, 31, 0.7);
+      }
+      #touch-menu .who { padding: 6px 10px 10px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #touch-menu .who b { color: var(--text); }
+      #touch-menu button {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 11px 12px;
+        border-radius: 12px;
+        font-size: 15px;
+        color: var(--text);
+        background: none;
+      }
+      #touch-menu button:active, #touch-menu button[aria-pressed="true"], #touch-menu button[aria-expanded="true"] { background: var(--raised); }
+      body.touch #stats { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); max-height: calc(100dvh - 16px); overflow-y: auto; }
+      #toast {
+        position: fixed;
+        z-index: 3;
+        top: max(14px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: calc(100vw - 140px);
+        padding: 7px 16px 8px;
+        border-radius: 999px;
+        background: rgba(18, 0, 31, 0.9);
+        border: 1px solid var(--line);
+        font-size: 13px;
+        pointer-events: none;
+      }
+      /* the browser version's own chat box (a phone's): kept just above the
+         keyboard, where the visible part of the page ends */
+      #chat-box {
+        position: fixed;
+        z-index: 5;
+        left: 0;
+        right: 0;
+        top: 0;
+        display: flex;
+        gap: 8px;
+        padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+        background: rgba(18, 0, 31, 0.96);
+        border-top: 1px solid var(--line);
+      }
+      #chat-box input { flex: 1; min-width: 0; font-size: 16px; }
+      #chat-box button { width: auto; margin: 0; padding: 0 16px; border-radius: 14px; }
+      #chat-box #chat-close { padding: 0 10px; background: var(--raised); }
+      #chat-box svg { width: 18px; height: 18px; display: block; }
+      #home-screen {
+        position: fixed;
+        z-index: 5;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(340px, calc(100vw - 32px));
+        padding: 18px 20px;
+        text-align: center;
+        background: rgba(18, 0, 31, 0.97);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+      }
+      #home-screen h2 { margin: 0 0 8px; font-size: 24px; }
+      #home-screen p { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+      #home-screen b { color: var(--text); }
+      #home-screen button { width: auto; margin: 0; padding: 9px 26px; border-radius: 999px; }
+      #restart-offer {
+        position: fixed;
+        z-index: 5;
+        left: 50%;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: min(560px, calc(100vw - 24px));
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px 10px 16px;
+        font-size: 13px;
+        background: rgba(18, 0, 31, 0.96);
+        border: 1px solid #9d00ff;
+        border-radius: 16px;
+      }
+      #restart-offer span { flex: 1; color: var(--muted); }
+      #restart-offer button { width: auto; margin: 0; padding: 8px 16px; border-radius: 999px; }
+      #restart-offer .later { color: var(--muted); background: none; }
+      /* held upright, the game is a strip across the middle: asked to turn */
+      #turn {
+        position: fixed;
+        z-index: 4;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px;
+        text-align: center;
+        background: rgba(18, 0, 31, 0.94);
+      }
+      #turn svg { width: 72px; height: 72px; color: #b33cff; animation: turn 2.4s ease-in-out infinite; }
+      @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+      #turn h2 { margin: 0; font-size: 26px; }
+      #turn p { margin: 0; max-width: 280px; }
+      #turn button { width: auto; margin: 4px 0 0; padding: 11px 22px; border-radius: 999px; }
+      #turn .later { color: var(--muted); background: none; text-decoration: underline; text-underline-offset: 3px; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+      /* ... and the client's dots behind the page, with its purple glow at the top */
+      body {
+        background:
+          radial-gradient(circle, rgba(157, 0, 255, 0.22) 1.3px, transparent 1.8px) 0 0 / 22px 22px,
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157, 0, 255, 0.24), transparent 70%),
+          #12001f;
+        background-attachment: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="sign-in">
+      <img src="/logo.png" alt="">
+      <h1>Meadow</h1>
+      <p>Experimental version of Meadow directly in your web browser, running with Ruffle. Expect things to be unstable at the current stage.</p>
+      <label for="username">Username</label>
+      <input id="username" type="text" autocomplete="username" spellcheck="false" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <div id="code-part" hidden>
+        <label for="totp">2FA code</label>
+        <input id="totp" type="text" inputmode="numeric" autocomplete="one-time-code">
+      </div>
+      <label class="check"><input id="remember" type="checkbox"> Remember me in this browser</label>
+      <div class="captcha" id="captcha"></div>
+      <button id="go" type="submit">Play</button>
+      <p id="said" role="status"></p>
+    </form>
+    <div id="game" hidden>
+      <div id="bar">
+        <span id="who"></span>
+        <span id="glance"><span id="glance-badge" class="badge" hidden>Offline</span><span id="glance-text"></span><span id="fps" title="Pictures the game drew in the last second"></span><span id="note" role="status"></span></span>
+        <button id="stats-toggle" type="button" aria-expanded="false" aria-controls="stats">Stats</button>
+        <button id="mute" type="button" aria-pressed="false" title="F7">Mute</button>
+        <button id="hud" type="button" aria-pressed="false">HUD</button>
+        <button id="screenshot" type="button" title="F10">Screenshot</button>
+        <button id="room-picture" type="button" title="The whole room, without the HUD">Room picture</button>
+        <button id="reload" type="button">Reload</button>
+        <button id="account" type="button">Manage Account</button>
+        <button id="fullscreen" type="button" title="F11">Fullscreen</button>
+        <button id="log-out" type="button">Log out</button>
+      </div>
+      <div id="touch-controls" hidden>
+        <button id="touch-menu-toggle" type="button" aria-expanded="false" aria-controls="touch-menu" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <button id="touch-chat" type="button" aria-label="Chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5.5h16v10H10l-4.5 3.5V15.5H4z"/></svg>
+        </button>
+        <button id="touch-fullscreen" type="button" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        </button>
+      </div>
+      <div id="toast" role="status" hidden></div>
+      <div id="restart-offer" role="alert" hidden>
+        <span>The game is using a lot of memory, and the browser may close it soon. A restart frees it.</span>
+        <button id="restart-now" type="button">Restart</button>
+        <button id="restart-later" class="later" type="button">Later</button>
+      </div>
+      <form id="chat-box" hidden autocomplete="off">
+        <input id="chat-text" type="text" maxlength="200" enterkeyhint="send" autocapitalize="sentences" placeholder="Say something" aria-label="Chat">
+        <button id="chat-send" type="submit">Send</button>
+        <button id="chat-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </form>
+      <div id="home-screen" hidden>
+        <h2>Play full screen</h2>
+        <p>Safari on an iPhone keeps its bars around a page. To play without them, tap <b>Share</b>, then <b>Add to Home Screen</b>, and open Meadow from your Home Screen.</p>
+        <button id="home-screen-ok" type="button">OK</button>
+      </div>
+      <div id="touch-menu" hidden><div class="who"></div></div>
+      <div id="turn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+        <h2>Turn your phone sideways</h2>
+        <p>The game is wide: it fills the screen when your phone is on its side.</p>
+        <button id="turn-fullscreen" type="button">Play in fullscreen</button>
+        <button id="turn-later" class="later" type="button">Play upright anyway</button>
+      </div>
+      <div id="stage">
+        <div id="stats" hidden>
+          <h2>Server</h2>
+          <dl>
+            <dt>Answer time</dt><dd id="stat-ping">–</dd>
+            <dt>Playing now</dt><dd id="stat-online">–</dd>
+            <dt>Uptime</dt><dd id="stat-uptime">–</dd>
+          </dl>
+          <h2>This session</h2>
+          <dl>
+            <dt>Played for</dt><dd id="stat-session">–</dd>
+            <dt>Painted</dt><dd id="stat-painted">–</dd>
+            <dt>Game engine memory</dt><dd id="stat-engine">–</dd>
+            <dt>Page memory</dt><dd id="stat-memory">–</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <script src="/captcha.js"></script>
+    <script>
+      "use strict";
+
+      // the browser version: signs in as the client's app/index.html does,
+      // then runs the game's SWF in Ruffle with the start values the client
+      // would hand it. Ruffle opens no TCP sockets, so the game's socket to
+      // 127.0.0.1 goes over a WebSocket to /play/socket (lib/websocket.js).
+
+      const $ = id => document.getElementById(id);
+      const KEEP = "burrow-play";
+
+      // the game engine's memory (Ruffle's WebAssembly memory), kept hold of
+      // as Ruffle starts: it only ever grows, and the game's rooms grow it,
+      // which on a phone ends with the browser putting the page out
+      let engineMemory = null;
+      if (typeof WebAssembly === "object") {
+        for (const name of ["instantiate", "instantiateStreaming"]) {
+          const original = WebAssembly[name];
+          if (typeof original === "function") {
+            WebAssembly[name] = (...args) => original.apply(WebAssembly, args).then(result => {
+              for (const value of Object.values(((result && result.instance) || result || {}).exports || {})) {
+                if (value instanceof WebAssembly.Memory) {
+                  engineMemory = value;
+                }
+              }
+              return result;
+            });
+          }
+        }
+      }
+      const engineMB = () => (engineMemory ? Math.round(engineMemory.buffer.byteLength / 1048576) : 0);
+
+      const stored = () => {
+        try {
+          return JSON.parse(localStorage.getItem(KEEP)) || {};
+        }
+        catch (err) {
+          return {};
+        }
+      };
+      const store = values => {
+        try {
+          localStorage.setItem(KEEP, JSON.stringify({...stored(), ...values}));
+        }
+        catch (err) {
+          // a private window: nothing is kept.
+        }
+      };
+
+      // what the server is told about this "computer" (its lib/devices.js):
+      // a browser can read nothing of the machine, so only an id of its
+      // own, kept in this browser, hashed as the client hashes its own.
+      const sha256 = async text => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)))]
+        .map(byte => byte.toString(16).padStart(2, "0")).join("");
+      // ---- this browser, for the server's device bans (lib/devices.js) ----
+      // no hardware can be read from a page. what is sent instead: an id of
+      // this browser's own, kept in four places so that clearing one keeps
+      // it, and a fingerprint of the browser in three parts. nothing goes as
+      // it is: each is SHA-256 here, and the server keys that again with a
+      // secret of its own before keeping it, so what it keeps cannot be
+      // matched with what any other service logs.
+      const ID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+      const ID_PLACE = "meadow-browser-id";
+      const ID_COOKIE = "meadow_bid";
+      const keep = action => new Promise(resolve => {
+        try {
+          const open = indexedDB.open("meadow", 1);
+          open.onupgradeneeded = () => open.result.createObjectStore("keep");
+          open.onerror = () => resolve(null);
+          open.onsuccess = () => {
+            try {
+              const request = action(open.result.transaction("keep", "readwrite").objectStore("keep"));
+              request.onsuccess = () => resolve(request.result || null);
+              request.onerror = () => resolve(null);
+            }
+            catch (err) {
+              resolve(null);
+            }
+          };
+        }
+        catch (err) {
+          resolve(null);
+        }
+      });
+      const cached = async id => {
+        try {
+          const cache = await caches.open(ID_PLACE);
+          if (id) {
+            await cache.put("/play/browser-id", new Response(id));
+            return id;
+          }
+          const kept = await cache.match("/play/browser-id");
+          return kept ? kept.text() : null;
+        }
+        catch (err) {
+          return null;
+        }
+      };
+      const browserId = async () => {
+        const cookie = (document.cookie.match(new RegExp(`(?:^|; )${ID_COOKIE}=([0-9a-f-]{36})`)) || [])[1];
+        const found = [stored().browserId || stored().install, cookie, await keep(store => store.get("id")), await cached()]
+          .filter(id => typeof id === "string" && ID_SHAPE.test(id));
+        // the one most of the places have
+        const votes = new Map();
+        for (const id of found) {
+          votes.set(id, (votes.get(id) || 0) + 1);
+        }
+        const id = [...votes].sort((one, other) => other[1] - one[1]).map(([kept]) => kept)[0] || crypto.randomUUID();
+        store({browserId: id});
+        document.cookie = `${ID_COOKIE}=${id}; max-age=${10 * 365 * 86400}; path=/play; SameSite=Strict${location.protocol === "https:" ? "; Secure" : ""}`;
+        await keep(place => place.put(id, "id"));
+        await cached(id);
+        return id;
+      };
+      // the fingerprint: the graphics card the browser names, how it draws
+      // a test picture, and its screen, processors, memory, time zone and
+      // languages. "" where the browser will not say.
+      const fingerprint = () => {
+        const parts = {gpu: "", canvas: "", env: ""};
+        try {
+          const gl = document.createElement("canvas").getContext("webgl");
+          const named = gl && gl.getExtension("WEBGL_debug_renderer_info");
+          if (gl) {
+            parts.gpu = [gl.getParameter(named ? named.UNMASKED_VENDOR_WEBGL : gl.VENDOR), gl.getParameter(named ? named.UNMASKED_RENDERER_WEBGL : gl.RENDERER),
+              gl.getParameter(gl.MAX_TEXTURE_SIZE), (gl.getSupportedExtensions() || []).length].join("|");
+          }
+        }
+        catch (err) {
+          // no WebGL
+        }
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 280;
+          canvas.height = 60;
+          const draw = canvas.getContext("2d");
+          const shade = draw.createLinearGradient(0, 0, 280, 0);
+          shade.addColorStop(0, "#9d00ff");
+          shade.addColorStop(1, "#ffb000");
+          draw.fillStyle = shade;
+          draw.fillRect(0, 0, 280, 60);
+          draw.textBaseline = "top";
+          draw.font = "17px Arial, sans-serif";
+          draw.fillStyle = "rgba(255, 255, 255, 0.8)";
+          draw.fillText("Meadow, Jamaa \u273f \ud83d\udc3e 1.0", 6, 8);
+          draw.font = "italic 13px Georgia, serif";
+          draw.fillStyle = "#12001f";
+          draw.fillText("The quick brown fox", 40, 34);
+          draw.beginPath();
+          draw.arc(250, 30, 18, 0, Math.PI * 1.7);
+          draw.stroke();
+          parts.canvas = canvas.toDataURL();
+        }
+        catch (err) {
+          // no canvas
+        }
+        parts.env = [Math.max(screen.width, screen.height), Math.min(screen.width, screen.height), screen.colorDepth,
+          navigator.hardwareConcurrency, navigator.deviceMemory, Intl.DateTimeFormat().resolvedOptions().timeZone,
+          (navigator.languages || []).join(","), navigator.platform, navigator.maxTouchPoints].join("|");
+        return parts;
+      };
+      const device = async () => {
+        if (!crypto.subtle) {
+          return null; // not https: nothing can be hashed here
+        }
+        const ids = {browser: await sha256(`meadow-browser:browser:${await browserId()}`)};
+        for (const [kind, value] of Object.entries(fingerprint())) {
+          if (value) {
+            ids[kind] = await sha256(`meadow-browser:${kind}:${value}`);
+          }
+        }
+        return {v: 1, ids, notes: ["browser"]};
+      };
+
+      const getJson = async (url, options) => {
+        const response = await fetch(url, options);
+        let body = {};
+        try {
+          body = await response.json();
+        }
+        catch (err) {
+          // no JSON: the status says enough.
+        }
+        return {status: response.status, body};
+      };
+
+      const say = text => $("said").textContent = text;
+
+      // the captcha (public/captcha.js) on the sign-in form, shown as the
+      // page loads; nothing when the server asks for none.
+      const check = window.captcha.mount($("captcha"), "login");
+      let captchaPass = null;
+
+      const signIn = async () => {
+        const username = $("username").value.trim();
+        const password = $("password").value;
+        const saved = stored().saved;
+        const useSaved = !password && saved && saved.username === username.toLowerCase();
+        if (!username || (!password && !useSaved)) {
+          throw new Error("Enter username and password.");
+        }
+        const flashVars = (await getJson("/flashvars")).body;
+        if (!flashVars.clientURL) {
+          throw new Error("This server does not answer as a Meadow server.");
+        }
+        // the captcha, for a password (a saved sign-in is not asked); the
+        // pass a 2FA question comes with saves a second one for the code.
+        const answer = useSaved || captchaPass ? undefined : await check.answer();
+        if (answer === "") {
+          throw new Error(window.captcha.FAILED);
+        }
+        const request = useSaved ? {username, refresh_token: saved.token} : {
+          username, password, domain: "flash", device_token: stored().deviceToken,
+          totp: $("code-part").hidden ? undefined : $("totp").value.trim(),
+          captcha: answer, captcha_pass: captchaPass || undefined,
+        };
+        const auth = await getJson("/authenticate", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({...request, device: await device()}),
+        });
+        const error = auth.body.error;
+        if (answer !== undefined) {
+          check.reset(); // an answer is good once
+        }
+        captchaPass = auth.body.captcha_pass || null;
+        if (/^captcha_/.test(error || "")) {
+          throw new Error({captcha_required: "Complete the captcha.", captcha_failed: "Captcha failed. Try again.",
+            captcha_unavailable: "Captcha unavailable. Try again later."}[error] || "Captcha failed. Try again.");
+        }
+        if (auth.status === 401 && error === "totp_required") {
+          $("code-part").hidden = false;
+          $("totp").focus();
+          throw new Error("Enter your 2FA code.");
+        }
+        if (auth.status === 401 && error === "totp_wrong") {
+          throw new Error("Wrong code.");
+        }
+        if (auth.status === 401 && ["account_banned", "address_banned", "device_banned"].includes(error)) {
+          throw new Error(`Banned.${auth.body.ban_reason ? ` ${auth.body.ban_reason}` : ""}`);
+        }
+        if (auth.status === 401 && error === "name_rejected") {
+          throw new Error("This username has to be changed. Sign in with the Meadow client to choose another.");
+        }
+        if (auth.status === 401 && error === "account_locked") {
+          throw new Error("This account is locked.");
+        }
+        if (auth.status === 401 && useSaved) {
+          store({saved: null});
+          throw new Error("Saved sign-in expired. Enter your password.");
+        }
+        if (auth.status === 401) {
+          throw new Error("Wrong username or password.");
+        }
+        if (auth.status === 429) {
+          throw new Error("Too many attempts. Try later.");
+        }
+        if (auth.status !== 200) {
+          throw new Error(`The server refused the sign-in (${auth.status}).`);
+        }
+        const player = await getJson("/player", {headers: {Authorization: `Bearer ${auth.body.auth_token}`}});
+        if (player.status !== 200) {
+          throw new Error(`The server refused the sign-in (${player.status}).`);
+        }
+        if (auth.body.device_token) {
+          store({deviceToken: auth.body.device_token});
+        }
+        store({saved: $("remember").checked ? {username: player.body.screen_name.toLowerCase(), token: auth.body.refresh_token} : null});
+
+        delete flashVars.loginChoices;
+        delete flashVars.membershipChoice;
+        Object.assign(flashVars, {
+          smartfoxServer: player.body.game_server || flashVars.smartfoxServer,
+          blueboxServer: player.body.game_server || flashVars.blueboxServer,
+          // "electron" keeps the game on the paths the desktop client takes:
+          // printing through ajPrint, errors to the console, not alert().
+          clientPlatform: "electron",
+          clientPlatformVersion: "browser",
+          clientOS: navigator.platform || "browser",
+          auth_token: auth.body.auth_token,
+          df: "private-client",
+          locale: "en",
+          username: player.body.screen_name,
+          webRefPath: "game/play",
+        });
+        return flashVars;
+      };
+
+      const loadRuffle = () => new Promise((resolve, reject) => {
+        if (window.RufflePlayer && window.RufflePlayer.newest) {
+          resolve(window.RufflePlayer.newest());
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "/play/ruffle/ruffle.js";
+        script.onload = () => window.RufflePlayer && window.RufflePlayer.newest()
+          ? resolve(window.RufflePlayer.newest())
+          : reject(new Error("Ruffle did not start."));
+        script.onerror = () => reject(new Error("Ruffle is not on this server: run tools/build-ruffle.sh."));
+        document.head.appendChild(script);
+      });
+
+      let player = null;
+      // the game being played: its start values (a reload starts it again
+      // with them, as the client's does) and since when.
+      let session = null;
+
+      const play = async flashVars => {
+        const ruffle = await loadRuffle();
+        // the game's socket goes to its host and port as the start values
+        // say (the patched SWF: always 127.0.0.1); every name it might use
+        // goes to this server's WebSocket.
+        const socketUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/play/socket`;
+        const port = Number(flashVars.smartfoxPort);
+        const socketProxy = [...new Set(["127.0.0.1", "localhost", flashVars.smartfoxServer])]
+          .map(host => ({host, port, proxyUrl: socketUrl}));
+        // the game's own files come from this server under its own name,
+        // as the desktop client's page has them.
+        const client = new URL(flashVars.clientURL, location.href);
+        const muted = session && session.flashVars === flashVars && isMuted();
+        stopGame();
+        session = {flashVars, since: session && session.flashVars === flashVars ? session.since : Date.now()};
+        player = ruffle.createPlayer();
+        $("sign-in").hidden = true;
+        $("game").hidden = false;
+        $("who").textContent = `${flashVars.username} · ${location.host}`;
+        showTurn();
+        showHud(true);
+        $("stage").appendChild(player);
+        // what Ruffle logs while it starts, for saying why it did not: its
+        // own message keeps nothing of what the browser said
+        const logged = [];
+        const logError = console.error;
+        console.error = (...args) => {
+          logged.push(args.map(String).join(" ").replace(/%c/g, "").replace(/\s+/g, " ").trim());
+          logError.apply(console, args);
+        };
+        try {
+          await startRuffle(client, flashVars, socketProxy);
+        }
+        catch (err) {
+          throw new Error(ruffleProblem(err, logged));
+        }
+        finally {
+          console.error = logError;
+        }
+        setMuted(muted);
+        checkStatus();
+      };
+
+      // why Ruffle could not start, in words a player can act on
+      const ruffleProblem = (err, logged) => {
+        const message = String(err && err.message || err);
+        if (!/WASM/i.test(message)) {
+          return message;
+        }
+        if (typeof WebAssembly !== "object") {
+          return "This browser has WebAssembly turned off, which the game needs. On an iPhone or iPad, Lockdown Mode does that: "
+            + "in Safari, tap aA → Website Settings and turn Lockdown Mode off for this site.";
+        }
+        const said = logged.filter(line => /wasm|webassembly|memory|compile|instantiate|error/i.test(line)).slice(-2).join(" / ").slice(0, 400);
+        return `The game engine (Ruffle) could not start in this browser.${said ? ` It said: ${said}` : ""}`;
+      };
+
+      const startRuffle = async (client, flashVars, socketProxy) => {
+        await player.ruffle().load({
+          url: location.origin + client.pathname + client.search,
+          parameters: flashVars,
+          // what the game loads by a relative address goes by the desktop
+          // client's game page, /gameClient/game/index.html: the asset
+          // SWFs import their fonts from ../sharedFonts.swf.
+          base: `${location.origin}/gameClient/game/`,
+          socketProxy,
+          allowScriptAccess: true,
+          allowNetworking: "all",
+          autoplay: "on",
+          unmuteOverlay: "hidden",
+          splashScreen: false,
+          letterbox: "on",
+          scale: "showAll",
+          quality: lightGraphics() ? "medium" : "high",
+          upgradeToHttps: false,
+          warnOnUnsupportedContent: false,
+          showSwfDownload: false,
+          contextMenu: "rightClickOnly",
+          openUrlMode: "allow",
+          // the game reads all its lists at start, in one long go.
+          maxExecutionDuration: 60,
+          // /play?log=info (or debug, trace) shows the game's own traces in the console
+          logLevel: ["error", "warn", "info", "debug", "trace"].find(level => level === new URLSearchParams(location.search).get("log")) || "warn",
+          publicPath: "/play/ruffle/",
+          // the game's own fonts, under the names it asks for (lib/rufflefonts.js)
+          fontSources: ["/play/fonts.swf"],
+          polyfills: false,
+        });
+      };
+
+      $("sign-in").addEventListener("submit", async event => {
+        event.preventDefault();
+        $("go").disabled = true;
+        say("");
+        try {
+          await play(await signIn());
+        }
+        catch (err) {
+          closeGame(err.message);
+        }
+        finally {
+          $("go").disabled = false;
+        }
+      });
+
+      const saved = stored().saved;
+      if (saved) {
+        $("username").value = saved.username;
+        $("remember").checked = true;
+      }
+
+      // ExternalInterface functions the SWF calls, as the desktop client's
+      // game page (game.html) has them; what only the desktop client does
+      // (Discord, the theatre's videos) does nothing here.
+      const callGame = (name, ...args) => {
+        try {
+          if (player && typeof player[name] === "function") {
+            return player[name](...args);
+          }
+        }
+        catch (err) {
+          // the game is not up yet.
+        }
+        return undefined;
+      };
+      const resize = () => callGame("handleResize", $("stage").clientWidth, $("stage").clientHeight);
+      window.addEventListener("resize", resize);
+
+      window.complete_signup = () => {};
+      window.aj_initialized = () => {
+        // a game just started has its HUD, whatever the last one was told.
+        showHud(true);
+        for (let i = 0; i < 20; i++) {
+          setTimeout(resize, i * 500);
+        }
+      };
+      // pictures drawn in the last second, told by the patched SWF once a second
+      window.ajFps = count => {
+        session && (session.fps = Number(count) || 0);
+        $("fps").textContent = session ? `· ${session.fps} fps` : "";
+      };
+      // the colour panel's dropper (ColorTable in the patched SWF): a colour
+      // from anywhere on the screen, by the browser's own picker where it has
+      // one (Chrome, Edge). false: there is none, and the game picks from
+      // itself. the answer comes back by ajScreenColour: "#RRGGBB", "" when
+      // the player let it be, "!" when the browser would not after all.
+      window.ajPickScreenColour = () => {
+        if (typeof window.EyeDropper !== "function") {
+          return false;
+        }
+        new EyeDropper().open()
+          .then(picked => callGame("ajScreenColour", /^#[0-9a-f]{6}$/i.test(picked.sRGBHex) ? picked.sRGBHex : "!"))
+          .catch(err => callGame("ajScreenColour", err && err.name === "AbortError" ? "" : "!"));
+        return true;
+      };
+      window.ajPresence = () => {};
+      window.ajTheatreScreen = () => {};
+      window.ajTheatreVideo = () => {};
+      window.ajVideoSpot = () => {};
+      window.ajOpenTheatreControl = () => callGame("openTheatreControl");
+      window.mrc = () => {};
+      window.handleGAEvent = () => {};
+      window.handleKey = () => {};
+      // https anywhere, or this server's own pages
+      window.ajOpenPage = url => {
+        const link = String(url);
+        if (/^https:\/\//.test(link) || link.startsWith(`${location.origin}/`)) {
+          window.open(link, "_blank", "noopener");
+        }
+      };
+      // a picture from a print kit: a JPEG, as base64, printed from a window of its own
+      window.ajPrint = picture => {
+        const image = picture && typeof picture.image === "string" ? picture.image : "";
+        if (!/^[A-Za-z0-9+/=\r\n]+$/.test(image)) {
+          return;
+        }
+        const page = window.open("", "_blank");
+        if (!page) {
+          return;
+        }
+        const landscape = Number(picture.width) > Number(picture.height);
+        page.document.write("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Print</title><style>"
+          + `@page { margin: 0; size: ${landscape ? "landscape" : "portrait"}; } html, body { margin: 0; height: 100%; }`
+          + " img { display: block; width: 100%; height: 100%; object-fit: contain; }</style></head><body>"
+          + `<img src="data:image/jpeg;base64,${image.replace(/\s/g, "")}" onload="print()"></body></html>`);
+        page.document.close();
+      };
+      // the game asks for a restart (a client mismatch, a world hop), or
+      // says it is done (it may have been put out: a ban), or asks only for
+      // this computer's address, which nobody here knows.
+      window.reloadSwfOrGetIP = reloadSwf => {
+        if (reloadSwf && session) {
+          play(session.flashVars).catch(err => closeGame(err.message));
+        }
+        else if (reloadSwf === false) {
+          checkBan();
+        }
+        return "";
+      };
+
+      // ---- the top bar, as the client's (its app/index.html) ----
+
+      const STATUS_EVERY_MS = 15000;
+      const STATS_EVERY_MS = 2000;
+      let lastStatus = null;
+
+      const duration = seconds => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor(seconds / 60) % 60;
+        const days = Math.floor(hours / 24);
+        return days > 0 ? `${days} d ${hours % 24} h` : `${hours}:${String(minutes).padStart(2, "0")}:${String(Math.floor(seconds) % 60).padStart(2, "0")}`;
+      };
+
+      let noteTimer = null;
+      const note = text => {
+        clearTimeout(noteTimer);
+        $("note").textContent = text ? `· ${text}` : "";
+        // on a phone the bar is away: the note shows at the top of the game
+        $("toast").textContent = text || "";
+        $("toast").hidden = !text || !document.body.classList.contains("touch");
+        noteTimer = setTimeout(() => {
+          $("note").textContent = "";
+          $("toast").hidden = true;
+        }, 6000);
+      };
+
+      // the game torn down, the page left as it is
+      const stopGame = () => {
+        if (player) {
+          callGame("unloadAJClient");
+          player.remove();
+          player = null;
+        }
+        $("fps").textContent = "";
+      };
+
+      const closeGame = message => {
+        stopGame();
+        session = null;
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+        $("game").hidden = true;
+        $("turn").hidden = true;
+        $("sign-in").hidden = false;
+        $("password").value = "";
+        say(message || "");
+      };
+
+      const showStats = () => {
+        if ($("stats").hidden || !session) {
+          return;
+        }
+        const status = lastStatus || {};
+        $("stat-ping").textContent = status.there ? `${status.ms} ms` : "no answer";
+        $("stat-online").textContent = status.ok ? status.online : "–";
+        $("stat-uptime").textContent = status.ok ? duration(status.uptimeSeconds + (Date.now() - status.at) / 1000) : "–";
+        $("stat-session").textContent = duration((Date.now() - session.since) / 1000);
+        $("stat-painted").textContent = session.fps === undefined ? "–" : `${session.fps} / s`;
+        // only Chromium tells a page how much memory its scripts hold
+        const memory = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null;
+        $("stat-memory").textContent = memory === null ? "–" : `${memory} MB`;
+        $("stat-engine").textContent = engineMemory ? `${engineMB()} MB` : "–";
+      };
+
+      // the server's state, and the time it takes to answer: the second of
+      // two asks, as the first may have had to make the connection.
+      const askStatus = async () => {
+        const started = performance.now();
+        const answer = await getJson("/api/status", {cache: "no-store"});
+        return {...answer, ms: Math.round(performance.now() - started)};
+      };
+      const checkStatus = async () => {
+        if (!session) {
+          return;
+        }
+        let answer;
+        try {
+          await askStatus();
+          answer = await askStatus();
+        }
+        catch (err) {
+          answer = {status: 0, body: {}, ms: 0};
+        }
+        lastStatus = {...answer.body, ok: answer.status === 200, there: answer.status !== 0, ms: answer.ms, at: Date.now()};
+        const {ok, there, online, ms} = lastStatus;
+        $("glance-badge").hidden = there;
+        $("glance-text").textContent = ok ? `${online === 1 ? "1 playing" : `${online} playing`} · ${ms} ms` : "";
+        showStats();
+        if (ok) {
+          checkBan();
+        }
+      };
+
+      // banned while playing: the server is asked, with this game's token,
+      // and the game makes way for what it says.
+      const banTitle = seconds => (seconds < 0 ? "Banned for good"
+        : seconds >= 86400 ? `Banned (${Math.floor(seconds / 86400)}d remaining)`
+          : seconds >= 3600 ? `Banned (${Math.ceil(seconds / 3600)}h remaining)`
+            : `Banned (${Math.max(1, Math.ceil(seconds / 60))}m remaining)`);
+      const checkBan = async () => {
+        const asked = session;
+        if (!asked) {
+          return;
+        }
+        const answer = await getJson("/api/ban", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({token: asked.flashVars.auth_token}),
+        }).catch(() => null);
+        if (answer && answer.status === 200 && answer.body.banned && session === asked) {
+          closeGame(`${banTitle(Number(answer.body.banned_seconds))}.${answer.body.ban_reason ? ` ${answer.body.ban_reason}` : ""}`);
+        }
+      };
+
+      const isMuted = () => $("mute").getAttribute("aria-pressed") === "true";
+      const setMuted = muted => {
+        try {
+          if (player) {
+            player.ruffle().volume = muted ? 0 : 1;
+          }
+        }
+        catch (err) {
+          // not loaded yet: the next load sets it
+        }
+        $("mute").setAttribute("aria-pressed", String(muted));
+        $("mute").textContent = muted ? "Muted" : "Mute";
+      };
+
+      // the game's HUD shown or hidden (AJClient.setHudShown in the patched SWF)
+      const showHud = shown => {
+        $("hud").setAttribute("aria-pressed", String(!shown));
+        $("hud").textContent = shown ? "HUD" : "HUD off";
+      };
+      const setHudHidden = hidden => {
+        showHud(!hidden);
+        callGame("ajHud", !hidden);
+      };
+
+      const toggleStats = () => {
+        const open = $("stats").hidden;
+        $("stats").hidden = !open;
+        $("stats-toggle").setAttribute("aria-expanded", String(open));
+        showStats();
+      };
+
+      // what Ruffle drew last, as a PNG to save. its canvas keeps no copy
+      // once a picture is on screen, so it is read in the frame it is drawn.
+      const takeScreenshot = () => {
+        const canvas = player && player.shadowRoot && player.shadowRoot.querySelector("canvas");
+        if (!canvas || !canvas.width) {
+          return;
+        }
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const copy = document.createElement("canvas");
+          copy.width = canvas.width;
+          copy.height = canvas.height;
+          copy.getContext("2d").drawImage(canvas, 0, 0);
+          copy.toBlob(blob => {
+            if (!blob) {
+              note("Screenshot failed.");
+              return;
+            }
+            const stamp = new Date();
+            const pad = n => String(n).padStart(2, "0");
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Meadow ${stamp.getFullYear()}-${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())} ${pad(stamp.getHours())}.${pad(stamp.getMinutes())}.${pad(stamp.getSeconds())}.png`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+            note("Screenshot saved.");
+          }, "image/png");
+        }));
+      };
+
+      // the whole room, items and animals, without the HUD: drawn by the
+      // patched SWF (AJClient.takeRoomPicture), which calls ajRoomPicture
+      // back with a PNG in base64, or {error}
+      let roomPictureAsked = false;
+      const takeRoomPicture = () => {
+        if (roomPictureAsked) {
+          return;
+        }
+        roomPictureAsked = true;
+        note("Taking a picture of the room…");
+        callGame("ajRoomShot");
+        setTimeout(() => roomPictureAsked = false, 30000);
+      };
+      window.ajRoomPicture = picture => {
+        roomPictureAsked = false;
+        const image = picture && typeof picture.image === "string" ? picture.image : "";
+        if (!image || !/^[A-Za-z0-9+/=\r\n]+$/.test(image)) {
+          note(picture && picture.error ? String(picture.error) : "Room picture failed.");
+          return;
+        }
+        const bytes = Uint8Array.from(atob(image.replace(/\s/g, "")), c => c.charCodeAt(0));
+        const stamp = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([bytes], {type: "image/png"}));
+        link.download = `Meadow room ${stamp.getFullYear()}-${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())} ${pad(stamp.getHours())}.${pad(stamp.getMinutes())}.${pad(stamp.getSeconds())}.png`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+        note(`Room picture saved (${picture.width} × ${picture.height}).`);
+      };
+
+      const toggleFullscreen = () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+        else {
+          document.documentElement.requestFullscreen()
+            // on a phone, the game turned sideways (where the browser lets a page do that)
+            .then(() => touch && screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape").catch(() => {}))
+            .catch(() => note("The browser did not allow fullscreen."));
+        }
+      };
+      document.addEventListener("fullscreenchange", () => {
+        document.body.classList.toggle("fullscreen", Boolean(document.fullscreenElement));
+        resize();
+      });
+
+      $("log-out").addEventListener("click", () => closeGame());
+      $("reload").addEventListener("click", () => {
+        if (session) {
+          play(session.flashVars).catch(err => closeGame(err.message));
+        }
+      });
+      $("mute").addEventListener("click", () => setMuted(!isMuted()));
+      $("hud").addEventListener("click", () => setHudHidden($("hud").getAttribute("aria-pressed") !== "true"));
+      $("screenshot").addEventListener("click", takeScreenshot);
+      $("room-picture").addEventListener("click", takeRoomPicture);
+      $("stats-toggle").addEventListener("click", toggleStats);
+      $("account").addEventListener("click", () => window.open("/account", "_blank", "noopener"));
+      $("fullscreen").addEventListener("click", toggleFullscreen);
+      // ---- phones and tablets ----
+
+      // a screen worked with fingers, and no mouse to point with
+      const touch = matchMedia("(pointer: coarse)").matches && !matchMedia("(pointer: fine)").matches;
+      const upright = matchMedia("(orientation: portrait)");
+      let turnLater = false;
+      // a phone draws the game at its screen's density (an iPhone's: three
+      // pixels a point), nine times the pixels a computer's screen has, and
+      // the browser puts the page out when that runs it out of memory. on a
+      // touch screen Ruffle is told of at most PHONE_RATIO, and draws with
+      // less smoothing of edges, unless "Sharp graphics" is on in the menu.
+      const PHONE_RATIO = 1.5;
+      const lightGraphics = () => touch && !stored().sharpGraphics;
+      const ratio = Object.getOwnPropertyDescriptor(window, "devicePixelRatio") || Object.getOwnPropertyDescriptor(Window.prototype, "devicePixelRatio");
+      if (touch && ratio && ratio.get && ratio.configurable !== false) {
+        Object.defineProperty(window, "devicePixelRatio", {configurable: true,
+          get: () => (lightGraphics() ? Math.min(ratio.get.call(window), PHONE_RATIO) : ratio.get.call(window))});
+      }
+      const sharpButton = document.createElement("button");
+      sharpButton.type = "button";
+      const showSharp = () => {
+        sharpButton.setAttribute("aria-pressed", String(!lightGraphics()));
+        sharpButton.textContent = lightGraphics() ? "Sharp graphics: off" : "Sharp graphics: on";
+      };
+      sharpButton.addEventListener("click", () => {
+        store({sharpGraphics: lightGraphics()});
+        showSharp();
+        // the smoothing is set as the game loads: it is loaded again
+        if (session) {
+          play(session.flashVars).catch(err => closeGame(err.message));
+        }
+      });
+
+      // on a phone, before the engine's memory gets to where the browser
+      // puts the page out (an iPhone's: around a gigabyte), a restart is
+      // offered; "Later" asks again RESTART_AGAIN_MB on
+      const RESTART_AT_MB = 850;
+      const RESTART_AGAIN_MB = 100;
+      let restartAskAt = RESTART_AT_MB;
+      setInterval(() => {
+        if (touch && session && engineMB() >= restartAskAt && $("restart-offer").hidden) {
+          $("restart-offer").hidden = false;
+        }
+      }, 10000);
+      // Ruffle keeps one engine for the page, and its memory with it: only
+      // the page loaded again gives that back. the game's start values (its
+      // sign-in, as the Reload button reuses it) wait in this tab's session
+      // storage, gone when the tab closes, and the game starts from them.
+      const RESTART_KEY = "meadow-restart";
+      $("restart-now").addEventListener("click", () => {
+        if (!session) {
+          return;
+        }
+        try {
+          sessionStorage.setItem(RESTART_KEY, JSON.stringify(session.flashVars));
+          callGame("unloadAJClient");
+          location.reload();
+        }
+        catch (err) {
+          $("restart-offer").hidden = true;
+          play(session.flashVars).catch(failed => closeGame(failed.message));
+        }
+      });
+      $("restart-later").addEventListener("click", () => {
+        $("restart-offer").hidden = true;
+        restartAskAt = engineMB() + RESTART_AGAIN_MB;
+      });
+
+      // the bar's buttons, moved into the menu, keep what they do
+      if (touch) {
+        document.body.classList.add("touch");
+        $("touch-controls").hidden = false;
+        for (const id of ["stats-toggle", "mute", "hud", "screenshot", "room-picture", "reload", "account", "fullscreen", "log-out"]) {
+          $("touch-menu").appendChild($(id));
+        }
+        $("touch-menu").insertBefore(sharpButton, $("reload"));
+        showSharp();
+        // a phone's browser that has no fullscreen for pages (an iPhone's):
+        // its way is the Home Screen, which the fullscreen buttons tell of.
+        // opened from there, the game has the screen already.
+        if (!document.fullscreenEnabled) {
+          const fromHomeScreen = navigator.standalone === true || matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches;
+          for (const id of ["fullscreen", "touch-fullscreen", "turn-fullscreen"]) {
+            $(id).hidden = fromHomeScreen;
+          }
+        }
+      }
+      const showTurn = () => {
+        $("turn").hidden = !(touch && upright.matches && !turnLater && session);
+      };
+      upright.addEventListener("change", showTurn);
+      const setMenuOpen = open => {
+        $("touch-menu").hidden = !open;
+        $("touch-menu-toggle").setAttribute("aria-expanded", String(open));
+        $("touch-menu").querySelector(".who").innerHTML = "";
+        if (open) {
+          const who = document.createElement("b");
+          who.textContent = session ? session.flashVars.username : "";
+          $("touch-menu").querySelector(".who").append(who, ` · ${$("glance-text").textContent || location.host}`);
+        }
+      };
+      $("touch-menu-toggle").addEventListener("click", () => setMenuOpen($("touch-menu").hidden));
+      // a choice made closes the menu (the stats stay up, closed by their own button)
+      $("touch-menu").addEventListener("click", event => {
+        if (event.target.closest("button")) {
+          setMenuOpen(false);
+        }
+      });
+      // a tap in the game closes it too
+      $("stage").addEventListener("pointerdown", () => {
+        setMenuOpen(false);
+        closeChat();
+      }, true);
+      const fullscreenOrHomeScreen = () => {
+        if (document.fullscreenEnabled) {
+          toggleFullscreen();
+        }
+        else {
+          $("home-screen").hidden = false;
+        }
+      };
+      $("touch-fullscreen").addEventListener("click", fullscreenOrHomeScreen);
+      $("turn-fullscreen").addEventListener("click", fullscreenOrHomeScreen);
+      $("home-screen-ok").addEventListener("click", () => $("home-screen").hidden = true);
+
+      // the chat box: the keyboard comes up because the box is focused in
+      // the tap itself, which an iPhone asks for and Ruffle's own hidden box
+      // (focused a moment later) never was. what is sent goes into the
+      // game's chat bar and out with its send button (AJClient.sayFromPage).
+      const placeChatBox = () => {
+        const view = window.visualViewport;
+        const bottom = view ? view.offsetTop + view.height : window.innerHeight;
+        $("chat-box").style.top = `${Math.max(0, bottom - $("chat-box").offsetHeight)}px`;
+      };
+      // while the box is open Ruffle may not move the page's focus to
+      // itself, as it does when the game's focus changes (a line sent puts
+      // it back on the chat bar): on a phone that would take the keyboard
+      // away from the box. its elements' focus() does nothing till it closes.
+      const holdRuffleFocus = hold => {
+        const root = player && player.shadowRoot;
+        for (const element of [player, root && root.getElementById("container"), root && root.getElementById("virtual-keyboard")]) {
+          if (element && hold) {
+            element.focus = () => {};
+          }
+          else if (element) {
+            delete element.focus;
+          }
+        }
+      };
+      const openChat = () => {
+        $("chat-box").hidden = false;
+        $("chat-text").focus();
+        holdRuffleFocus(true);
+        placeChatBox();
+      };
+      const closeChat = () => {
+        holdRuffleFocus(false);
+        $("chat-text").blur();
+        $("chat-box").hidden = true;
+      };
+      if (window.visualViewport) {
+        visualViewport.addEventListener("resize", placeChatBox);
+        visualViewport.addEventListener("scroll", placeChatBox);
+      }
+      // a line sent, the game puts its focus back on its own chat bar, and
+      // Ruffle the page's on its hidden box: taken back for the chat box
+      const KEEP_CHAT_FOCUS_MS = 2500;
+      let keepChatFocusUntil = 0;
+      document.addEventListener("focusin", event => {
+        if (!$("chat-box").hidden && event.target !== $("chat-text") && Date.now() < keepChatFocusUntil) {
+          // not inside the focus change itself, which would undo it
+          setTimeout(() => $("chat-box").hidden || $("chat-text").focus(), 0);
+        }
+      }, true);
+      $("touch-chat").addEventListener("click", openChat);
+      $("chat-close").addEventListener("click", closeChat);
+      $("chat-box").addEventListener("submit", event => {
+        event.preventDefault();
+        const text = $("chat-text").value.trim();
+        if (!text) {
+          return;
+        }
+        if (callGame("ajChat", text) === true) {
+          $("chat-text").value = "";
+          keepChatFocusUntil = Date.now() + KEEP_CHAT_FOCUS_MS;
+        }
+        else {
+          note("The chat is not ready yet.");
+        }
+        // the keyboard stays up for the next line
+        $("chat-text").focus();
+      });
+      $("turn-later").addEventListener("click", () => {
+        turnLater = true;
+        showTurn();
+      });
+
+      // the client's keys, while a game is open; caught before Ruffle sees them
+      window.addEventListener("keydown", event => {
+        if (!session || event.repeat) {
+          return;
+        }
+        // (no key for the room picture: it holds the game still for seconds in a big room)
+        const action = {F7: () => setMuted(!isMuted()), F10: takeScreenshot, F11: toggleFullscreen}[event.key];
+        if (action) {
+          event.preventDefault();
+          event.stopPropagation();
+          action();
+        }
+      }, true);
+      setInterval(checkStatus, STATUS_EVERY_MS);
+      setInterval(showStats, STATS_EVERY_MS);
+
+      // the game reads the browser's user agent (ExternalInterface,
+      // Utility.getElectronVersion) for the official launcher's version,
+      // and takes a browser without one for an out-of-date launcher. this
+      // page answers as the launcher the desktop client stands in for (its
+      // app/main.js, LAUNCHER_VERSION).
+      try {
+        const agent = `${navigator.userAgent} AJClassic/1.5.7`;
+        Object.defineProperty(navigator, "userAgent", {get: () => agent});
+      }
+      catch (err) {
+        // the game will say to update
+      }
+
+      window.addEventListener("beforeunload", () => callGame("unloadAJClient"));
+
+      // back from a restart (above): into the game at once
+      try {
+        const restarted = sessionStorage.getItem(RESTART_KEY);
+        sessionStorage.removeItem(RESTART_KEY);
+        if (restarted) {
+          play(JSON.parse(restarted)).catch(err => closeGame(err.message));
+        }
+      }
+      catch (err) {
+        // no session storage: the sign-in form as ever
+      }
+    </script>
+  </body>
+</html>

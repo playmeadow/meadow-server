@@ -1,0 +1,125 @@
+package gui
+{
+   import avatar.AvatarManager;
+   import flash.display.MovieClip;
+   import flash.events.MouseEvent;
+   import loader.MediaHelper;
+   import pet.GuiPet;
+   import pet.PetManager;
+   
+   public class PetMastery
+   {
+      
+      private const MASTERY_MEDIA_ID:int = 1381;
+      
+      private var _masteryPopup:MovieClip;
+      
+      private var _guiLayer:DisplayLayer;
+      
+      private var _mediaHelper:MediaHelper;
+      
+      private var _currPet:GuiPet;
+      
+      public function PetMastery()
+      {
+         super();
+      }
+      
+      public function init() : void
+      {
+         _guiLayer = GuiManager.guiLayer;
+      }
+      
+      public function displayMasteryPopup() : void
+      {
+         if(_masteryPopup)
+         {
+            setupInitialConditions();
+            _guiLayer.addChild(_masteryPopup);
+            DarkenManager.darken(_masteryPopup);
+         }
+         else
+         {
+            DarkenManager.showLoadingSpiral(true);
+            _mediaHelper = new MediaHelper();
+            _mediaHelper.init(1381,onMediaLoaded);
+         }
+      }
+      
+      private function onMediaLoaded(param1:MovieClip) : void
+      {
+         if(param1)
+         {
+            DarkenManager.showLoadingSpiral(false);
+            _masteryPopup = MovieClip(param1.getChildAt(0));
+            setupInitialConditions();
+            _masteryPopup.x = 900 * 0.5;
+            _masteryPopup.y = 550 * 0.5;
+            _guiLayer.addChild(_masteryPopup);
+            DarkenManager.darken(_masteryPopup);
+            addEventListeners();
+         }
+      }
+      
+      private function setupInitialConditions() : void
+      {
+         var _loc4_:int = 0;
+         var _loc8_:int = 0;
+         var _loc6_:int = 0;
+         var _loc7_:int = 0;
+         var _loc5_:int = 0;
+         var _loc3_:int = 0;
+         var _loc2_:int = 0;
+         var _loc1_:Object = PetManager.myActivePet;
+         if(_loc1_)
+         {
+            _loc4_ = 1;
+            _loc8_ = int(_loc1_.uBits);
+            _loc6_ = _loc8_ & 0x0F;
+            _loc7_ = _loc8_ >> 4 & 0x0F;
+            _loc5_ = _loc8_ >> 12 & 0x0F;
+            _loc3_ = _loc8_ >> 16 & 0x0F;
+            _loc2_ = _loc8_ >> 20 & 0x0F;
+            _loc8_ = _loc2_ << 20 | _loc3_ << 16 | _loc5_ << 12 | _loc4_ << 8 | _loc7_ << 4 | _loc6_;
+            _loc1_.uBits = _loc4_ << 8 | _loc8_;
+            _currPet = new GuiPet(_loc1_.createdTs,_loc1_.idx,_loc1_.lBits,_loc1_.uBits,_loc1_.eBits,_loc1_.type,_loc1_.name,_loc1_.personalityDefId,_loc1_.favoriteToyDefId,_loc1_.favoriteFoodDefId,onPetLoaded);
+            while(_masteryPopup.itemBlock.numChildren > 0)
+            {
+               _masteryPopup.itemBlock.removeChildAt(0);
+            }
+            _masteryPopup.itemBlock.addChild(_currPet);
+            AvatarManager.playerAvatarWorldView.setActivePet(_currPet.createdTs,_currPet.getLBits(),_currPet.getUBits(),_currPet.getEBits(),_currPet.name,_currPet.personalityDefId,_currPet.favoriteFoodDefId,_currPet.favoriteToyDefId);
+         }
+      }
+      
+      private function onPetLoaded(param1:MovieClip, param2:GuiPet) : void
+      {
+         _currPet.scaleX = _currPet.scaleY = 2.5;
+      }
+      
+      private function onPopup(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+      }
+      
+      private function onMasteryClose(param1:MouseEvent) : void
+      {
+         param1.stopPropagation();
+         DarkenManager.unDarken(_masteryPopup);
+         _guiLayer.removeChild(_masteryPopup);
+      }
+      
+      private function addEventListeners() : void
+      {
+         _masteryPopup.addEventListener("mouseDown",onPopup,false,0,true);
+         _masteryPopup.xb.addEventListener("mouseDown",onMasteryClose,false,0,true);
+      }
+      
+      private function removeEventListeners() : void
+      {
+         _masteryPopup.removeEventListener("mouseDown",onPopup);
+         _masteryPopup.xb.removeEventListener("mouseDown",onMasteryClose);
+      }
+   }
+}
+

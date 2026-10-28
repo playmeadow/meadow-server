@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meadow</title>
+    <meta name="description" content="Meadow, an AJ Classic private server.">
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; font-display: swap; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; font-display: swap; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --raised: #2b0e4b;
+        --line: #3e1a66;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+        --wide: 1160px;
+        --paws: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cg fill='%23b33cff'%3E%3Cg transform='translate(34 38) rotate(-20)'%3E%3Cellipse cy='8' rx='10' ry='8'/%3E%3Ccircle cx='-12' cy='-3' r='4'/%3E%3Ccircle cx='-4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='12' cy='-3' r='4'/%3E%3C/g%3E%3Cg transform='translate(108 112) rotate(24)'%3E%3Cellipse cy='8' rx='10' ry='8'/%3E%3Ccircle cx='-12' cy='-3' r='4'/%3E%3Ccircle cx='-4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='4.5' cy='-10' r='4.2'/%3E%3Ccircle cx='12' cy='-3' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      ::selection { background: #9d00ff; color: #fff; }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; border: 3px solid var(--bg); }
+      html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font: 16px/1.45 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      img { display: block; max-width: 100%; }
+      h1, h2, h3, p { margin: 0; }
+      .wrap { width: 100%; max-width: var(--wide); margin: 0 auto; padding: 0 20px; }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 20px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.14s, box-shadow 0.14s;
+      }
+      .pill:hover { background: var(--raised); border-color: #6a2fa8; }
+      .pill.main { color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      .pill.main:hover { background: #b33cff; transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #12001f, 5px 5px 0 #9d00ff; }
+      .pill.main:active { transform: none; box-shadow: none; }
+      .pill.big { padding: 14px 30px 15px; font-size: 18px; }
+      .pill.soon, .pill.soon:hover { color: var(--muted); background: none; border: 1px dashed #6a2fa8; cursor: default; transform: none; box-shadow: none; }
+      .pill svg { width: 18px; height: 18px; flex: none; }
+
+      #nav {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        z-index: 20;
+        width: calc(100% - 24px);
+        max-width: var(--wide);
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 8px 7px 16px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(18, 0, 31, 0.72);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+      }
+      #nav .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; font-family: var(--title); font-size: 22px; font-weight: 400; letter-spacing: 0.01em; text-decoration: none; }
+      #nav .brand img { height: 28px; }
+      #nav a.link { padding: 6px 13px 7px; border-radius: 999px; font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.12s, background 0.12s; }
+      #nav a.link:hover { color: var(--text); background: var(--raised); }
+      #nav a.icon { display: flex; padding: 8px; }
+      #nav a.icon svg { width: 18px; height: 18px; }
+      #nav .pill { padding: 7px 16px 8px; font-size: 14px; }
+
+      #hero {
+        position: relative;
+        min-height: 100vh;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 92px 20px 84px;
+        text-align: center;
+        overflow: hidden;
+        --mx: 50%;
+        --my: 38%;
+      }
+      #hero .paws {
+        position: absolute;
+        top: -150px; right: -150px; bottom: -150px; left: -150px;
+        background: var(--paws);
+        opacity: 0.06;
+        animation: drift 40s linear infinite;
+      }
+      #hero .dots {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: radial-gradient(#b33cff 1.4px, transparent 1.9px) 0 0 / 22px 22px;
+        opacity: 0.55;
+        -webkit-mask-image: radial-gradient(420px circle at var(--mx) var(--my), #12001f 0, transparent 100%);
+        mask-image: radial-gradient(420px circle at var(--mx) var(--my), #12001f 0, transparent 100%);
+      }
+      #hero .fade { position: absolute; right: 0; bottom: 0; left: 0; height: 160px; background: linear-gradient(transparent, #12001f); }
+      @keyframes drift { to { transform: translate(150px, 150px); } }
+      #hero > .in { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+      #name { position: relative; margin-top: 8px; line-height: 0.8; }
+      #name h1, #name span {
+        display: block;
+        font-family: var(--title);
+        font-size: clamp(76px, 19vw, 250px);
+        font-weight: 400;
+        letter-spacing: 0.01em;
+        line-height: 0.8;
+      }
+      #name h1 { position: relative; z-index: 2; text-shadow: 0 6px 0 #9d00ff, 0 0 40px rgba(157, 0, 255, 0.55); }
+      #name span {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        color: transparent;
+        -webkit-text-stroke: 1.5px #b33cff;
+        pointer-events: none;
+        user-select: none;
+      }
+      #name span { display: none; }
+      #bunny {
+        position: relative;
+        z-index: 3;
+        height: auto;
+        width: clamp(140px, 21vw, 260px);
+        margin-bottom: calc(clamp(140px, 21vw, 260px) * -0.2);
+        filter: drop-shadow(0 10px 24px rgba(157, 0, 255, 0.45));
+        animation: breathe 5s ease-in-out infinite;
+        transform-origin: 50% 100%;
+      }
+      @keyframes breathe { 50% { transform: scale(1.02, 0.975); } }
+      #line {
+        margin-top: clamp(50px, 8.5vw, 112px);
+        max-width: 620px;
+        font-size: clamp(17px, 2.2vw, 23px);
+        color: var(--muted);
+      }
+      #line b { color: var(--text); }
+      #hero .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 24px; }
+      #hero .buttons.small { gap: 10px; margin-top: 12px; }
+      #hero .buttons.small .pill { padding: 7px 16px 8px; font-size: 14px; color: #fff; }
+      /* the only colour on any page of ours: these two keep their brands' */
+      #hero .pill[data-link="discord"] { background: #5865f2; border-color: #5865f2; }
+      #hero .pill[data-link="discord"]:hover { background: #4752c4; border-color: #4752c4; }
+      #hero .pill[data-link="github"] { background: #24292f; border-color: #3d444d; }
+      #hero .pill[data-link="github"]:hover { background: #32383f; }
+
+      #state { margin-top: 22px; font-size: 15px; color: var(--muted); min-height: 22px; }
+
+      section { position: relative; padding: 84px 0; }
+      .head { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 38px; }
+      .head h2 { font-size: clamp(38px, 6.4vw, 78px); font-weight: 400; line-height: 0.95; letter-spacing: 0.01em; }
+      .head h2 em { font-style: normal; color: #b33cff; }
+      .head.mid { align-items: center; text-align: center; }
+
+      #list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 56px; margin: 0; padding: 0; list-style: none; }
+      #list li {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 17px 4px 18px;
+        border-top: 1px solid var(--line);
+        transition: padding 0.18s, border-color 0.18s;
+      }
+      #list li:hover { padding-left: 14px; border-color: #9d00ff; }
+      #list h3 { font-size: 21px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
+      #list p { color: var(--muted); font-size: 15px; text-align: right; }
+      #list li:hover p { color: var(--text); }
+
+      #get {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 30px;
+        padding: clamp(30px, 6vw, 70px);
+        border-radius: 36px;
+        color: #fff;
+        background: #9d00ff;
+        overflow: hidden;
+      }
+      #get::before {
+        content: "";
+        position: absolute;
+        top: -150px; right: -150px; bottom: -150px; left: -150px;
+        background: var(--paws);
+        filter: brightness(0);
+        opacity: 0.08;
+        animation: drift 40s linear infinite reverse;
+      }
+      #get::after {
+        content: "";
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 55%;
+        background: radial-gradient(#12001f 2px, transparent 2.6px) 0 0 / 16px 16px;
+        opacity: 0.5;
+        -webkit-mask-image: linear-gradient(90deg, transparent, #12001f);
+        mask-image: linear-gradient(90deg, transparent, #12001f);
+      }
+      #get > * { position: relative; z-index: 1; }
+      #get h2 { font-size: clamp(40px, 7vw, 92px); font-weight: 400; line-height: 0.9; letter-spacing: 0.01em; }
+      #get p { margin-top: 14px; font-size: 17px; color: #f0e2ff; }
+      #get .side { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+      #get .hole { display: flex; align-items: center; justify-content: center; width: clamp(170px, 21vw, 250px); height: clamp(170px, 21vw, 250px); border-radius: 50%; background: #12001f; box-shadow: 0 0 0 10px #fff, 0 0 0 11.5px #12001f; }
+      #get .hole img { width: 82%; margin-top: 8%; }
+      #get .pill { color: #fff; background: #12001f; border-color: #12001f; }
+      #get .pill:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 #fff, 5px 5px 0 #12001f; }
+      #get .pill.soon, #get .pill.soon:hover { color: #6a2fa8; background: none; border: 1px dashed #6a2fa8; transform: none; box-shadow: none; }
+
+      footer { margin-top: 30px; padding: 40px 0 44px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+      footer .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; }
+      footer .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; font-family: var(--title); font-size: 24px; font-weight: 400; letter-spacing: 0.01em; color: var(--text); text-decoration: none; }
+      footer .brand img { height: 32px; }
+      footer a { text-decoration: none; }
+      footer a:hover { color: var(--text); text-decoration: underline; }
+      footer p { margin-top: 22px; max-width: 760px; font-size: 13px; }
+
+      .js .rise { opacity: 0; transform: translateY(26px); transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(.2, .8, .2, 1); transition-delay: var(--wait, 0s); }
+      .js .rise.in { opacity: 1; transform: none; }
+
+      @media (max-width: 960px) {
+        #get { grid-template-columns: 1fr; text-align: center; }
+        #get::after { width: 100%; -webkit-mask-image: linear-gradient(transparent 55%, #12001f); mask-image: linear-gradient(transparent 55%, #12001f); opacity: 0.25; }
+      }
+      @media (max-width: 720px) {
+        #nav a.link { display: none; }
+        #name h1, #name span { font-size: 21vw; }
+        #bunny { width: 30vw; margin-bottom: -5vw; }
+        #line { margin-top: 11vw; }
+        section { padding: 60px 0; }
+        #list { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 380px) {
+        #nav .brand span { display: none; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+        .js .rise { opacity: 1; transform: none; }
+      }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+    </style>
+    <script>document.documentElement.className = "js";</script>
+  </head>
+  <body data-download="{{downloadUrl}}" data-github="{{githubUrl}}" data-discord="{{discordUrl}}" data-play="https://game.playmeadow.xyz/play">
+    <nav id="nav" aria-label="Main">
+      <a class="brand" href="#top"><img src="/logo.png" alt=""><span>Meadow</span></a>
+      <a class="link" href="#here">Features</a>
+      <a class="link" href="/commands">Commands</a>
+      <a class="link" href="/account">Account</a>
+      <a class="link icon" data-link="github" href="#" aria-label="GitHub" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.1c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.42.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
+      <a class="link icon" data-link="discord" href="#" aria-label="Discord" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17.5 17.5 0 0 0 15.3 3.9l-.5 1.1a16 16 0 0 0-5.5 0L8.7 3.9A17.5 17.5 0 0 0 4.4 5.2C1.7 9.3 1 13.3 1.3 17.200a17.7 17.7 0 0 0 5.3 2.700l1.1-1.800a11.5 11.5 0 0 1-1.8-.900l.400-.300a12.6 12.6 0 0 0 11.4 0l.400.300c-.600.4-1.2.700-1.8.900l1.1 1.800a17.7 17.7 0 0 0 5.3-2.700c.400-4.5-.700-8.4-3.1-12zM8.7 14.700c-1 0-1.9-1-1.9-2.200s.800-2.2 1.9-2.2 1.9 1 1.9 2.2-.800 2.2-1.9 2.200zm6.6 0c-1 0-1.9-1-1.9-2.200s.800-2.2 1.9-2.2 1.9 1 1.9 2.2-.800 2.2-1.9 2.200z"/></svg></a>
+      <a class="pill" data-link="play" href="#" hidden>Play in browser</a>
+      <a class="pill main" href="/register">Create account</a>
+    </nav>
+
+    <header id="hero">
+      <div class="paws" aria-hidden="true"></div>
+      <div class="dots" aria-hidden="true"></div>
+      <div class="fade" aria-hidden="true"></div>
+      <div class="in" id="top">
+        <img id="bunny" src="/logo.png" alt="" width="300" height="300">
+        <div id="name">
+          <h1>Meadow</h1>
+          <span aria-hidden="true">Meadow</span><span aria-hidden="true">Meadow</span><span aria-hidden="true">Meadow</span>
+        </div>
+        <p id="line">not affiliated with WildWorks or Animal Jam</p>
+        <div class="buttons">
+          <a class="pill main big" href="#download">Download</a>
+          <a class="pill big" href="/register">Create account</a>
+        </div>
+        <div class="buttons small">
+          <a class="pill" data-link="discord" href="#"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.6 5.2A17.5 17.5 0 0 0 15.3 3.9l-.5 1.1a16 16 0 0 0-5.5 0L8.7 3.9A17.5 17.5 0 0 0 4.4 5.2C1.7 9.3 1 13.3 1.3 17.200a17.7 17.7 0 0 0 5.3 2.700l1.1-1.800a11.5 11.5 0 0 1-1.8-.900l.400-.300a12.6 12.6 0 0 0 11.4 0l.400.300c-.600.4-1.2.700-1.8.900l1.1 1.800a17.7 17.7 0 0 0 5.3-2.700c.400-4.5-.700-8.4-3.1-12zM8.7 14.700c-1 0-1.9-1-1.9-2.200s.800-2.2 1.9-2.2 1.9 1 1.9 2.2-.800 2.2-1.9 2.200zm6.6 0c-1 0-1.9-1-1.9-2.200s.800-2.2 1.9-2.2 1.9 1 1.9 2.2-.800 2.2-1.9 2.200z"/></svg>Discord</a>
+          <a class="pill" data-link="github" href="#"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.1c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.42.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>GitHub</a>
+        </div>
+        <p id="state" role="status"></p>
+      </div>
+    </header>
+
+    <main>
+      <section id="here">
+        <div class="wrap">
+          <div class="head rise">
+            <h2>Everything <em>unlocked</em></h2>
+          </div>
+          <ul id="list" class="rise">
+            <li><h3>Item giver</h3><p>any item in custom colours</p></li>
+            <li><h3>Membership unlocked</h3></li>
+            <li><h3>Every animal and pet</h3><p>in stores all the time</p></li>
+            <li><h3>Restored content</h3><p>removed content and concept dens</p></li>
+            <li><h3>Themes</h3><p>any season or holiday</p></li>
+            <li><h3>Alphas</h3><p>play as an alpha</p></li>
+            <li><h3>Profiles</h3><p>bio, badges and better player cards</p></li>
+            <li><h3>Chat upgraded</h3><p>fewer limits, whispers</p></li>
+            <li><h3>Custom names</h3><p>for animals and pets</p></li>
+            <li><h3>Bigger inventory</h3><p>higher limits</p></li>
+            <li><h3>Custom client</h3><p>with improvements of its own</p></li>
+            <li><h3>QOL improvements</h3><p>all over the game</p></li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="download">
+        <div class="wrap">
+          <div id="get" class="rise">
+            <div>
+              <h2>Get Meadow</h2>
+              <p>Windows, Linux, macOS</p>
+            </div>
+            <div class="side">
+              <div class="hole"><img src="/logo.png" alt="" loading="lazy"></div>
+              <a class="pill big soon" id="get-button" aria-disabled="true">Soon</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="row">
+          <a class="brand" href="#top"><img src="/logo.png" alt="">Meadow</a>
+          <a href="/register">Create account</a>
+          <a href="/account">Account</a>
+          <a href="/commands">Commands</a>
+          <a data-link="github" href="#" hidden>GitHub</a>
+          <a data-link="discord" href="#" hidden>Discord</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+        </div>
+        <p>Meadow is an unofficial fan project, not affiliated with or endorsed by WildWorks. Animal Jam is a trademark of WildWorks, Inc.</p>
+      </div>
+    </footer>
+
+    <script>
+      "use strict";
+      const $ = id => document.getElementById(id);
+
+      // the server fills these addresses in from config.js; an unset one gets no link
+      const address = name => {
+        const value = document.body.dataset[name] || "";
+        return /^https?:\/\//.test(value) || /^\/[^/]/.test(value) ? value : "";
+      };
+      for (const name of ["github", "discord", "play"]) {
+        for (const link of document.querySelectorAll(`[data-link="${name}"]`)) {
+          if (address(name)) {
+            link.href = address(name);
+            link.rel = "noopener";
+            link.hidden = false;
+          } else if (link.classList.contains("pill")) {
+            link.removeAttribute("href");
+          }
+        }
+      }
+      if (address("download")) {
+        const button = $("get-button");
+        button.href = address("download");
+        button.textContent = "Download";
+        button.classList.remove("soon");
+        button.removeAttribute("aria-disabled");
+      }
+
+      const showState = state => {
+        $("state").textContent = state ? `${Number(state.online) || 0} online` : "Offline";
+      };
+      const askState = () => fetch("/api/status", {cache: "no-store"})
+        .then(answer => (answer.ok ? answer.json() : null))
+        .then(showState, () => showState(null));
+      askState();
+      setInterval(() => { if (!document.hidden) { askState(); } }, 30000);
+
+      const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const hero = $("hero");
+      hero.addEventListener("pointermove", event => {
+        const box = hero.getBoundingClientRect();
+        hero.style.setProperty("--mx", `${event.clientX - box.left}px`);
+        hero.style.setProperty("--my", `${event.clientY - box.top}px`);
+      });
+
+      const arrive = element => element.classList.add("in");
+      if ("IntersectionObserver" in window && !still) {
+        const watcher = new IntersectionObserver(entries => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              arrive(entry.target);
+              watcher.unobserve(entry.target);
+            }
+          }
+        }, {rootMargin: "0px 0px -8% 0px"});
+        document.querySelectorAll(".rise").forEach(element => watcher.observe(element));
+      } else {
+        document.querySelectorAll(".rise").forEach(element => element.classList.add("in"));
+      }
+    </script>
+  </body>
+</html>

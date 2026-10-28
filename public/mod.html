@@ -1,0 +1,3327 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Moderators</title>
+    <link rel="icon" type="image/png" href="/logo-square.png">
+    <style>
+      /* a modern dark dashboard: a sidebar of pages, cards on a slate
+         ground. black and white throughout, in the game's own text font: the
+         look of the client. Nothing is said by colour: what went wrong is white
+         with a "!" before it, and what cannot be undone has a dashed edge. */
+      @font-face { font-family: "DigitalDelivery"; font-weight: 400; src: url("/fonts/CCDigitalDelivery-Regular.otf") format("opentype"); }
+      @font-face { font-family: "DigitalDelivery"; font-weight: 700; src: url("/fonts/CCDigitalDelivery-Bold.otf") format("opentype"); }
+      :root {
+        color-scheme: dark;
+        --bg: #12001f;
+        --panel: #1d0833;
+        --raised: #2b0e4b;
+        --field: #12001f;
+        --line: #3e1a66;
+        --line-strong: #6a2fa8;
+        --text: #fff;
+        --accent: #9d00ff;
+        --accent-hover: #b33cff;
+        --accent-dim: #4a1a78;
+        --line-hover: #6a2fa8;
+        --faint: #6f5a8c;
+        --dots: rgba(157, 0, 255, 0.3);
+        --title: "Dimbo", "DigitalDelivery", system-ui, sans-serif;
+        --muted: #b7a0d4;
+        --accent: #9d00ff;
+        --accent-soft: #2b0e4b;
+        --radius: 14px;
+        --shadow: none;
+      }
+      * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
+      ::selection { background: #9d00ff; color: #fff; }
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 5px; border: 3px solid var(--bg); }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 "DigitalDelivery", system-ui, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; text-underline-offset: 3px; }
+      h1, h2, h3 { font-family: "DigitalDelivery", system-ui, sans-serif; }
+      h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.01em; }
+      h2 { margin: 0 0 10px; font-size: 18px; font-weight: 700; }
+      h3 { font-size: 15px; font-weight: 700; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      label { display: block; margin: 12px 0 5px; color: var(--muted); font-size: 13px; }
+      .hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+      input, select, textarea {
+        font: inherit;
+        color: var(--text);
+        background: var(--field);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 12px;
+        transition: border-color 0.12s, box-shadow 0.12s;
+      }
+      input::placeholder, textarea::placeholder { color: #8a74a8; }
+      input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
+      input:focus, select:focus, textarea:focus { outline: none; border-color: #9d00ff; }
+      input:disabled, select:disabled, textarea:disabled { opacity: 0.45; }
+      select:not([multiple]) {
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 34px;
+        background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+        background-position: calc(100% - 19px) 55%, calc(100% - 14px) 55%;
+        background-size: 5px 5px;
+        background-repeat: no-repeat;
+      }
+      input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 0 6px 0 0;
+        padding: 0;
+        vertical-align: -4px;
+        border: 1px solid var(--line-strong);
+        border-radius: 5px;
+        background: var(--field);
+        cursor: pointer;
+      }
+      input[type="checkbox"]:checked {
+        border-color: #9d00ff;
+        background: #9d00ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.5 9.5l3 3 6-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat;
+      }
+      button {
+        font: inherit;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--raised);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 7px 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.06s;
+      }
+      button:hover { background: #2b0e4b; border-color: var(--line-strong); }
+      button:active { transform: translateY(1px); }
+      button:disabled { opacity: 0.45; cursor: default; transform: none; }
+      button:focus-visible, a:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid #9d00ff; outline-offset: 2px; }
+      button.primary { font-weight: 700; color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      button.primary:hover { background: #b33cff; border-color: #b33cff; }
+      button.primary:disabled, button.primary:disabled:hover { background: #4a1a78; border-color: #4a1a78; color: #9b86b8; }
+      button.danger { border-style: dashed; border-color: #6a2fa8; }
+      button.danger:hover { border-style: solid; border-color: #9d00ff; }
+      .status, #status { min-height: 20px; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+      .status.bad, #status.bad { color: var(--text); }
+      .status.bad::before, #status.bad::before, .notice::before {
+        content: "!";
+        display: inline-block;
+        width: 17px;
+        height: 17px;
+        margin-right: 7px;
+        border-radius: 50%;
+        background: #9d00ff;
+        color: #fff;
+        font-weight: 700;
+        line-height: 17px;
+        text-align: center;
+      }
+      .notice { margin: 0 0 16px; padding: 11px 13px; border: 1px solid #9d00ff; border-radius: 10px; color: var(--text); }
+      .notice .hint { display: block; margin: 6px 0 0 24px; }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+      label.check { margin: 0; color: var(--text); font-size: 14px; cursor: pointer; }
+      #item-colours { display: flex; gap: 6px 14px; flex-wrap: wrap; margin-top: 8px; }
+      #item-colours label.check { display: inline-flex; gap: 5px; align-items: center; }
+      ul.plain { list-style: none; padding: 0; margin: 10px 0 0; }
+      ul.plain li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+      ul.plain li:last-child { border-bottom: 0; }
+      img.guarded { filter: blur(14px) grayscale(0.6); cursor: pointer; transition: filter 0.15s; }
+      img.guarded.shown { filter: none; cursor: default; }
+      .made-items { display: grid; gap: 8px; margin: 8px 0; }
+      .made-item { display: flex; gap: 12px; align-items: center; padding: 8px; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; }
+      .made-item .art { width: 52px; height: 52px; flex: none; border-radius: 8px; background: var(--field); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-size: 10px; text-align: center; }
+      .made-item .art img { max-width: 100%; max-height: 100%; }
+      .made-item > div:nth-child(2) { flex: 1; min-width: 0; }
+      #quick-lock { margin-top: 18px; }
+      .lock-results li { display: flex; gap: 10px; align-items: center; }
+      .lock-results .meta { color: var(--muted); font-size: 12px; }
+      .lock-results button { margin-left: auto; }
+      .lock-results .is-locked { font-size: 11px; padding: 1px 7px; border: 1px solid #9d00ff; border-radius: 999px; }
+      #wear-rule-animals { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; }
+      #wear-rule-animals label.check { display: inline-flex; align-items: center; gap: 5px; }
+      #wear-rule-animal { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+      #wear-rule-animal button { margin: 0; }
+      #wear-rule-animal button[aria-pressed="true"] { color: #fff; background: #9d00ff; border-color: #9d00ff; }
+      #wear-rule-results li, #wear-rule-active li { display: flex; gap: 10px; align-items: center; }
+      #wear-rule-results .meta, #wear-rule-active .meta { color: var(--muted); font-size: 12px; }
+      #wear-rule-results button, #wear-rule-active button { margin-left: auto; }
+
+      /* signing in */
+      #gate {
+        max-width: 400px;
+        margin: 10vh auto 0;
+        padding: 28px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+      }
+      #gate h1 { margin-bottom: 4px; }
+      #gate input { width: 100%; }
+      #gate button { width: 100%; margin-top: 18px; padding: 10px 16px; }
+      #captcha { margin-top: 16px; }
+
+      /* the panel: a sidebar, and the page beside it */
+      #panel { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+      #side {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        padding: 20px 14px;
+        background: var(--panel);
+        border-right: 1px solid var(--line);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+      .brand h1 { font-size: 19px; }
+      #who { display: block; margin-top: 1px; }
+      nav { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
+      nav button {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 10px;
+        border: 0;
+        background: none;
+        color: var(--muted);
+        font-weight: 500;
+        text-align: left;
+      }
+      nav button .icon { width: 18px; text-align: center; opacity: 0.85; }
+      nav button:hover { background: var(--raised); color: var(--text); }
+      nav button[aria-selected="true"] { background: #9d00ff; color: #fff; font-weight: 700; }
+      nav button span[id$="-count"]:not(:empty) {
+        margin-left: auto;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #9d00ff;
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 19px;
+      }
+      #sign-out { width: 100%; }
+      #main { padding: 28px clamp(16px, 3vw, 36px) 48px; max-width: 1240px; width: 100%; }
+      .page-title { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+      .page-title h1 { font-size: 26px; }
+      @media (max-width: 860px) {
+        #panel { grid-template-columns: 1fr; }
+        #side { position: static; height: auto; gap: 12px; padding: 12px; }
+        nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; scrollbar-width: thin; }
+        nav button { flex: 0 0 auto; width: auto; }
+        #main { padding: 16px 12px 32px; }
+        section { padding: 15px; border-radius: 14px; }
+        .page-title { align-items: flex-start; flex-direction: column; gap: 3px; margin-bottom: 14px; }
+        .columns, .actions { grid-template-columns: minmax(0, 1fr); }
+        .toolbar input[type="search"] { flex-basis: 100%; min-width: 0; width: 100%; }
+        .table-wrap { max-width: 100%; }
+      }
+      @media (max-width: 520px) {
+        body { font-size: 14px; overflow-x: hidden; }
+        .brand { padding: 0; }
+        .tiles, .paintings { grid-template-columns: minmax(0, 1fr); }
+        .tile { padding: 14px; }
+        .tile .value { font-size: 26px; }
+        dl { grid-template-columns: 1fr; gap: 2px; }
+        dd { margin-bottom: 9px; }
+        .preview { padding: 8px; }
+      }
+
+      section { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
+      /* the dashboard's numbers: each a card that opens its page */
+      .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+      .tile { padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+      button.tile { display: block; width: 100%; text-align: left; font-weight: 400; }
+      button.tile:hover { border-color: #9d00ff; background: var(--panel); }
+      .tile .value { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; font-family: "DigitalDelivery", system-ui, sans-serif; }
+      .tile .name { margin-top: 4px; font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+      .tile.attention { border-color: #9d00ff; }
+      .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+      .columns section { margin: 0; }
+      dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; margin: 0; }
+      dt { color: var(--muted); }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+      th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; background: var(--raised); }
+      td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+      td button { padding: 3px 11px; font-size: 13px; }
+      tbody tr:last-child td { border-bottom: 0; }
+      tbody tr:hover td { background: #1d0833; }
+      tbody tr.selected td { background: var(--accent-soft); }
+      tbody tr.pick { cursor: pointer; }
+      .device-id { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+      button.link { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; font-weight: 400; }
+      .empty { color: var(--muted); padding: 10px 2px; }
+      .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+      .toolbar input[type="search"] { flex: 1; min-width: 200px; }
+      .tag { display: inline-block; padding: 1px 9px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+      .tag.good { color: #fff; background: #9d00ff; border-color: #9d00ff; font-weight: 700; }
+      .tag.bad { color: var(--text); border-color: #9d00ff; font-weight: 700; }
+      #detail { margin-top: 0; }
+      .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+      .action .hint { margin: 8px 0 0; }
+      .action { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+      .action h3 { margin: 0 0 10px; }
+      .action .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .action .row input, .action .row select { flex: 1; min-width: 90px; }
+      .action .row input[type="checkbox"] { flex: none; min-width: 0; }
+      /* the items' buttons wrap in their cell, not out of the table */
+      #items td:last-child { white-space: normal; min-width: 300px; }
+      #items td:last-child button { margin: 2px 0; }
+      .action .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+      #log {
+        height: 60vh;
+        overflow: auto;
+        margin: 0;
+        padding: 12px 14px;
+        background: var(--field);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        font: 12px/1.5 ui-monospace, Consolas, monospace;
+        color: #b7a0d4;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      #log .time { color: var(--muted); }
+      #log .error { color: var(--text); font-weight: 700; }
+      .report { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+      .report h3 { margin: 0 0 4px; }
+      .report .typed { margin: 8px 0; padding: 8px 12px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
+      .report pre { margin: 8px 0; padding: 8px 12px; background: var(--field); border: 1px solid var(--line); border-radius: 10px; font: 12px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; }
+      .report .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+      .paintings { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+      .painting { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+      .painting img { display: block; width: 100%; height: auto; border-radius: 10px; background: #fff; }
+      .painting h3 { margin: 8px 0 2px; }
+      .painting .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+      .painting img { cursor: zoom-in; }
+      .painting .hint { overflow-wrap: anywhere; }
+      .painting h3 button.link { font-weight: 700; text-decoration: none; }
+      .painting h3 button.link:hover { text-decoration: underline; }
+      .paintings.compact { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+      .paintings.compact .painting { padding: 10px; }
+      .paintings.compact h3 { font-size: 14px; }
+      .preview { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(18, 0, 31, 0.9); cursor: zoom-out; }
+      .preview[hidden] { display: none; }
+      .preview figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 100%; max-height: 100%; }
+      .preview img { max-width: 100%; max-height: calc(100vh - 140px); border-radius: 10px; background: #fff; }
+      /* an item's picture is small: shown bigger */
+      .preview img.small { width: min(440px, 100%); height: auto; object-fit: contain; }
+      .preview figcaption { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; cursor: default; }
+      .preview figcaption .buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+      .preview figcaption:empty, .preview .buttons:empty { display: none; }
+      /* what an action came to, at the foot of the window, wherever the page is scrolled */
+      #toast { position: fixed; right: 20px; bottom: 20px; z-index: 60; display: flex; gap: 12px; align-items: center; max-width: min(480px, calc(100vw - 32px));
+        padding: 11px 12px 11px 16px; background: #9d00ff; color: #fff; border-radius: 12px; font-size: 14px; overflow-wrap: anywhere; }
+      #toast.bad::before { content: "!"; flex: none; width: 17px; height: 17px; border-radius: 50%; background: #12001f; color: #fff; font-weight: 700; line-height: 17px; text-align: center; }
+      #toast button { flex: none; padding: 4px 12px; background: #12001f; color: #fff; border-color: #12001f; }
+      #toast button:hover { background: #3e1a66; }
+      @media (max-width: 600px) { #toast { left: 16px; right: 16px; bottom: 16px; } }
+      textarea { width: 100%; resize: vertical; }
+      .send-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+      #owned { margin-top: 16px; }
+      #owned ul { margin: 4px 0 12px; padding-left: 18px; columns: 220px; }
+      #owned li { break-inside: avoid; }
+      #ban-record h3 { margin: 14px 0 4px; }
+      #ban-record ul { margin: 0; padding-left: 18px; font-size: 13px; overflow-wrap: anywhere; }
+      #ban-record li { margin: 3px 0; }
+      #ban-record li button { padding: 2px 10px; font-size: 12px; }
+      #password-form { max-width: 360px; }
+      #password-form input { width: 100%; }
+      #password-form button { margin-top: 16px; }
+      .logo { display: block; height: 64px; margin: 0 0 12px; }
+      .mark { height: 34px; flex: none; }
+      #chat-lines { margin: 0; padding: 0; list-style: none; }
+      .report-chat { margin: 0 0 8px; padding: 0; list-style: none; }
+      #chat-lines li, #chat-context li, .report-chat li { display: flex; gap: 10px; align-items: baseline; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+      #chat-lines li:last-child, #chat-context li:last-child { border-bottom: 0; }
+      .chat-time { flex: none; width: 128px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+      .chat-who { flex: none; max-width: 190px; padding: 0; border: 0; background: none; font-weight: 700; text-align: left; overflow: hidden; text-overflow: ellipsis; }
+      .chat-who:hover { background: none; text-decoration: underline; }
+      .chat-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+      .chat-room { display: block; color: var(--muted); font-size: 12px; }
+      .chat-more { flex: none; padding: 2px 10px; font-size: 12px; }
+      #chat-context { margin: 0; padding: 0; list-style: none; }
+      #chat-context li.this { background: var(--accent-soft); border-radius: 8px; }
+      #player-facts { margin-bottom: 16px; }
+      .record-title { margin: 20px 0 6px; }
+      #timeline { font-size: 13px; }
+      #timeline .tag { flex: none; }
+      #timeline .chat-time { width: 156px; }
+
+      /* the Players page: the list on the left, the player picked beside it */
+      .people { display: grid; grid-template-columns: minmax(250px, 310px) minmax(0, 1fr); gap: 18px; align-items: start; }
+      .people > section { margin: 0; }
+      .people-list { position: sticky; top: 20px; display: flex; flex-direction: column; max-height: calc(100vh - 40px); padding: 14px; }
+      .people-list .toolbar { margin-bottom: 10px; }
+      .people-list .toolbar input[type="search"] { min-width: 0; flex-basis: 100%; }
+      .people-list .toolbar select { flex: 1; }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+      .chips button { padding: 3px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+      .chips button[aria-pressed="true"] { background: #9d00ff; border-color: #9d00ff; color: #fff; font-weight: 700; }
+      #online-count:not(:empty) { margin-left: 5px; font-variant-numeric: tabular-nums; }
+      .player-list { list-style: none; margin: 0 -6px; padding: 0; overflow-y: auto; flex: 1; min-height: 60px; }
+      .player-row { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: none; text-align: left; font-weight: 400; white-space: normal; }
+      .player-row:hover { background: var(--raised); border: 0; }
+      .player-row:active { transform: none; }
+      .player-row .row-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .player-row strong { overflow-wrap: anywhere; }
+      .player-row .tag { font-size: 10px; padding: 0 7px; }
+      .player-row .row-sub { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+      .player-row[aria-current="true"] { background: #9d00ff; color: #fff; }
+      .player-row[aria-current="true"] .row-sub { color: #e3d4f5; }
+      .player-row[aria-current="true"] .tag { color: #fff; border-color: #fff; }
+      .player-row[aria-current="true"] .tag.good { background: #fff; color: #9d00ff; }
+      #no-detail { color: var(--muted); text-align: center; padding: 56px 20px; line-height: 1.7; }
+      .profile-head { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+      .profile-head .avatar { width: 52px; height: 52px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #9d00ff; color: #fff; font-size: 24px; font-weight: 700; }
+      .profile-who { flex: 1; min-width: 180px; }
+      .profile-who h2 { margin: 0 0 5px; font-size: 24px; overflow-wrap: anywhere; }
+      .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+      .tag-row:empty { display: none; }
+      .profile-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+      .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; margin: 16px 0; }
+      .counts button { display: flex; flex-direction: column; justify-content: flex-start; padding: 10px 12px; text-align: left; font-weight: 400; border-radius: 12px; white-space: normal; }
+      .counts button.attention { border-color: #9d00ff; }
+      .counts .value { font-size: 22px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .counts .name { margin-top: 3px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      .subtabs { display: flex; gap: 2px; flex-wrap: wrap; margin: 0 0 16px; border-bottom: 1px solid var(--line); }
+      .subtabs button { margin-bottom: -1px; padding: 8px 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--muted); font-weight: 500; }
+      .subtabs button:hover { background: none; color: var(--text); }
+      .subtabs button:active { transform: none; }
+      .subtabs button[aria-selected="true"] { border-bottom-color: #9d00ff; color: var(--text); font-weight: 700; }
+      .subtabs .count:not(:empty) { margin-left: 6px; padding: 0 7px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 11px; }
+      #detail-status:empty { display: none; }
+      #detail-status { margin: -6px 0 12px; }
+      .banner { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 10px; border: 1px solid #9d00ff; border-radius: 12px; }
+      .banner > span { flex: 1; min-width: 200px; overflow-wrap: anywhere; }
+      .banner:last-child { margin-bottom: 18px; }
+      .overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px; }
+      .overview h3 { margin-top: 0; }
+      .warning-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+      .warning-list li { padding: 8px 10px; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; font-size: 13px; overflow-wrap: anywhere; }
+      .warning-list .who { display: block; color: var(--muted); font-size: 12px; }
+      .narrow-only { display: none; }
+      @media (max-width: 1180px) {
+        .people { grid-template-columns: minmax(0, 1fr); }
+        .people-list { position: static; max-height: none; }
+        .people.picked .people-list, #no-detail { display: none; }
+        .narrow-only { display: inline; }
+        .wide-only { display: none; }
+      }
+      /* mod notes: cards, the newest first */
+      .notes { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+      .notes li { padding: 10px 12px; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid #9d00ff; border-radius: 10px; overflow-wrap: anywhere; }
+      .notes .who { display: flex; gap: 8px; align-items: center; margin-bottom: 3px; color: var(--muted); font-size: 12px; }
+      .notes .who button { margin-left: auto; padding: 1px 9px; font-size: 12px; }
+      .notes .who button.about { margin-left: 0; padding: 0; }
+      .notes .about { padding: 0; border: 0; background: none; color: var(--text); font-weight: 700; font-size: 12px; text-decoration: underline; }
+      .note-row { display: flex; gap: 8px; align-items: flex-start; }
+      /* items waiting for approval: a card each, its picture on the left */
+      .review-card audio { width: 100%; max-width: 360px; margin-top: 6px; }
+      .review-list { display: grid; gap: 10px; }
+      .review-card { display: grid; grid-template-columns: 104px 1fr auto; gap: 14px; align-items: center; padding: 12px; background: var(--raised); border: 1px solid var(--line); border-radius: 14px; }
+      .review-card .art { width: 104px; height: 104px; border-radius: 10px; background: var(--field); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-size: 11px; text-align: center; }
+      .review-card .art img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+      @media (max-width: 600px) { .review-card { grid-template-columns: 80px 1fr; } .review-card .art { width: 80px; height: 80px; } .review-card .buttons { grid-column: 1 / -1; } }
+      .review-card .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+      img.item-art { display: block; width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: var(--raised); }
+      #note-text { flex: 1; min-width: 0; }
+      @font-face { font-family: "Dimbo"; font-display: swap; src: url("/fonts/Dimbo-Regular.ttf") format("truetype"); }
+      /* Meadow: titles in Dimbo, as in the client */
+      h1, h2 { font-family: "Dimbo", "DigitalDelivery", system-ui, sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+    </style>
+  </head>
+  <body>
+    <main id="gate" hidden>
+      <img class="logo" src="/logo.png" alt="">
+      <h1>Moderators</h1>
+      <form id="gate-form">
+        <label for="username">Username</label>
+        <input id="username" autocomplete="username" maxlength="100" spellcheck="false" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" maxlength="100" required>
+        <label for="code">2FA code</label>
+        <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" spellcheck="false" required>
+        <div id="captcha"></div>
+        <button class="primary" id="gate-button">Sign in</button>
+      </form>
+      <form id="discord-code-form" hidden>
+        <p class="hint">Discord confirmed who you are. Enter your 2FA code to finish signing in.</p>
+        <label for="discord-code">2FA code</label>
+        <input id="discord-code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" spellcheck="false" required>
+        <button class="primary" id="discord-code-button">Finish signing in</button>
+      </form>
+      <button type="button" id="discord-sign-in" hidden>Sign in with Discord</button>
+      <p class="hint" id="discord-gate-hint" hidden>Use the Discord account linked to your active staff account.</p>
+      <p class="status" id="gate-status" role="status"></p>
+    </main>
+
+    <div id="panel" hidden>
+      <aside id="side">
+        <div class="brand">
+          <img class="mark" src="/logo.png" alt="">
+          <div><h1>Meadow dashboard</h1><span class="hint" id="who"></span></div>
+        </div>
+        <nav role="tablist" aria-orientation="vertical">
+          <button role="tab" data-tab="home" data-needs="player.view" aria-selected="true"><span class="icon" aria-hidden="true">&#9673;</span>Dashboard</button>
+          <button role="tab" data-tab="server" data-needs="server.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9881;</span>Server health</button>
+          <button role="tab" data-tab="players" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9787;</span>Players</button>
+          <button role="tab" data-tab="chat" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9993;</span>Chat</button>
+          <button role="tab" data-tab="reports" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9873;</span>Reports<span id="report-count"></span></button>
+          <button role="tab" data-tab="requests" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9998;</span>Requests<span id="request-count"></span></button>
+          <button role="tab" data-tab="masterpieces" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9635;</span>Masterpieces<span id="masterpiece-count"></span></button>
+          <button role="tab" data-tab="bans" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#8856;</span>Bans</button>
+          <button role="tab" data-tab="stats" data-needs="player.view" aria-selected="false"><span class="icon" aria-hidden="true">&#9636;</span>Stats</button>
+          <button role="tab" data-tab="mod-log" data-needs="staff.log" aria-selected="false" hidden><span class="icon" aria-hidden="true">&#9776;</span>Mod log</button>
+          <button role="tab" data-tab="review" data-needs="items.approve" aria-selected="false" hidden><span class="icon" aria-hidden="true">&#10004;</span>Custom items</button>
+          <button role="tab" data-tab="wear-rules" data-needs="items.restrict" aria-selected="false" hidden><span class="icon" aria-hidden="true">&#9873;</span>Wear rules</button>
+          <button role="tab" data-tab="items" data-needs="items.create" aria-selected="false" hidden><span class="icon" aria-hidden="true">&#10070;</span>Items</button>
+          <button role="tab" data-tab="music" data-needs="music.upload" aria-selected="false" hidden><span class="icon" aria-hidden="true">&#9835;</span>Music</button>
+        </nav>
+        <button id="sign-out" type="button">Sign out</button>
+      </aside>
+      <div id="main">
+      <div class="page-title"><h1 id="page-name">Dashboard</h1></div>
+
+      <div data-view="home">
+        <div class="tiles">
+          <button type="button" class="tile" data-goto="players"><div class="value" id="home-online">0</div><div class="name">Playing now</div></button>
+          <button type="button" class="tile" data-goto="reports"><div class="value" id="home-reports">0</div><div class="name">Open reports</div></button>
+          <button type="button" class="tile" data-goto="requests"><div class="value" id="home-requests">0</div><div class="name">Requests and appeals</div></button>
+          <button type="button" class="tile" data-goto="masterpieces"><div class="value" id="home-paintings">0</div><div class="name">Paintings to check</div></button>
+        </div>
+        <div class="columns">
+          <section>
+            <h2>Find a player</h2>
+            <p class="hint">By name: opens them on the Players page.</p>
+            <div class="toolbar"><input id="home-search" type="search" placeholder="Username" aria-label="Find a player">
+              <button type="button" class="primary" id="home-search-go">Find</button></div>
+          </section>
+          <section>
+            <h2>Recent mod notes</h2>
+            <ul class="notes" id="home-notes"></ul>
+            <div class="empty" id="no-home-notes" hidden>No notes yet. Notes are added on a player's page, or with !note in the game.</div>
+          </section>
+        </div>
+        <section id="quick-lock" hidden>
+          <h2>Restrict items</h2>
+          <p class="hint">Find any item, the game's or a custom one, by name or id, and lock it out of the item finder: players can no longer find it or take it there (staff still can). <span id="lock-count"></span></p>
+          <div class="toolbar">
+            <select id="quick-lock-kind" aria-label="Kind">
+              <option value="all">All items</option>
+              <option value="clothing">Clothing</option>
+              <option value="den">Den items</option>
+            </select>
+            <input id="quick-lock-q" type="search" placeholder="Item name or id" aria-label="Find an item to lock">
+            <button type="button" id="quick-lock-all">Every locked item</button>
+          </div>
+          <ul class="plain lock-results" id="quick-lock-results"></ul>
+          <p class="hint" id="quick-lock-more" hidden></p>
+          <p class="status" id="quick-lock-status" role="status"></p>
+        </section>
+      </div>
+
+      <div data-view="server" hidden>
+        <section>
+          <h2>Server health</h2>
+          <p class="hint">Live, read-only health information. It refreshes automatically and never shows player IP addresses or packet contents.</p>
+          <div class="notice" id="server-update-warning" hidden>
+            <strong id="server-update-title"></strong>
+            <span class="hint" id="server-update-detail"></span>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="value" id="server-online">0</div><div class="name">Players online</div></div>
+            <div class="tile"><div class="value" id="server-rooms">0</div><div class="name">Active rooms</div></div>
+            <div class="tile"><div class="value" id="server-sockets">0</div><div class="name">Game sockets</div></div>
+            <div class="tile"><div class="value" id="server-memory">0 MB</div><div class="name">Process memory</div></div>
+          </div>
+          <div class="columns">
+            <section>
+              <h3>Service</h3>
+              <ul class="plain" id="server-service"></ul>
+            </section>
+            <section>
+              <h3>Socket protection</h3>
+              <ul class="plain" id="server-socket-details"></ul>
+            </section>
+          </div>
+          <p class="hint" id="server-updated"></p>
+        </section>
+      </div>
+
+      <div data-view="players">
+        <div class="people" id="people">
+          <section class="people-list">
+            <div class="toolbar">
+              <input id="player-search" type="search" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search players">
+              <select id="player-search-by" aria-label="Search by">
+                <option value="name">By name</option>
+                <option value="address" data-needs="address.ban">By IP address</option>
+                <option value="device">By hardware ID</option>
+              </select>
+            </div>
+            <div class="chips" id="player-only" role="group" aria-label="Show only">
+              <button type="button" data-only="" aria-pressed="true">Everyone</button>
+              <button type="button" data-only="online" aria-pressed="false">Online<span id="online-count"></span></button>
+              <button type="button" data-only="banned" aria-pressed="false">Banned</button>
+              <button type="button" data-only="silenced" aria-pressed="false">Silenced</button>
+              <button type="button" data-only="staff" aria-pressed="false">Staff</button>
+            </div>
+            <ul class="player-list" id="players"></ul>
+            <div class="empty" id="no-players" hidden>No players match.</div>
+            <p class="hint" id="players-more" hidden></p>
+            <p class="hint" id="address-hint" hidden>Searches by address are logged.</p>
+          </section>
+          <section id="no-detail">Pick a player to see them here.<br>Enter in the search opens the first one found.</section>
+          <section id="detail" hidden>
+            <div class="profile-head">
+              <div class="avatar" id="detail-initial" aria-hidden="true"></div>
+              <div class="profile-who">
+                <h2 id="detail-name"></h2>
+                <div class="tag-row" id="detail-tags"></div>
+                <div class="hint" id="detail-where"></div>
+              </div>
+              <div class="profile-tools">
+                <button type="button" id="open-chat">Chat history</button>
+                <button type="button" id="open-paintings">Paintings</button>
+                <button type="button" id="copy-link" title="A link to this player, to paste to other staff">Copy link</button>
+                <button type="button" id="detail-close"><span class="wide-only">Close</span><span class="narrow-only">Back to the list</span></button>
+              </div>
+            </div>
+            <div class="counts" id="player-counts"></div>
+            <div class="subtabs" role="tablist" aria-label="About this player">
+              <button type="button" role="tab" data-sub="overview" aria-selected="true">Overview</button>
+              <button type="button" role="tab" data-sub="actions" aria-selected="false">Actions</button>
+              <button type="button" role="tab" data-sub="accounts" aria-selected="false">Alts and hardware<span class="count" id="alts-count"></span></button>
+              <button type="button" role="tab" data-sub="mail" aria-selected="false">Messages</button>
+              <button type="button" role="tab" data-sub="timeline" aria-selected="false">Timeline</button>
+              <button type="button" role="tab" data-sub="made" data-needs="items.approve" aria-selected="false" hidden>Items they made<span class="count" id="made-count"></span></button>
+            </div>
+            <p class="status" id="detail-status" role="status"></p>
+
+            <div data-sub-view="overview">
+              <div id="detail-banners"></div>
+              <div class="overview">
+                <div>
+                  <h3>About</h3>
+                  <dl id="player-facts"></dl>
+                  <h3 class="record-title">Warnings</h3>
+                  <ul class="warning-list" id="player-warnings"></ul>
+                  <div class="empty" id="no-warnings" hidden>None.</div>
+                  <div id="unwarn-row" hidden><button type="button" data-action="unwarn">Take back the latest</button></div>
+                </div>
+                <div>
+                  <h3>Mod notes</h3>
+                  <p class="hint" style="margin:0 0 8px">For the other staff only: the player never sees these.</p>
+                  <div class="note-row"><textarea id="note-text" maxlength="500" rows="2" placeholder="Add a note about this player" aria-label="New note"></textarea>
+                    <button type="button" class="primary" id="note-add">Add note</button></div>
+                  <ul class="notes" id="player-notes"></ul>
+                </div>
+              </div>
+            </div>
+
+            <div data-sub-view="actions" hidden>
+              <div class="actions">
+                <div class="action">
+                  <h3>Warn</h3>
+                  <div class="row"><select id="warn-reason" aria-label="Reason">
+                      <option value="behavior">Inappropriate behavior</option>
+                      <option value="bullying">Bullying</option>
+                      <option value="personal">Personal information</option>
+                      <option value="scamming">Scamming</option>
+                      <option value="custom">Custom (the note is shown to them)</option>
+                    </select></div>
+                  <div class="row" style="margin-top:8px"><input id="warn-note" maxlength="200" placeholder="Note for staff (optional)" autocomplete="off" aria-label="Note">
+                    <button type="button" data-action="warn" class="primary">Warn</button></div>
+                  <p class="hint">The game shows them its own warning for the reason.</p>
+                </div>
+                <div class="action">
+                  <h3>Silence</h3>
+                  <div class="row"><select id="silence-length" aria-label="How long to silence them">
+                      <option value="">How long?</option>
+                      <option value="1">1 hour</option>
+                      <option value="6">6 hours</option>
+                      <option value="24">1 day</option>
+                      <option value="72">3 days</option>
+                      <option value="168">1 week</option>
+                      <option value="0">Until lifted</option>
+                      <option value="custom">Other, in hours</option>
+                    </select>
+                    <input id="silence-hours" type="number" min="1" placeholder="Hours" aria-label="Silence length in hours" hidden></div>
+                  <div class="row" style="margin-top:8px"><button type="button" data-action="silence" class="primary">Silence</button>
+                    <button type="button" data-action="unsilence">Lift</button></div>
+                </div>
+                <div class="action">
+                  <h3>Ban</h3>
+                  <div class="row"><select id="ban-length" aria-label="How long to ban them">
+                      <option value="">How long?</option>
+                      <option value="1">1 hour</option>
+                      <option value="24">1 day</option>
+                      <option value="72">3 days</option>
+                      <option value="168">1 week</option>
+                      <option value="720">30 days</option>
+                      <option value="0">Permanent</option>
+                      <option value="custom">Other, in hours</option>
+                    </select>
+                    <input id="ban-hours" type="number" min="1" placeholder="Hours" aria-label="Ban length in hours" hidden></div>
+                  <div class="row" style="margin-top:8px"><input id="ban-reason" maxlength="300" placeholder="Reason, shown to them" autocomplete="off" list="ban-reasons" aria-label="Reason, shown to the banned player"></div>
+                  <div class="row" style="margin-top:8px">
+                    <button type="button" data-action="ban" class="danger">Ban</button>
+                    <button type="button" data-action="banReason">Save reason</button>
+                    <button type="button" data-action="unban">Lift</button></div>
+                </div>
+                <div class="action">
+                  <h3>Address and hardware</h3>
+                  <div class="row"><input id="block-reason" maxlength="300" placeholder="Reason (the ban's, if left empty)" autocomplete="off" list="ban-reasons" aria-label="Reason for the address or hardware ban"></div>
+                  <div class="row" style="margin-top:8px">
+                    <button type="button" data-action="banAddress" class="danger">Ban address</button>
+                    <button type="button" data-action="banDevices" class="danger">Hardware ban</button>
+                    <button type="button" data-action="unbanDevices">Lift hardware ban</button></div>
+                  <p class="hint">Keeps out everyone on the address they last signed in from, or on their computers.</p>
+                </div>
+                <div class="action">
+                  <h3>Message</h3>
+                  <div class="row"><input id="message-text" maxlength="200" placeholder="Shown to them in the game" autocomplete="off" aria-label="Message">
+                    <button type="button" data-action="message">Send</button></div>
+                  <div class="row" style="margin-top:8px"><button type="button" data-action="kick">Disconnect</button></div>
+                </div>
+                <div class="action">
+                  <h3>In the game</h3>
+                  <div class="row">
+                    <button type="button" data-action="summon">Bring to me</button>
+                    <button type="button" data-action="goto">Go to them</button></div>
+                  <p class="hint">Both of you online, you in a room.</p>
+                </div>
+                <div class="action">
+                  <h3>Username, bio and wall posts</h3>
+                  <div class="row">
+                    <button type="button" data-action="rejectName" class="danger">Reject username</button>
+                    <button type="button" data-action="acceptName">Take back</button>
+                    <button type="button" data-action="clearBio">Clear bio</button></div>
+                  <div class="row" style="margin-top:8px" title="Every post they wrote on anyone's Jammer Wall, and the replies to those">
+                    <button type="button" data-action="clearWallPosts" class="danger">Clear wall posts</button></div>
+                </div>
+              </div>
+              <datalist id="ban-reasons">
+                <option value="Inappropriate behavior"></option>
+                <option value="Bullying"></option>
+                <option value="Scamming"></option>
+                <option value="Sharing personal information"></option>
+                <option value="Inappropriate username"></option>
+                <option value="Ban evasion"></option>
+              </datalist>
+            </div>
+
+            <div data-sub-view="accounts" hidden>
+              <h3 style="margin:0 0 4px">Other accounts</h3>
+              <p class="hint" style="margin:0 0 8px">Ones that used the same computer, or signed in from the same addresses in the last 90 days. Click one to open it.</p>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Name</th><th>State</th><th>Same hardware</th><th class="num">Same addresses</th></tr></thead>
+                <tbody id="alts"></tbody>
+              </table></div>
+              <div class="empty" id="no-alts" hidden>None found.</div>
+              <h3 style="margin:16px 0 4px">Hardware IDs</h3>
+              <p class="hint" style="margin:0 0 8px">Click one for every account that used it.</p>
+              <div class="table-wrap"><table>
+                <thead><tr><th>Kind</th><th>Id</th><th>First seen</th><th>Last seen</th><th class="num">Other accounts</th><th>State</th></tr></thead>
+                <tbody id="device-ids"></tbody>
+              </table></div>
+              <div class="empty" id="no-device-ids" hidden>None.</div>
+            </div>
+
+            <div data-sub-view="mail" hidden>
+              <div class="toolbar">
+                <select id="mail-kind" aria-label="Which">
+                  <option value="jamagram">Jam-a-Grams</option>
+                  <option value="wall">Jammer Wall posts</option>
+                </select>
+                <select id="mail-direction" aria-label="Sent or received">
+                  <option value="">Sent and received</option>
+                  <option value="sent">Sent by them</option>
+                  <option value="received">Sent to them</option>
+                </select>
+              </div>
+              <ul id="mail-lines" class="report-chat"></ul>
+              <div class="empty" id="no-mail" hidden>Nothing kept.</div>
+              <button type="button" id="mail-older" hidden>Older</button>
+            </div>
+
+            <div data-sub-view="timeline" hidden>
+              <p class="hint" style="margin:0 0 8px">Bans, what staff did, reports about them and hardware alerts, newest first.</p>
+              <ul id="timeline" class="report-chat"></ul>
+              <div class="empty" id="no-timeline" hidden>Nothing yet.</div>
+            </div>
+
+            <div data-sub-view="made" hidden>
+              <p class="hint" style="margin:0 0 8px">From the Item Maker. A picture taken off counts against them, and cannot be uploaded again.</p>
+              <div class="made-items" id="made-items"></div>
+              <div class="empty" id="no-made-items" hidden>None.</div>
+              <div class="toolbar"><span class="hint" id="uploads-state"></span>
+                <button type="button" id="uploads-toggle"></button></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div data-view="stats" hidden>
+<!--stats-view-->
+      </div>
+
+      <div data-view="chat" hidden>
+        <section>
+          <form id="chat-form" class="toolbar">
+            <input id="chat-player" maxlength="100" placeholder="Player" autocomplete="off" spellcheck="false" aria-label="Player">
+            <input id="chat-room" maxlength="100" placeholder="Room" autocomplete="off" spellcheck="false" aria-label="Room">
+            <input id="chat-text" maxlength="100" placeholder="Words" autocomplete="off" aria-label="Words" style="flex:1">
+            <select id="chat-kind" aria-label="What">
+              <option value="">Everything</option>
+              <option value="chat">Chat</option>
+              <option value="whisper">Whispers</option>
+              <option value="jamagram">Jam-a-Grams</option>
+              <option value="wall">Wall posts</option>
+              <option value="notsent">Stopped by the filter</option>
+            </select>
+            <input id="chat-until" type="datetime-local" aria-label="From this time back">
+            <button class="primary" type="submit">Search</button>
+          </form>
+          <p class="status" id="chat-status" role="status"></p>
+          <div id="context-box" hidden>
+            <div class="toolbar"><h2 style="margin:0;flex:1" id="context-title"></h2><button type="button" id="context-close">Close</button></div>
+            <ul id="chat-context"></ul>
+          </div>
+          <ul id="chat-lines"></ul>
+          <div class="empty" id="no-chat" hidden>Nothing here.</div>
+          <div class="send-row"><button type="button" id="chat-older" hidden>Older</button></div>
+        </section>
+      </div>
+
+      <div data-view="reports" hidden>
+        <section>
+          <div class="toolbar">
+            <h2 style="margin:0;flex:1">Reports</h2>
+            <select id="report-filter" aria-label="Which reports">
+              <option value="0">Waiting</option>
+              <option value="1">Dealt with</option>
+            </select>
+          </div>
+          <p class="status" id="report-status" role="status"></p>
+          <div id="reports"></div>
+          <div class="empty" id="no-reports" hidden>Nothing here.</div>
+        </section>
+      </div>
+
+      <div data-view="requests" hidden>
+        <section>
+          <div class="toolbar">
+            <h2 style="margin:0;flex:1">Requests</h2>
+            <select id="request-filter" aria-label="Which requests">
+              <option value="0">Waiting</option>
+              <option value="1">Answered</option>
+            </select>
+          </div>
+          <p class="status" id="request-status" role="status"></p>
+          <h2>Ban appeals</h2>
+          <div id="appeals"></div>
+          <div class="empty" id="no-appeals" hidden>Nothing here.</div>
+          <h2 style="margin-top:20px">Username changes</h2>
+          <div id="name-requests"></div>
+          <div class="empty" id="no-name-requests" hidden>Nothing here.</div>
+        </section>
+      </div>
+
+      <div data-view="masterpieces" hidden>
+        <section>
+          <div class="toolbar">
+            <h2 style="margin:0;flex:1">Masterpieces</h2>
+            <select id="masterpiece-filter" aria-label="Which masterpieces">
+              <option value="waiting">Waiting</option>
+              <option value="approved">On show, the last approved first</option>
+              <option value="all">All</option>
+            </select>
+            <input id="masterpiece-creator" type="search" maxlength="100" placeholder="Maker's username" autocomplete="off" spellcheck="false" aria-label="Maker's username">
+          </div>
+          <p class="hint">Click a painting to see it full size: there, the arrow keys go through the others.</p>
+          <p class="status" id="masterpiece-status" role="status"></p>
+          <div class="paintings" id="masterpieces"></div>
+          <div class="empty" id="no-masterpieces" hidden>Nothing here.</div>
+        </section>
+        <section id="recent-block">
+          <div class="toolbar">
+            <h2 style="margin:0;flex:1">Recently approved</h2>
+            <label class="check"><input id="recent-mine" type="checkbox"> Only the ones I approved</label>
+          </div>
+          <p class="hint">The last paintings let in, the latest first. Rejecting one takes it out of every den it hangs in, and gives its maker a Masterpiece Token back.</p>
+          <div class="paintings compact" id="recent-paintings"></div>
+          <div class="empty" id="no-recent" hidden>None yet.</div>
+        </section>
+      </div>
+
+      <div data-view="review" hidden>
+        <section>
+          <div class="subtabs" role="tablist" aria-label="Custom items">
+            <button type="button" role="tab" data-rsub="items" aria-selected="true">Items and pictures<span class="count" id="review-count"></span></button>
+            <button type="button" role="tab" data-rsub="music" aria-selected="false">Custom music<span class="count" id="music-review-count"></span></button>
+          </div>
+          <div data-rsub-view="items">
+          <h2>Waiting for approval</h2>
+          <p class="hint">Items players made while the admin asks for them to be approved first, and every new picture a player gives one (unless the admin says not). Click a picture to see it full size. An item let in is given to its maker; one turned away is deleted (a picture turned away is only taken off).</p>
+          <div class="review-list" id="review-list"></div>
+          <div class="empty" id="no-review" hidden>Nothing is waiting.</div>
+          <h3 style="margin:18px 0 4px">Picture uploads stopped</h3>
+          <p class="hint">A player whose 3 pictures were turned away (or taken off) can upload no more till they are let again, which clears the count. A picture turned away can never be sent again.</p>
+          <div class="toolbar"><input id="stop-name" maxlength="20" placeholder="Username" aria-label="Player whose uploads to stop">
+            <button type="button" class="danger" id="stop-go">Stop their uploads</button></div>
+          <ul class="plain" id="stopped-list"></ul>
+          <div class="empty" id="no-stopped" hidden>Nobody.</div>
+          </div>
+          <div data-rsub-view="music" hidden>
+          <h2>Custom music waiting</h2>
+          <p class="hint">Tracks players uploaded. Listen first. Approved, it goes to their den music; turned away, it is deleted and their 150 Earth Crystals go back.</p>
+          <div class="review-list" id="music-review-list"></div>
+          <div class="empty" id="no-music-review" hidden>Nothing is waiting.</div>
+          </div>
+          <p class="status" id="review-status" role="status"></p>
+        </section>
+      </div>
+
+      <div data-view="wear-rules" hidden>
+        <section>
+          <h2>Animal wear rules</h2>
+          <p class="hint">Choose an animal below, then control which clothing it may wear. A rule never changes the other animals.</p>
+          <div id="wear-rule-animal" aria-label="Animal to control"></div>
+          <div class="toolbar"><input id="wear-rule-q" type="search" placeholder="Clothing name or id" aria-label="Find clothing to restrict" disabled></div>
+          <ul class="plain lock-results" id="wear-rule-results"></ul>
+          <p class="hint" id="wear-rule-more" hidden></p>
+        </section>
+        <section id="wear-rule-editor" hidden>
+          <h2 id="wear-rule-title"></h2>
+          <p class="hint">Tick every animal that must not wear this item. Leaving them all clear lets every animal wear it again.</p>
+          <div id="wear-rule-animals"></div>
+          <div class="toolbar" style="margin-top:14px"><button type="button" class="primary" id="wear-rule-save">Save rules</button>
+            <button type="button" id="wear-rule-close">Close</button></div>
+          <p class="status" id="wear-rule-status" role="status"></p>
+        </section>
+        <section>
+          <h2>Restricted for this animal</h2>
+          <ul class="plain lock-results" id="wear-rule-active"></ul>
+          <div class="empty" id="no-wear-rules">No animal wear rules yet.</div>
+        </section>
+      </div>
+
+      <div data-view="music" hidden>
+        <section>
+          <h2>Upload music</h2>
+          <p class="hint">An MP3 becomes a den music track at once, with no restart: players get it from the item finder (and the shop, if it is on sale) and play it in their dens like the game's own tracks. 44.1 kHz MP3s play best; 15 MB at most.</p>
+          <div class="actions">
+            <div class="action">
+              <h3>The track</h3>
+              <div class="row"><input id="music-file" type="file" accept=".mp3,audio/mpeg" aria-label="MP3 file"></div>
+              <div class="row" style="margin-top:8px"><input id="music-name" maxlength="40" placeholder="Name" aria-label="Name"></div>
+              <div class="row" style="margin-top:8px"><input id="music-cost" type="number" min="0" placeholder="Price in gems (0)" aria-label="Price in gems">
+                <label class="check"><input type="checkbox" id="music-shop"> On sale in the shop</label></div>
+              <div class="row" style="margin-top:8px"><button type="button" class="primary" id="music-upload">Upload</button></div>
+            </div>
+          </div>
+          <p class="status" id="music-status" role="status"></p>
+        </section>
+        <section>
+          <h2>Uploaded tracks</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Track</th><th class="num">Den item</th><th>Uploaded</th><th class="num">Size</th><th></th></tr></thead>
+            <tbody id="music-list"></tbody>
+          </table></div>
+          <div class="empty" id="no-music" hidden>None yet.</div>
+        </section>
+      </div>
+      <div data-view="items" hidden>
+        <section>
+          <h2 id="item-form-title">Make an item</h2>
+          <p class="hint">One of the game's items under a new name, price and colours. Players have it at once, with no restart: in the item finder, and first in the hidden shops of oddities.</p>
+          <div class="actions">
+            <div class="action">
+              <h3>Made from</h3>
+              <div class="row">
+                <select id="item-kind" aria-label="Kind">
+                  <option value="clothing">Clothing</option>
+                  <option value="den">Den item</option>
+                </select>
+                <input id="item-base" type="number" min="1" placeholder="Id of the game's item" aria-label="Id of the item to copy">
+                <button type="button" id="item-look">Look up</button></div>
+              <p class="hint" id="item-base-name"></p>
+            </div>
+            <div class="action">
+              <h3>The new item</h3>
+              <div class="row"><input id="item-name" maxlength="40" placeholder="Name" aria-label="Name"></div>
+              <div class="row" style="margin-top:8px"><input id="item-cost" type="number" min="0" placeholder="Price in gems" aria-label="Price in gems">
+                <label class="check"><input type="checkbox" id="item-members"> Members only</label></div>
+              <div id="item-colours" aria-label="Colours offered"></div>
+              <div class="row" style="margin-top:12px">
+                <button type="button" class="primary" id="item-save">Make it</button>
+                <button type="button" id="item-cancel" hidden>Cancel</button></div>
+            </div>
+          </div>
+          <p class="status" id="item-status" role="status"></p>
+        </section>
+        <section>
+          <h2>Items made</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Picture</th><th class="num">Id</th><th>Name</th><th>Made from</th><th class="num">Price</th><th>By</th><th></th></tr></thead>
+            <tbody id="items"></tbody>
+          </table></div>
+          <div class="empty" id="no-items" hidden>None yet.</div>
+        </section>
+        <section>
+          <h2>Item finder and inventories</h2>
+          <p class="hint">Any item of the game's or a custom one, by its id. A locked item is kept out of the item finder for players; admins and developers still find it there, marked locked. Taking an item takes every one of it the player has.</p>
+          <div class="actions">
+            <div class="action">
+              <h3>Lock out of the finder</h3>
+              <div class="row">
+                <select id="lock-kind" aria-label="Kind">
+                  <option value="clothing">Clothing</option>
+                  <option value="den">Den item</option>
+                </select>
+                <input id="lock-id" type="number" min="1" placeholder="Item id" aria-label="Item id">
+                <button type="button" id="lock-add">Lock</button></div>
+              <ul class="plain" id="locked-items"></ul>
+              <div class="empty" id="no-locked">Nothing locked.</div>
+            </div>
+            <div class="action">
+              <h3>Take from a player</h3>
+              <div class="row"><input id="take-name" maxlength="20" placeholder="Username" aria-label="Username"></div>
+              <div class="row" style="margin-top:8px">
+                <select id="take-kind" aria-label="Kind">
+                  <option value="clothing">Clothing</option>
+                  <option value="den">Den item</option>
+                </select>
+                <input id="take-id" type="number" min="1" placeholder="Item id" aria-label="Item id">
+                <button type="button" id="take-go">Take</button></div>
+            </div>
+          </div>
+          <p class="status" id="control-status" role="status"></p>
+        </section>
+      </div>
+
+      <div data-view="mod-log" hidden>
+        <section>
+          <h2>What staff did</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>When</th><th>Who</th><th>What</th><th>Player</th><th>Detail</th></tr></thead>
+            <tbody id="mod-log"></tbody>
+          </table></div>
+          <div class="empty" id="no-mod-log" hidden>Nothing yet.</div>
+        </section>
+      </div>
+
+      <div data-view="bans" hidden>
+        <section>
+          <h2>Banned and silenced</h2>
+          <p class="status" id="ban-status" role="status"></p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Ban</th><th>Reason</th><th>By</th><th>Chat</th><th></th></tr></thead>
+            <tbody id="bans"></tbody>
+          </table></div>
+          <div class="empty" id="no-bans" hidden>Nobody is banned or silenced.</div>
+        </section>
+        <section>
+          <h2>Banned addresses</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Address</th><th>Reason</th><th>By</th><th>Since</th><th></th></tr></thead>
+            <tbody id="addresses"></tbody>
+          </table></div>
+          <div class="empty" id="no-addresses" hidden>No address is banned.</div>
+        </section>
+        <section>
+          <h2>Hardware bans</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Banned with</th><th>Reason</th><th>By</th><th>Since</th><th>Accounts</th><th>Ids</th><th></th></tr></thead>
+            <tbody id="device-bans"></tbody>
+          </table></div>
+          <div class="empty" id="no-device-bans" hidden>No hardware bans.</div>
+        </section>
+        <section>
+          <h2>Hardware alerts</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>When</th><th>Player</th><th>What</th><th>Detail</th></tr></thead>
+            <tbody id="device-alerts"></tbody>
+          </table></div>
+          <div class="empty" id="no-device-alerts" hidden>Nothing yet.</div>
+        </section>
+        <section>
+          <h2>Stopped most by the filter</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Player</th><th class="num">Stopped</th><th>Last</th><th></th></tr></thead>
+            <tbody id="filter-hits"></tbody>
+          </table></div>
+          <div class="empty" id="no-filter-hits" hidden>Nobody.</div>
+        </section>
+      </div>
+      </div>
+    </div>
+
+    <!-- a picture full size over the page, with what can be done about it -->
+    <div class="preview" id="preview" hidden>
+      <figure>
+        <img id="preview-img" alt="">
+        <figcaption>
+          <div><strong id="preview-title"></strong> <span class="hint" id="preview-detail"></span></div>
+          <div class="buttons" id="preview-buttons"></div>
+          <span class="hint" id="preview-keys"></span>
+        </figcaption>
+      </figure>
+    </div>
+    <div id="toast" role="status" aria-live="polite" hidden><span id="toast-text"></span></div>
+
+    <script src="/captcha.js"></script>
+    <script>
+      "use strict";
+
+      const $ = id => document.getElementById(id);
+      const REFRESH_MS = 8000;
+
+      let signedIn = false;
+      let tab = "home";
+      let selected = null; // the username of the player whose box is open
+      let players = [];
+      // Older responses must never overwrite a newer player search.
+      let playerSearchRun = 0;
+      let chatQuery = null; // what the Chat page shows: {username, room, text}
+      let chatLines = [];
+      let timer = null;
+
+      const el = (tag, text, className) => {
+        const node = document.createElement(tag);
+        if (text !== undefined) {
+          node.textContent = text;
+        }
+        if (className) {
+          node.className = className;
+        }
+        return node;
+      };
+      const button = (label, onClick, className) => {
+        const node = el("button", label, className);
+        node.type = "button";
+        node.addEventListener("click", async () => {
+          node.disabled = true;
+          await onClick();
+          node.disabled = false;
+        });
+        return node;
+      };
+
+      const setStatus = (element, text, bad = false) => {
+        element.textContent = text;
+        element.classList.toggle("bad", bad);
+      };
+
+      const when = seconds => (seconds ? new Date(seconds * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"}) : "never");
+      const duration = seconds => {
+        for (const [size, name] of [[86400, "day"], [3600, "hour"], [60, "minute"]]) {
+          if (seconds >= size) {
+            const count = Math.floor(seconds / size);
+            return `${count} ${name}${count === 1 ? "" : "s"}`;
+          }
+        }
+        return "under a minute";
+      };
+      // time played: "3d 4h", "2h 15m", "40m".
+      const played = seconds => {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor(seconds % 86400 / 3600);
+        const minutes = Math.floor(seconds % 3600 / 60);
+        return days > 0 ? `${days.toLocaleString()}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      };
+      const left = seconds => (seconds === -1 ? "Until lifted" : seconds ? `${duration(seconds)} left` : "—");
+      // how long ago, as said: "just now", "5 min ago", "3 h ago", "2 days ago"; past a month, the date.
+      const ago = seconds => {
+        if (!seconds) {
+          return "never";
+        }
+        const gone = Math.max(0, Math.floor(Date.now() / 1000) - seconds);
+        const days = Math.floor(gone / 86400);
+        return gone < 60 ? "just now" : gone < 3600 ? `${Math.floor(gone / 60)} min ago` : gone < 86400 ? `${Math.floor(gone / 3600)} h ago`
+          : days < 31 ? `${days} ${days === 1 ? "day" : "days"} ago` : new Date(seconds * 1000).toLocaleDateString([], {dateStyle: "medium"});
+      };
+
+      let check = null; // the captcha (public/captcha.js), once the sign-in is shown
+      let discordLogin = false;
+
+      const showGate = message => {
+        check = check || window.captcha.mount($("captcha"), "login");
+        clearTimeout(timer);
+        signedIn = false;
+        $("panel").hidden = true;
+        $("gate").hidden = false;
+        $("password").value = "";
+        $("code").value = "";
+        $("discord-sign-in").hidden = false;
+        $("discord-sign-in").disabled = !discordLogin;
+        $("discord-sign-in").textContent = discordLogin ? "Sign in with Discord" : "Discord sign-in is not configured";
+        $("discord-gate-hint").hidden = false;
+        $("discord-gate-hint").textContent = discordLogin
+          ? "Use the Discord account linked to your active staff account."
+          : "Set AJ_DISCORD_CLIENT_ID and AJ_DISCORD_CLIENT_SECRET, then add the staff callback URL in your Discord application.";
+        setStatus($("gate-status"), message || "", Boolean(message));
+      };
+
+      const api = async (path, body) => {
+        try {
+          const response = await fetch(`/dashboard/api/staff/${path}`, body === undefined ? {} : {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(body),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (response.status === 401 && signedIn) {
+            showGate("Your session ended. Sign in again.");
+          }
+          return {ok: response.ok, status: response.status, data};
+        }
+        catch (err) {
+          return {ok: false, status: 0, data: {error: "The server did not answer."}};
+        }
+      };
+      const said = result => result.data.ok || result.data.error || "That did not work.";
+
+      // what an action came to: in the page's status line, and at the foot of
+      // the window too, for when that line is scrolled out of sight. `undo` is
+      // [label, what it does], for one that can be taken back.
+      let toastTimer = null;
+      const hideToastSoon = ms => {
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          $("toast").hidden = true;
+        }, ms);
+      };
+      const toast = (text, bad = false, undo = null) => {
+        $("toast-text").textContent = text;
+        $("toast").classList.toggle("bad", bad);
+        $("toast").replaceChildren($("toast-text"), ...(undo ? [button(undo[0], async () => {
+          $("toast").hidden = true;
+          await undo[1]();
+        })] : []));
+        $("toast").hidden = false;
+        hideToastSoon(undo ? 10000 : 5000);
+      };
+      // kept while the pointer is on it
+      $("toast").addEventListener("mouseenter", () => clearTimeout(toastTimer));
+      $("toast").addEventListener("mouseleave", () => hideToastSoon(3000));
+      const tell = (element, result, undo = null) => {
+        setStatus(element, said(result), !result.ok);
+        toast(said(result), !result.ok, result.ok ? undo : null);
+      };
+
+      const stateTags = player => {
+        const tags = [];
+        if (player.online) {
+          tags.push(el("span", "Online", "tag good"));
+        }
+        if (player.banned !== 0) {
+          tags.push(el("span", player.banned === -1 ? "Banned" : `Banned ${duration(player.banned)}`, "tag bad"));
+        }
+        if (player.silenced !== 0) {
+          tags.push(el("span", "Silenced", "tag bad"));
+        }
+        if (player.deviceBanned) {
+          tags.push(el("span", "Hardware banned", "tag bad"));
+        }
+        if (player.nameRejected) {
+          tags.push(el("span", "Name rejected", "tag bad"));
+        }
+        if (player.role || player.moderator) {
+          tags.push(el("span", player.role ? `${player.role[0].toUpperCase()}${player.role.slice(1)}` : "Moderator", "tag"));
+        }
+        return tags;
+      };
+
+      // the list beside the player: drawn again only when it changed (and
+      // once a minute, for its "ago"s), so that a row is not swapped out as
+      // it is clicked. the arrow keys go up and down it.
+      let playersShown = "";
+      const ONLY_WORDS = {online: "online", banned: "banned", silenced: "silenced", staff: "on the staff"};
+      const renderPlayers = () => {
+        const only = $("player-search-by").value === "name" ? listOnly() : "";
+        const query = $("player-search").value.trim();
+        $("no-players").textContent = only ? `Nobody ${ONLY_WORDS[only]}${query ? ` is called anything like "${query}"` : ""}.` : "No players match.";
+        $("no-players").hidden = players.length > 0;
+        const shown = `${selected} ${Math.floor(Date.now() / 60000)} ${JSON.stringify(players)}`;
+        if (shown === playersShown) {
+          return;
+        }
+        playersShown = shown;
+        const focused = $("players").contains(document.activeElement) ? document.activeElement.dataset.username : null;
+        const searchBy = $("player-search-by").value;
+        $("players").replaceChildren(...players.map(player => {
+          const row = el("li");
+          const pick = el("button", undefined, "player-row");
+          pick.type = "button";
+          pick.dataset.username = player.username;
+          pick.setAttribute("aria-current", String(player.username === selected));
+          const top = el("span", undefined, "row-top");
+          top.append(el("strong", player.username), ...stateTags(player));
+          const seen = player.matchedAt ? `${searchBy === "address" ? "Last from that address" : "Last used"} ${ago(player.matchedAt)}`
+            : player.online ? player.room : `Seen ${ago(player.lastSeen)}`;
+          pick.append(top, el("span", seen, "row-sub"));
+          pick.addEventListener("click", () => select(player.username === selected ? null : player.username));
+          row.append(pick);
+          return row;
+        }));
+        const again = focused && [...$("players").querySelectorAll("button")].find(pick => pick.dataset.username === focused);
+        if (again) {
+          again.focus();
+        }
+      };
+      $("players").addEventListener("keydown", event => {
+        const rows = [...$("players").querySelectorAll("button")];
+        const at = rows.indexOf(document.activeElement);
+        if (at === -1 || (event.key !== "ArrowDown" && event.key !== "ArrowUp")) {
+          return;
+        }
+        event.preventDefault();
+        const next = at + (event.key === "ArrowDown" ? 1 : -1);
+        (next < 0 ? $("player-search") : rows[Math.min(next, rows.length - 1)]).focus();
+      });
+
+      // the player open beside the list: who they are and what holds them
+      // now, their numbers, and the page of theirs picked below those.
+      let shownPlayer = null; // what loadDetail last had of them
+      let altCount = null; // from loadExtras, which asks less often
+      let reasonFor = null; // whose ban reason the Ban box was filled in with
+      const loadDetail = async () => {
+        $("detail").hidden = !selected;
+        $("no-detail").hidden = Boolean(selected);
+        $("people").classList.toggle("picked", Boolean(selected));
+        if (!selected) {
+          return;
+        }
+        const username = selected;
+        const result = await api(`player?username=${encodeURIComponent(username)}`);
+        if (username !== selected) {
+          return;
+        }
+        if (!result.ok) {
+          selected = null;
+          shownPlayer = null;
+          $("detail").hidden = true;
+          $("no-detail").hidden = false;
+          $("people").classList.remove("picked");
+          return;
+        }
+        const player = result.data;
+        shownPlayer = player;
+        $("detail-name").textContent = player.username;
+        $("detail-initial").textContent = player.username.slice(0, 1).toUpperCase();
+        $("detail-tags").replaceChildren(...stateTags(player));
+        $("detail-where").textContent = player.online ? `Playing now, in ${player.room}` : `Offline · seen ${ago(player.lastSeen)}`;
+        renderCounts();
+        renderBanners(player);
+        const facts = [
+          ["Last seen", player.online ? "Now" : when(player.lastSeen)],
+          ["Joined", when(player.createdAt)],
+          ["Playtime", played(player.playtime || 0)],
+          ["Appeal", player.appeal ? `${player.appeal.status} · ${player.appeal.text}` : "—"],
+          ["Discord", player.discord || "—"],
+          ["Bio", player.bio || "—"],
+        ];
+        $("player-facts").replaceChildren(...facts.flatMap(([name, value]) => [el("dt", name), el("dd", value)]));
+        renderWarnings(player.warningList || []);
+        // filled in once for each player, so that a reason being typed is not lost
+        if (reasonFor !== player.username && document.activeElement !== $("ban-reason")) {
+          $("ban-reason").value = player.banned === 0 ? "" : player.banReason;
+          reasonFor = player.username;
+        }
+        renderNotes(player.notes || []);
+        renderMade(player);
+      };
+
+      // their numbers, each a button to where they are told of.
+      const renderCounts = () => {
+        const player = shownPlayer;
+        if (!player) {
+          return;
+        }
+        const tiles = [
+          [player.warnings || 0, "Warnings", () => showSub("overview")],
+          [player.openReports, "Reports waiting", () => showSub("timeline"), player.openReports > 0],
+          [player.stoppedThisWeek, "Filter stops, 7 days", () => openChat(player.username, "notsent")],
+          [altCount === null ? "…" : altCount, "Other accounts", () => showSub("accounts")],
+          [player.devicesKnown || 0, "Hardware IDs", () => showSub("accounts")],
+          [player.paintings, "Paintings", () => openPaintings(player.username)],
+        ];
+        $("player-counts").replaceChildren(...tiles.map(([value, name, open, attention]) => {
+          const tile = el("button", undefined, attention ? "attention" : undefined);
+          tile.type = "button";
+          tile.append(el("div", String(value), "value"), el("div", name, "name"));
+          tile.addEventListener("click", open);
+          return tile;
+        }));
+      };
+
+      // what holds them now, each with the button that lifts it (for the
+      // roles that may: the buttons are caught with the rest, below).
+      const renderBanners = player => {
+        const banner = (text, action, label) => {
+          const box = el("div", undefined, "banner");
+          box.append(el("span", text));
+          if (permissions.has(ACTION_PERMISSIONS[action])) {
+            const lift = el("button", label);
+            lift.type = "button";
+            lift.dataset.action = action;
+            box.append(lift);
+          }
+          return box;
+        };
+        const banners = [];
+        if (player.banned !== 0) {
+          banners.push(banner(`${player.banned === -1 ? "Banned permanently" : `Banned, ${duration(player.banned)} left`}${player.banReason ? ` · ${player.banReason}` : ""}`,
+            "unban", "Lift ban"));
+        }
+        if (player.deviceBanned) {
+          banners.push(banner("Their hardware is banned.", "unbanDevices", "Lift hardware ban"));
+        }
+        if (player.silenced !== 0) {
+          banners.push(banner(player.silenced === -1 ? "Silenced until it is lifted." : `Silenced, ${duration(player.silenced)} left.`, "unsilence", "Lift silence"));
+        }
+        if (player.nameRejected) {
+          banners.push(banner("Their username was rejected: they pick another at their next sign-in.", "acceptName", "Take back"));
+        }
+        $("detail-banners").replaceChildren(...banners);
+      };
+
+      // their warnings, the latest first (lib/moderation.js keeps the reason's name)
+      const WARNING_NAMES = {behavior: "Inappropriate behavior", bullying: "Bullying", personal: "Personal information", scamming: "Scamming", custom: "Custom"};
+      const renderWarnings = list => {
+        $("player-warnings").replaceChildren(...list.map(warning => {
+          const row = el("li");
+          row.append(el("span", `${when(warning.at)} · by ${warning.by}${warning.seen ? "" : " · not seen by them yet"}`, "who"),
+            `${WARNING_NAMES[warning.reason] || warning.reason}${warning.note ? `: ${warning.note}` : ""}`);
+          return row;
+        }));
+        $("no-warnings").hidden = list.length > 0;
+        $("unwarn-row").hidden = list.length === 0;
+      };
+
+      // the pages of a player's own: one at a time
+      const showSub = name => {
+        for (const one of document.querySelectorAll(".subtabs button")) {
+          one.setAttribute("aria-selected", String(one.dataset.sub === name));
+        }
+        for (const view of document.querySelectorAll("[data-sub-view]")) {
+          view.hidden = view.dataset.subView !== name;
+        }
+      };
+      for (const one of document.querySelectorAll(".subtabs button")) {
+        one.addEventListener("click", () => showSub(one.dataset.sub));
+      }
+
+      // what they made in the Item Maker, for a report about one of its pictures
+      let uploadsStopped = false;
+      const renderMade = player => {
+        const made = player.madeItems || [];
+        $("made-count").textContent = made.length ? String(made.length) : "";
+        $("no-made-items").hidden = made.length > 0;
+        $("made-items").replaceChildren(...made.map(item => {
+          const row = el("div", undefined, "made-item");
+          const art = el("div", item.artUrl ? undefined : "No picture", "art");
+          if (item.artUrl) {
+            art.append(guardedPicture(item.artUrl));
+          }
+          const about = el("div");
+          about.append(el("strong", item.name), el("div", `${item.kind === "den" ? "den item" : "clothing"} ${item.id}${item.artWaiting ? " · picture waiting for approval" : ""}`, "hint"));
+          row.append(art, about);
+          if (item.artUrl) {
+            row.append(button("Take picture off", async () => {
+              if (!confirm(`Take the picture off ${item.name}? It counts against ${player.username}.`)) {
+                return;
+              }
+              const result = await api("review", {action: "takePicture", kind: item.kind, id: item.id});
+              tell($("detail-status"), result);
+              await loadDetail();
+            }, "danger"));
+          }
+          return row;
+        }));
+        uploadsStopped = player.picturesStopped;
+        $("uploads-state").textContent = player.picturesStopped ? "Picture uploads: stopped."
+          : `Picture uploads: allowed (${player.pictureStrikes || 0} of 3 turned away).`;
+        $("uploads-toggle").textContent = player.picturesStopped ? "Let them upload again" : "Stop their picture uploads";
+        $("uploads-toggle").className = player.picturesStopped ? "" : "danger";
+      };
+      $("uploads-toggle").addEventListener("click", async () => {
+        if (!selected) {
+          return;
+        }
+        const result = await api("review", {action: "uploads", username: selected, blocked: !uploadsStopped});
+        tell($("detail-status"), result);
+        await loadDetail();
+      });
+
+      // the player's Jam-a-Grams or wall posts, sent and received
+      // (lib/chatlog.js): asked with the rest of the extras, and a page more
+      // with Older. "(not sent)" in front is one the filter stopped.
+      let mailLines = [];
+      const loadMail = async older => {
+        const username = selected;
+        if (!username) {
+          return;
+        }
+        const before = older && mailLines.length ? mailLines[mailLines.length - 1].id : 0;
+        const result = await api(`chat?username=${encodeURIComponent(username)}&kind=${$("mail-kind").value}`
+          + `&direction=${$("mail-direction").value}&before=${before}`);
+        if (username !== selected) {
+          return;
+        }
+        const lines = result.ok ? result.data.lines : [];
+        mailLines = older ? [...mailLines, ...lines] : lines;
+        $("mail-lines").replaceChildren(...mailLines.map(line => lineNode(line, true)));
+        $("no-mail").hidden = mailLines.length > 0;
+        $("mail-older").hidden = !(result.ok && result.data.more);
+      };
+      $("mail-kind").addEventListener("change", () => loadMail(false));
+      $("mail-direction").addEventListener("change", () => loadMail(false));
+      $("mail-older").addEventListener("click", () => loadMail(true));
+
+      // other accounts the same person may have, and what happened to the
+      // player: asked when a player is opened and after an action, not every
+      // few seconds (finding alts looks through every account).
+      const KIND_NAMES = {os: "system id", board: "board", disk: "disk", install: "client id", mac: "network card", browser: "browser id", gpu: "browser graphics", canvas: "browser drawing", env: "browser setup"};
+      const TIMELINE_NAMES = {ban: "Ban", staff: "Staff", report: "Report", alert: "Alert"};
+      const loadExtras = async () => {
+        const username = selected;
+        if (!username) {
+          return;
+        }
+        loadMail(false);
+        const [alts, timeline] = await Promise.all([api(`alts?username=${encodeURIComponent(username)}`), api(`timeline?username=${encodeURIComponent(username)}`)]);
+        if (username !== selected) {
+          return;
+        }
+        const altList = alts.ok ? alts.data.alts : [];
+        altCount = altList.length;
+        $("alts-count").textContent = altList.length ? String(altList.length) : "";
+        renderCounts();
+        $("alts").replaceChildren(...altList.map(alt => {
+          const row = el("tr", undefined, "pick");
+          const stateCell = el("td");
+          const tags = stateTags({...alt, silenced: 0, nameRejected: false, moderator: false, role: null, banned: alt.banned});
+          stateCell.append(...(tags.length ? tags.flatMap(tag => [tag, " "]) : ["—"]));
+          row.append(el("td", alt.username), stateCell,
+            el("td", alt.devices.length ? `${alt.devices.map(kind => KIND_NAMES[kind] || kind).join(", ")}` : "—"),
+            el("td", alt.addresses ? String(alt.addresses) : "—", "num"));
+          row.addEventListener("click", () => openPlayer(alt.username));
+          return row;
+        }));
+        $("no-alts").hidden = altList.length > 0;
+        const ids = alts.ok ? alts.data.ids : [];
+        $("device-ids").replaceChildren(...ids.map(entry => {
+          const row = el("tr", undefined, "pick");
+          row.title = "Every account that used this id";
+          row.append(el("td", KIND_NAMES[entry.kind] || entry.kind), el("td", entry.id, "device-id"), el("td", when(entry.first)), el("td", when(entry.last)),
+            el("td", String(entry.others), "num"), el("td", !entry.banned ? "—" : entry.kind === "mac" ? "Banned (alerts only)" : "Banned"));
+          row.addEventListener("click", () => searchDevice(entry.id));
+          return row;
+        }));
+        $("no-device-ids").hidden = ids.length > 0;
+        const events = timeline.ok ? timeline.data.events : [];
+        $("timeline").replaceChildren(...events.map(entry => {
+          const row = el("li");
+          const text = el("span", entry.text, "chat-text");
+          if (entry.by) {
+            text.append(el("span", `by ${entry.by}`, "chat-room"));
+          }
+          row.append(el("span", when(entry.at), "chat-time"), el("span", TIMELINE_NAMES[entry.kind] || entry.kind, "tag"), text);
+          return row;
+        }));
+        $("no-timeline").hidden = events.length > 0;
+      };
+
+      // mod notes (lib/modnotes.js): the newest first, each removable by its
+      // writer (or an admin).
+      const renderNotes = notes => {
+        $("player-notes").replaceChildren(...notes.map(note => {
+          const row = el("li");
+          const head = el("div", `${when(note.at)} · ${note.by}`, "who");
+          row.append(head, note.text);
+          head.append(button("Remove", async () => {
+            if (!confirm("Remove this note?")) {
+              return;
+            }
+            const result = await api("act", {username: selected, action: "deleteNote", id: note.id});
+            tell($("detail-status"), result);
+            refresh();
+          }));
+          return row;
+        }));
+      };
+      $("note-add").addEventListener("click", async () => {
+        const text = $("note-text").value.trim();
+        if (!text || !selected) {
+          return;
+        }
+        $("note-add").disabled = true;
+        const result = await api("act", {username: selected, action: "note", text});
+        $("note-add").disabled = false;
+        tell($("detail-status"), result);
+        if (result.ok) {
+          $("note-text").value = "";
+          refresh();
+        }
+      });
+
+      // another player opened: their page starts at its overview, with
+      // nothing typed and nothing of the last one's left in it.
+      const resetDetail = () => {
+        setStatus($("detail-status"), "");
+        for (const id of ["ban-length", "ban-hours", "ban-reason", "block-reason", "silence-length", "silence-hours", "message-text", "warn-note", "note-text"]) {
+          $(id).value = "";
+        }
+        $("ban-hours").hidden = true;
+        $("silence-hours").hidden = true;
+        for (const id of ["alts", "device-ids", "timeline", "mail-lines", "player-counts", "detail-banners"]) {
+          $(id).replaceChildren();
+        }
+        $("alts-count").textContent = "";
+        shownPlayer = null;
+        altCount = null;
+        reasonFor = null;
+        showSub("overview");
+      };
+
+      const select = username => {
+        if (username !== selected) {
+          resetDetail();
+        }
+        selected = username;
+        hashArg = username || "";
+        setHash();
+        renderPlayers();
+        loadDetail();
+        loadExtras();
+        // where the list was above it, the player is out of sight
+        if (username && window.matchMedia("(max-width: 1180px)").matches) {
+          window.scrollTo(0, 0);
+        }
+      };
+      $("detail-close").addEventListener("click", () => select(null));
+      $("copy-link").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          toast("Copied. The link opens this player for any staff member signed in here.");
+        }
+        catch (err) {
+          toast(`Copy this link: ${location.href}`);
+        }
+      });
+
+      // the list narrowed to who is online, banned, silenced or staff
+      // (lib/modpanel.js ONLY), when it is searched by name.
+      const listOnly = () => ($("player-only").querySelector('[aria-pressed="true"]') || {dataset: {only: ""}}).dataset.only;
+      const setListOnly = only => {
+        for (const chip of $("player-only").querySelectorAll("button")) {
+          chip.setAttribute("aria-pressed", String(chip.dataset.only === only));
+        }
+      };
+      $("player-only").addEventListener("click", event => {
+        const chip = event.target.closest("button[data-only]");
+        if (chip) {
+          playerSearchRun++;
+          setListOnly(chip.dataset.only);
+          refresh();
+        }
+      });
+
+      // from another page: that player's box, whether or not the search shows them.
+      const openPlayer = username => {
+        playerSearchRun++;
+        $("player-search").value = username;
+        $("player-search-by").value = "name";
+        $("player-search").placeholder = "Search";
+        setListOnly("");
+        if (username !== selected) {
+          resetDetail();
+        }
+        selected = username;
+        hashArg = username;
+        showTab("players");
+        loadExtras();
+      };
+
+      // every account that used a hardware ID: the player list, searched by it.
+      const searchDevice = id => {
+        playerSearchRun++;
+        $("player-search-by").value = "device";
+        $("player-search").placeholder = "Hardware ID, or the start of one";
+        $("player-search").value = id;
+        showTab("players");
+        refresh();
+        window.scrollTo(0, 0);
+      };
+
+      const numberFrom = id => ($(id).value.trim() === "" ? NaN : Number($(id).value));
+      // a length picked from its list (0 is for good), or the hours typed
+      // for "Other"; NaN when none is.
+      const hoursFrom = (list, typed) => ($(list).value === "custom" ? numberFrom(typed) : $(list).value === "" ? NaN : Number($(list).value));
+      for (const [list, typed] of [["ban-length", "ban-hours"], ["silence-length", "silence-hours"]]) {
+        $(list).addEventListener("change", () => {
+          $(typed).hidden = $(list).value !== "custom";
+          if (!$(typed).hidden) {
+            $(typed).focus();
+          }
+        });
+      }
+      const lengthWords = hours => (hours === 0 ? "permanently" : hours % 24 === 0 ? `for ${hours / 24} ${hours === 24 ? "day" : "days"}`
+        : `for ${hours} ${hours === 1 ? "hour" : "hours"}`);
+      const actionBody = action => {
+        switch (action) {
+          case "ban": return {hours: hoursFrom("ban-length", "ban-hours"), reason: $("ban-reason").value};
+          case "banReason": return {reason: $("ban-reason").value};
+          // their own reason, or the ban's
+          case "banAddress": case "banDevices": return {reason: $("block-reason").value.trim() || $("ban-reason").value};
+          case "silence": return {hours: hoursFrom("silence-length", "silence-hours")};
+          case "message": return {text: $("message-text").value};
+          case "warn": return {reason: $("warn-reason").value, note: $("warn-note").value};
+          default: return {};
+        }
+      };
+      const CONFIRM = {
+        ban: name => `Ban ${name} ${lengthWords(hoursFrom("ban-length", "ban-hours"))}?`,
+        banAddress: name => `Ban the address ${name} last signed in from, for good?`,
+        banDevices: name => `Hardware ban ${name}? Everyone on their hardware is put out.`,
+        unbanDevices: name => `Lift the hardware bans on ${name}?`,
+        rejectName: name => `Reject the username ${name}? They are signed out and must pick another.`,
+        unwarn: name => `Take back ${name}'s latest warning?`,
+        clearWallPosts: name => `Remove every post ${name} wrote on any Jammer Wall, and the replies to them? This cannot be undone.`,
+      };
+
+      $("detail").addEventListener("click", async event => {
+        const pressed = event.target.closest("button[data-action]");
+        if (!pressed || !selected) {
+          return;
+        }
+        const {action} = pressed.dataset;
+        const body = actionBody(action);
+        if ((action === "ban" || action === "silence") && Number.isNaN(body.hours)) {
+          tell($("detail-status"), {ok: false, data: {error: "Choose how long first."}});
+          return;
+        }
+        if (CONFIRM[action] && !window.confirm(CONFIRM[action](selected))) {
+          return;
+        }
+        pressed.disabled = true;
+        const result = await api("act", {username: selected, action, ...body});
+        pressed.disabled = false;
+        tell($("detail-status"), result);
+        if (result.ok) {
+          for (const id of ["ban-length", "ban-hours", "silence-length", "silence-hours", "message-text"]) {
+            $(id).value = "";
+          }
+          $("ban-hours").hidden = true;
+          $("silence-hours").hidden = true;
+          if (action === "warn") {
+            $("warn-note").value = "";
+          }
+          if (action === "ban" || action === "unban") {
+            reasonFor = null;
+          }
+          refresh();
+          loadExtras();
+        }
+      });
+
+      // by address, asked once typing stops: each search is written down.
+      let searchWait = null;
+      $("player-search").addEventListener("input", () => {
+        playerSearchRun++;
+        clearTimeout(searchWait);
+        searchWait = setTimeout(refresh, $("player-search-by").value === "name" ? 250 : 700);
+      });
+      // Enter opens the player of exactly that name, or else the first one
+      // found; the down arrow goes into the list.
+      $("player-search").addEventListener("keydown", async event => {
+        if (event.key === "ArrowDown" && $("players").querySelector("button")) {
+          event.preventDefault();
+          $("players").querySelector("button").focus();
+          return;
+        }
+        if (event.key !== "Enter") {
+          return;
+        }
+        clearTimeout(searchWait);
+        await refresh();
+        const wanted = $("player-search").value.trim().toLowerCase();
+        const found = players.find(player => player.username.toLowerCase() === wanted) || players[0];
+        if (found && found.username !== selected) {
+          select(found.username);
+        }
+      });
+      $("player-search-by").addEventListener("change", () => {
+        playerSearchRun++;
+        $("player-search").placeholder = {address: "203.0.113.7, or the start of one", device: "Hardware ID, or the start of one"}[$("player-search-by").value] || "Search";
+        refresh();
+      });
+
+      const chatUrl = before => `chat?username=${encodeURIComponent(chatQuery.username)}&room=${encodeURIComponent(chatQuery.room)}`
+        + `&text=${encodeURIComponent(chatQuery.text)}&kind=${chatQuery.kind || ""}&until=${chatQuery.until || 0}&before=${before}`;
+      // where a line was said: a room, or who it went to.
+      const placeOf = line => (line.kind === "whisper" ? `Whisper to ${line.to}` : line.kind === "jamagram" ? `Jam-a-Gram to ${line.to}`
+        : line.kind === "wall" ? `On ${line.to}'s wall` : line.room);
+
+      // a line as typed, its emoji ("\{1f600}", as the game sends them) as themselves
+      const withEmoji = text => String(text).replace(/\\\{([0-9a-f]{2,6}(?:-[0-9a-f]{2,6}){0,9})\}/g,
+        (whole, hex) => String.fromCodePoint(...hex.split("-").map(part => parseInt(part, 16))));
+
+      const lineNode = (line, inContext = false) => {
+        const item = el("li", undefined, inContext && line.marked ? "this" : "");
+        const who = button(line.username, () => openPlayer(line.username), "chat-who");
+        const text = el("span", undefined, "chat-text");
+        text.append(withEmoji(line.text || "(no words)"), el("span", placeOf(line), "chat-room"));
+        item.append(el("span", when(line.at), "chat-time"), who, text);
+        if (!inContext) {
+          item.append(button("Around", () => showContext(line.id), "chat-more"));
+        }
+        return item;
+      };
+
+      const renderChat = more => {
+        $("chat-lines").replaceChildren(...chatLines.map(line => lineNode(line)));
+        $("no-chat").hidden = chatLines.length > 0;
+        $("chat-older").hidden = !more;
+      };
+
+      const loadChat = async older => {
+        if (!chatQuery) {
+          chatQuery = {username: "", room: "", text: "", kind: "", until: 0};
+        }
+        const before = older && chatLines.length ? chatLines[chatLines.length - 1].id : 0;
+        const result = await api(chatUrl(before));
+        if (!result.ok) {
+          setStatus($("chat-status"), said(result), true);
+          return;
+        }
+        chatLines = older ? [...chatLines, ...result.data.lines] : result.data.lines;
+        setStatus($("chat-status"), result.data.days > 0 ? `Kept ${result.data.days} days.` : "Chat is not being kept.");
+        renderChat(result.data.more);
+      };
+
+      const showContext = async id => {
+        const result = await api(`chat/around?id=${id}`);
+        if (!result.ok) {
+          setStatus($("chat-status"), said(result), true);
+          return;
+        }
+        const {line, lines} = result.data;
+        $("context-title").textContent = line.kind === "chat" ? line.room : `${line.username} and ${line.to}`;
+        $("chat-context").replaceChildren(...lines.map(entry => lineNode({...entry, marked: entry.id === line.id}, true)));
+        $("context-box").hidden = false;
+        $("context-box").scrollIntoView({block: "nearest"});
+      };
+      $("context-close").addEventListener("click", () => {
+        $("context-box").hidden = true;
+      });
+
+      $("chat-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const until = $("chat-until").value ? Math.floor(new Date($("chat-until").value).getTime() / 1000) : 0;
+        chatQuery = {username: $("chat-player").value.trim(), room: $("chat-room").value.trim(), text: $("chat-text").value.trim(), kind: $("chat-kind").value, until};
+        $("context-box").hidden = true;
+        loadChat(false);
+      });
+      $("chat-older").addEventListener("click", () => loadChat(true));
+
+      const openChat = (username, kind = "") => {
+        $("chat-player").value = username;
+        $("chat-room").value = "";
+        $("chat-text").value = "";
+        $("chat-kind").value = kind;
+        $("chat-until").value = "";
+        chatQuery = {username, room: "", text: "", kind, until: 0};
+        hashArg = username;
+        $("context-box").hidden = true;
+        showTab("chat");
+      };
+      $("open-chat").addEventListener("click", () => selected && openChat(selected));
+      $("open-paintings").addEventListener("click", () => selected && openPaintings(selected));
+
+      // what the reported player said up to the report, once asked for: report id -> lines.
+      const reportChat = new Map();
+      let reportsShown = "";
+      let lastReports = null;
+      const renderReports = (data, force = false) => {
+        const handled = $("report-filter").value === "1";
+        $("report-count").textContent = data.open ? ` (${data.open})` : "";
+        lastReports = data;
+        // drawn again only when the list changed.
+        const shown = `${handled} ${data.reports.map(report => report.id).join(",")}`;
+        if (shown === reportsShown && !force) {
+          return;
+        }
+        reportsShown = shown;
+        $("reports").replaceChildren(...data.reports.map(report => {
+          const box = el("div", undefined, "report");
+          box.append(el("h3", `${report.target} — ${report.reason}`),
+            el("div", `Reported by ${report.reporter} on ${when(report.createdAt)}${report.room ? `, in ${report.room}` : ""}`, "hint"));
+          if (report.detail) {
+            box.append(el("div", report.detail, "typed"));
+          }
+          if (report.context) {
+            box.append(el("pre", report.context));
+          }
+          if (reportChat.has(report.id)) {
+            const lines = reportChat.get(report.id);
+            const list = el("ul", undefined, "report-chat");
+            list.append(...lines.map(line => lineNode(line, true)));
+            box.append(el("h3", `What ${report.target} said up to the report`), lines.length ? list : el("div", "Nothing kept.", "hint"));
+          }
+          const buttons = el("div", undefined, "buttons");
+          buttons.append(button("Player", () => openPlayer(report.target)), button("Chat history", () => openChat(report.target)),
+            button(reportChat.has(report.id) ? "Hide chat" : "Chat at the time", async () => {
+              if (reportChat.has(report.id)) {
+                reportChat.delete(report.id);
+              }
+              else {
+                const result = await api(`chat?username=${encodeURIComponent(report.target)}&until=${report.createdAt + 60}&before=0`);
+                reportChat.set(report.id, result.ok ? result.data.lines.slice(0, 20).reverse() : []);
+              }
+              renderReports(lastReports, true);
+            }));
+          if (handled) {
+            box.append(el("div", `Dealt with on ${when(report.handledAt)}`, "hint"));
+          }
+          else if (permissions.has("player.warn")) {
+            buttons.append(button("Dealt with", async () => {
+              const result = await api("report", {id: report.id});
+              setStatus($("report-status"), said(result), !result.ok);
+              refresh();
+            }, "primary"));
+          }
+          box.append(buttons);
+          return box;
+        }));
+        $("no-reports").hidden = data.reports.length > 0;
+      };
+      $("report-filter").addEventListener("change", () => refresh());
+
+
+      const renderRequests = data => {
+        const handled = $("request-filter").value === "1";
+        const answer = async body => {
+          const result = await api("request", body);
+          setStatus($("request-status"), said(result), !result.ok);
+          if (document.activeElement) {
+            document.activeElement.blur();
+          }
+          refresh();
+        };
+        // typed replies are left alone while one is being written.
+        if (!$("appeals").contains(document.activeElement) || document.activeElement.tagName !== "INPUT") {
+          $("appeals").replaceChildren(...data.appeals.map(appeal => {
+            const box = el("div", undefined, "report");
+            box.append(el("h3", appeal.username), el("div", `Sent on ${when(appeal.createdAt)}${appeal.gone ? " · account deleted" : ""}`, "hint"));
+            if (appeal.ban) {
+              box.append(el("div", `Banned${appeal.ban.seconds === -1 ? " for good" : `, ${duration(appeal.ban.seconds)} left`} · ${appeal.ban.reason}`, "hint"));
+            }
+            if (appeal.ofAddress) {
+              box.append(el("div", "Their address is banned.", "hint"));
+            }
+            box.append(el("div", appeal.text, "typed"));
+            if (handled) {
+              box.append(el("div", `${appeal.status === "approved" ? "Approved" : "Denied"} on ${when(appeal.handledAt)}${appeal.reply ? ` · ${appeal.reply}` : ""}`, "hint"));
+              return box;
+            }
+            const reply = el("input");
+            reply.maxLength = 500;
+            reply.placeholder = "Reply (optional)";
+            reply.setAttribute("aria-label", `Reply to ${appeal.username}`);
+            reply.style.width = "100%";
+            const buttons = el("div", undefined, "buttons");
+            // answering is a ban decision, and lifting an address's ban with
+            // it is for the roles that ban addresses (lib/modpanel.js).
+            const answers = permissions.has("player.ban");
+            if (answers && (!appeal.ofAddress || permissions.has("address.ban"))) {
+              buttons.append(button("Unban", () => answer({action: "appealApprove", id: appeal.accountId, reply: reply.value}), "primary"));
+            }
+            if (answers) {
+              buttons.append(button("Deny", () => answer({action: "appealDeny", id: appeal.accountId, reply: reply.value})));
+            }
+            buttons.append(button("Player", () => openPlayer(appeal.username)), button("Chat history", () => openChat(appeal.username)));
+            reply.hidden = !answers;
+            box.append(reply, buttons);
+            return box;
+          }));
+        }
+        $("no-appeals").hidden = data.appeals.length > 0;
+        $("name-requests").replaceChildren(...data.names.map(request => {
+          const box = el("div", undefined, "report");
+          box.append(el("h3", `${request.oldName} → ${request.newName}`), el("div", `Asked on ${when(request.createdAt)}`, "hint"));
+          if (request.reason) {
+            box.append(el("div", request.reason, "typed"));
+          }
+          if (handled) {
+            box.append(el("div", `${request.status === "approved" ? "Approved" : "Denied"} on ${when(request.handledAt)}`, "hint"));
+          }
+          else if (permissions.has("player.names")) {
+            const buttons = el("div", undefined, "buttons");
+            buttons.append(button("Approve", () => answer({action: "approve", id: request.id}), "primary"), button("Deny", () => answer({action: "deny", id: request.id})));
+            box.append(buttons);
+          }
+          return box;
+        }));
+        $("no-name-requests").hidden = data.names.length > 0;
+      };
+      $("request-filter").addEventListener("change", () => refresh());
+
+      // a picture full size, over the page, from a list of them the arrow
+      // keys go through: `source` gives the list as it is now ({src, title,
+      // detail, small, buttons}), asked again once one of them is dealt with.
+      // a click outside its words puts it away.
+      let previewSource = () => [];
+      let previewEntries = [];
+      let previewAt = 0;
+      const closePreview = () => {
+        $("preview").hidden = true;
+      };
+      const showPreviewAt = at => {
+        const entry = previewEntries[at];
+        if (!entry) {
+          closePreview();
+          return;
+        }
+        previewAt = at;
+        $("preview-img").src = entry.src;
+        $("preview-img").alt = entry.title;
+        $("preview-img").classList.toggle("small", Boolean(entry.small));
+        $("preview-title").textContent = entry.title;
+        $("preview-detail").textContent = entry.detail || "";
+        $("preview-buttons").replaceChildren(...(entry.buttons ? [entry.buttons()] : []));
+        $("preview-keys").textContent = previewEntries.length > 1 ? `${at + 1} of ${previewEntries.length} · the arrow keys for the others · Esc to close` : "Esc to close";
+        $("preview").hidden = false;
+      };
+      const openPreview = (source, at) => {
+        previewSource = source;
+        previewEntries = source();
+        showPreviewAt(at);
+      };
+      // after one was approved or turned away: the one that came after it
+      const previewAgain = () => {
+        if (!$("preview").hidden) {
+          previewEntries = previewSource();
+          showPreviewAt(Math.min(previewAt, previewEntries.length - 1));
+        }
+      };
+      $("preview").addEventListener("click", event => {
+        if (!event.target.closest("figcaption")) {
+          closePreview();
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if ($("preview").hidden) {
+          return;
+        }
+        if (event.key === "Escape") {
+          closePreview();
+        }
+        else if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+          event.preventDefault();
+          const next = previewAt + (event.key === "ArrowRight" ? 1 : -1);
+          if (next >= 0 && next < previewEntries.length) {
+            showPreviewAt(next);
+          }
+        }
+      });
+
+      // ---- masterpieces (lib/masterpieces.js): the ones asked for, and the
+      // ones approved last, to take one back that should not have been.
+      let paintingList = [];
+      let recentList = [];
+      let paintingsShown = "";
+      let recentShown = "";
+      const paintingSrc = painting => `/dashboard/api/staff/masterpiece?id=${encodeURIComponent(painting.id)}`;
+      const paintingWords = painting => (painting.status === "waiting" ? `Waiting · painted ${ago(painting.createdAt)}`
+        : `Approved${painting.approvedAt ? ` ${ago(painting.approvedAt)}` : ""}${painting.approvedBy ? ` by ${painting.approvedBy === myName ? "you" : painting.approvedBy}` : ""}`
+          + `${painting.likes ? ` · ${painting.likes} ${painting.likes === 1 ? "like" : "likes"}` : ""}`);
+
+      // approved, or rejected (one approved already is taken down: from every
+      // den it hangs in, its maker given a token back). rejecting asks first;
+      // approving does not, and can be taken back from its toast.
+      const judge = async (painting, approve) => {
+        const waiting = painting.status === "waiting";
+        if (!approve && !confirm(waiting ? `Reject this painting by ${painting.creator}?`
+          : `Reject this painting by ${painting.creator}, approved ${painting.approvedAt ? ago(painting.approvedAt) : "before"}? It is taken out of every den it hangs in.`)) {
+          return;
+        }
+        const result = await api("masterpiece", {id: painting.id, action: approve ? "approve" : waiting ? "reject" : "remove"});
+        if (approve && result.ok) {
+          setStatus($("masterpiece-status"), `Approved ${painting.creator}'s painting.`);
+          toast(`Approved ${painting.creator}'s painting.`, false,
+            ["Reject it", () => judge({...painting, status: "approved", approvedAt: Math.floor(Date.now() / 1000)}, false)]);
+        }
+        else {
+          tell($("masterpiece-status"), result);
+        }
+        await refresh();
+        previewAgain();
+      };
+      // its card's buttons; the full-size view has the maker's page too (on a
+      // card, their name opens it)
+      const paintingButtons = (painting, withPlayer) => {
+        const buttons = el("div", undefined, "buttons");
+        // judging paintings is for the roles that may (masterpieces.approve)
+        if (permissions.has("masterpieces.approve")) {
+          buttons.append(...(painting.status === "waiting" ? [button("Approve", () => judge(painting, true), "primary")] : []),
+            button("Reject", () => judge(painting, false), "danger"));
+        }
+        if (withPlayer) {
+          buttons.append(button("Player", () => openPlayer(painting.creator)));
+        }
+        return buttons;
+      };
+      const paintingEntry = painting => ({src: paintingSrc(painting), title: `Painting by ${painting.creator}`, detail: paintingWords(painting),
+        buttons: () => paintingButtons(painting, true)});
+
+      // a card each; `list` gives the paintings the full-size view goes
+      // through. its words are kept, to say "5 min ago" again as time goes on.
+      let paintingHints = [];
+      const paintingCard = (painting, list) => {
+        const box = el("div", undefined, "painting");
+        const picture = el("img");
+        picture.src = paintingSrc(painting);
+        picture.alt = `Painting by ${painting.creator}`;
+        picture.loading = "lazy";
+        picture.addEventListener("click", () => openPreview(() => list().map(paintingEntry), list().findIndex(one => one.id === painting.id)));
+        const words = el("div", paintingWords(painting), "hint");
+        paintingHints.push([words, painting]);
+        const maker = button(painting.creator, () => openPlayer(painting.creator), "link");
+        maker.title = `${painting.creator}'s page`;
+        const heading = el("h3");
+        heading.append(maker);
+        box.append(picture, heading, words, paintingButtons(painting, false));
+        return box;
+      };
+
+      const renderMasterpieces = data => {
+        const which = $("masterpiece-filter").value;
+        const marked = (list, status) => list.map(painting => ({...painting, status}));
+        paintingList = which === "all" ? [...marked(data.waiting, "waiting"), ...marked(data.approved, "approved")] : marked(data[which], which);
+        recentList = marked(data.recent || [], "approved");
+        $("masterpiece-count").textContent = data.waitingCount ? String(data.waitingCount) : "";
+        $("no-masterpieces").hidden = paintingList.length > 0;
+        // the last approved are already first among the ones on show
+        $("recent-block").hidden = which === "approved";
+        $("no-recent").hidden = recentList.length > 0;
+        // drawn again only when a list changed, so the pictures do not flicker.
+        const key = list => list.map(painting => `${painting.id}:${painting.status}`).join(" ");
+        const shown = `${which} ${key(paintingList)}`;
+        const recent = key(recentList);
+        if (shown !== paintingsShown || recent !== recentShown) {
+          paintingsShown = shown;
+          recentShown = recent;
+          paintingHints = [];
+          $("masterpieces").replaceChildren(...paintingList.map(painting => paintingCard(painting, () => paintingList)));
+          $("recent-paintings").replaceChildren(...recentList.map(painting => paintingCard(painting, () => recentList)));
+        }
+        for (const [words, painting] of paintingHints) {
+          words.textContent = paintingWords(painting);
+        }
+      };
+      $("masterpiece-filter").addEventListener("change", () => refresh());
+      $("recent-mine").addEventListener("change", () => refresh());
+      let creatorWait = null;
+      $("masterpiece-creator").addEventListener("input", () => {
+        clearTimeout(creatorWait);
+        creatorWait = setTimeout(refresh, 250);
+      });
+      // a player's paintings, waiting and on show.
+      const openPaintings = username => {
+        $("masterpiece-creator").value = username;
+        $("masterpiece-filter").value = "all";
+        hashArg = username;
+        showTab("masterpieces");
+      };
+
+      const renderBans = data => {
+        $("bans").replaceChildren(...data.accounts.map(account => {
+          const row = el("tr");
+          const buttons = el("td");
+          const lifts = (label, action) => button(label, async () => {
+            const result = await api("act", {username: account.username, action});
+            setStatus($("ban-status"), said(result), !result.ok);
+            refresh();
+          });
+          if (account.banned !== 0) {
+            buttons.append(lifts("Lift ban", "unban"), " ");
+          }
+          if (account.silenced !== 0) {
+            buttons.append(lifts("Lift silence", "unsilence"), " ");
+          }
+          buttons.append(button("Player", () => openPlayer(account.username)));
+          row.append(el("td", account.username), el("td", left(account.banned)), el("td", account.reason || "—"), el("td", account.by || "—"),
+            el("td", account.silenced === 0 ? "—" : `Silenced: ${left(account.silenced).toLowerCase()}`), buttons);
+          return row;
+        }));
+        $("no-bans").hidden = data.accounts.length > 0;
+        $("addresses").replaceChildren(...data.addresses.map(ban => {
+          const row = el("tr");
+          const buttons = el("td");
+          if (permissions.has("address.ban")) {
+            buttons.append(button("Unban", async () => {
+              const result = await api("address", {id: ban.id});
+              setStatus($("ban-status"), said(result), !result.ok);
+              refresh();
+            }));
+          }
+          row.append(el("td", ban.address), el("td", ban.reason), el("td", ban.by || "—"), el("td", when(ban.createdAt)), buttons);
+          return row;
+        }));
+        $("no-addresses").hidden = data.addresses.length > 0;
+        $("device-bans").replaceChildren(...data.devices.map(ban => {
+          const row = el("tr");
+          const buttons = el("td");
+          if (permissions.has("address.ban")) {
+            buttons.append(button("Unban", async () => {
+              if (!window.confirm(`Lift the hardware ban made with ${ban.username}?`)) {
+                return;
+              }
+              const result = await api("device", {id: ban.id});
+              setStatus($("ban-status"), said(result), !result.ok);
+              refresh();
+            }), " ");
+          }
+          buttons.append(button("Player", () => openPlayer(ban.username)));
+          row.append(el("td", ban.username || "—"), el("td", ban.reason), el("td", ban.by || "—"), el("td", when(ban.createdAt)),
+            deviceAccounts(ban.accounts), deviceIds(ban), buttons);
+          return row;
+        }));
+        $("no-device-bans").hidden = data.devices.length > 0;
+        $("device-alerts").replaceChildren(...data.alerts.map(entry => {
+          const row = el("tr", undefined, "pick");
+          const detail = el("td", entry.detail);
+          detail.style.whiteSpace = "normal";
+          row.append(el("td", when(entry.at)), el("td", entry.username), el("td", entry.name), detail);
+          row.addEventListener("click", () => openPlayer(entry.username));
+          return row;
+        }));
+        $("no-device-alerts").hidden = data.alerts.length > 0;
+      };
+
+      // a hardware ban's accounts and ids, each one a link.
+      const deviceAccounts = names => {
+        const cell = el("td");
+        cell.style.whiteSpace = "normal";
+        cell.append(...(names.length ? names.flatMap((name, index) => {
+          const link = el("button", name, "link");
+          link.type = "button";
+          link.addEventListener("click", () => openPlayer(name));
+          return index ? [", ", link] : [link];
+        }) : ["—"]));
+        return cell;
+      };
+      const openBanIds = new Set();
+      const deviceIds = ban => {
+        const cell = el("td");
+        const shown = openBanIds.has(ban.id);
+        const toggle = el("button", shown ? `Hide ${ban.ids.length}` : `Show ${ban.ids.length}`, "link");
+        toggle.type = "button";
+        toggle.addEventListener("click", () => {
+          if (openBanIds.has(ban.id)) {
+            openBanIds.delete(ban.id);
+          }
+          else {
+            openBanIds.add(ban.id);
+          }
+          refresh();
+        });
+        cell.append(toggle);
+        if (shown) {
+          for (const entry of ban.ids) {
+            const link = el("button", `${KIND_NAMES[entry.kind] || entry.kind} ${entry.id}`, "link device-id");
+            link.type = "button";
+            link.addEventListener("click", () => searchDevice(entry.id));
+            cell.append(el("br"), link);
+          }
+        }
+        return cell;
+      };
+
+      const renderFilterHits = list => {
+        $("filter-hits").replaceChildren(...list.map(entry => {
+          const row = el("tr");
+          const buttons = el("td");
+          buttons.append(button("Lines", () => openChat(entry.username, "notsent")), " ", button("Player", () => openPlayer(entry.username)));
+          row.append(el("td", entry.username), el("td", String(entry.count), "num"), el("td", when(entry.last)), buttons);
+          return row;
+        }));
+        $("no-filter-hits").hidden = list.length > 0;
+      };
+
+      // ---- items (lib/customitems.js)
+      let items = [];
+      let editing = null; // the item the form is changing, or null to make one
+      let baseColours = []; // the colours of the item looked up
+
+      const showColours = (colours, chosen) => {
+        $("item-colours").replaceChildren(...colours.map((colour, index) => {
+          const box = el("input");
+          box.type = "checkbox";
+          box.value = String(colour);
+          box.checked = !chosen || chosen.includes(colour);
+          const label = el("label", undefined, "check");
+          label.append(box, ` Colour ${index + 1}`);
+          return label;
+        }));
+      };
+
+      const lookUp = async () => {
+        const result = await api(`items/base?kind=${$("item-kind").value}&id=${encodeURIComponent($("item-base").value.trim())}`);
+        baseColours = result.ok && result.data.colors ? result.data.colors : [];
+        if (!result.ok) {
+          $("item-base-name").textContent = said(result);
+          showColours([]);
+          return null;
+        }
+        if (!editing) {
+          $("item-base-name").textContent = `${result.data.name || "(no name)"}: ${result.data.cost} gems in the game.`;
+          if (!$("item-name").value.trim()) {
+            $("item-name").value = result.data.name || "";
+          }
+          showColours(baseColours);
+        }
+        return result.data;
+      };
+      $("item-look").addEventListener("click", lookUp);
+      $("item-kind").addEventListener("change", () => {
+        $("item-base-name").textContent = "";
+        showColours([]);
+      });
+
+      const itemForm = item => {
+        editing = item;
+        $("item-form-title").textContent = item ? `Change ${item.name}` : "Make an item";
+        $("item-save").textContent = item ? "Save" : "Make it";
+        $("item-cancel").hidden = !item;
+        for (const field of ["item-kind", "item-base", "item-look"]) {
+          $(field).disabled = Boolean(item);
+        }
+        if (item) {
+          $("item-kind").value = item.kind;
+        }
+        $("item-base").value = item ? item.base : "";
+        $("item-name").value = item ? item.name : "";
+        $("item-cost").value = item ? item.cost : "";
+        $("item-members").checked = Boolean(item && item.members);
+        $("item-base-name").textContent = item ? `${item.baseName} (${item.kind === "den" ? "den item" : "clothing"} ${item.base})` : "";
+        showColours([]);
+        if (item && item.kind === "clothing") {
+          // the base's colours, and any of the item's own that are not among them
+          lookUp().then(() => showColours([...new Set([...baseColours, ...item.colors])], item.colors));
+        }
+      };
+      $("item-cancel").addEventListener("click", () => itemForm(null));
+
+      $("item-save").addEventListener("click", async () => {
+        const fields = {name: $("item-name").value, cost: $("item-cost").value, members: $("item-members").checked};
+        const boxes = [...$("item-colours").querySelectorAll("input")];
+        if (boxes.length) {
+          fields.colors = boxes.filter(box => box.checked).map(box => Number(box.value));
+          if (!fields.colors.length) {
+            setStatus($("item-status"), "Leave at least one colour.", true);
+            return;
+          }
+        }
+        $("item-save").disabled = true;
+        const result = await api("items", editing
+          ? {action: "update", kind: editing.kind, id: editing.id, ...fields}
+          : {action: "create", kind: $("item-kind").value, base: $("item-base").value.trim(), ...fields});
+        $("item-save").disabled = false;
+        setStatus($("item-status"), said(result), !result.ok);
+        if (result.ok) {
+          itemForm(null);
+          refresh();
+        }
+      });
+
+      const renderItems = () => {
+        $("items").replaceChildren(...items.map(item => {
+          const row = el("tr");
+          const buttons = el("td");
+          buttons.append(button("Change", () => itemForm(item)), " ",
+            button(item.inShop ? "Take off sale" : "Put on sale", async () => {
+              const result = await api("items", {action: "update", kind: item.kind, id: item.id, inShop: !item.inShop});
+              setStatus($("item-status"), said(result), !result.ok);
+              await refresh();
+            }), " ",
+            button(item.locked ? "Unlock" : "Lock", async () => {
+              const result = await api("items", {action: item.locked ? "unlock" : "lock", kind: item.kind, id: item.id});
+              setStatus($("item-status"), said(result), !result.ok);
+              await refresh();
+            }), " ",
+            button("Picture", () => pickPicture(item)), " ",
+            ...(item.artUrl && item.kind === "clothing" ? [button(item.artMode === "texture" ? "Worn: texture" : "Worn: sticker", async () => {
+              const result = await api("items", {action: "look", kind: item.kind, id: item.id, look: item.artMode === "texture" ? "sticker" : "texture"});
+              setStatus($("item-status"), said(result), !result.ok);
+              await refresh();
+            }), " "] : []),
+            ...(item.artUrl ? [button("Remove picture", () => sendPicture(item, null)), " "] : []),
+            button("Delete", async () => {
+              if (!confirm(`Delete ${item.name}? It goes from the game and from every player who has it. This cannot be undone.`)) {
+                return;
+              }
+              const result = await api("items", {action: "delete", kind: item.kind, id: item.id});
+              setStatus($("item-status"), said(result), !result.ok);
+              await refresh();
+            }));
+          const art = el("td");
+          if (item.artUrl) {
+            const picture = el("img", undefined, "item-art");
+            picture.src = item.artUrl;
+            picture.alt = "";
+            art.append(picture);
+          }
+          else {
+            art.append(el("span", "—", "hint"));
+          }
+          row.append(art, el("td", String(item.id), "num"), el("td", `${item.name}${item.members ? " (members)" : ""}${item.ownerId ? " (a player's own)" : item.inShop ? "" : " (off sale)"}${item.locked ? " (locked)" : ""}`),
+            el("td", `${item.baseName} (${item.kind === "den" ? "den item" : "clothing"} ${item.base})`), el("td", String(item.cost), "num"),
+            el("td", item.createdBy), buttons);
+          return row;
+        }));
+        $("no-items").hidden = items.length > 0;
+      };
+
+      // an item's own picture (lib/itemart.js): chosen here, sent as it is
+      // a picture made ready to send (lib/itemart.js): as it is when the
+      // server takes it as it is (a PNG, JPEG or GIF small enough: a GIF keeps
+      // moving), else drawn into a PNG that fits, smaller until it is small
+      // enough. any picture this browser can open will do (WebP, AVIF, BMP...).
+      // null when it cannot be read at all.
+      const PICTURE_SIDE = 256;
+      const PICTURE_BYTES = 100 * 1024;
+      const preparePicture = async file => {
+        const kept = ["image/png", "image/jpeg", "image/gif"].includes(file.type);
+        let image = null;
+        try {
+          image = await createImageBitmap(file);
+        }
+        catch (err) {
+          return kept ? file : null;
+        }
+        if (kept && file.size <= PICTURE_BYTES && image.width <= PICTURE_SIDE && image.height <= PICTURE_SIDE) {
+          image.close();
+          return file;
+        }
+        for (const side of [PICTURE_SIDE, 192, 128, 96]) {
+          const scale = Math.min(1, side / image.width, side / image.height);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+          if (blob && blob.size <= PICTURE_BYTES) {
+            image.close();
+            return blob;
+          }
+        }
+        image.close();
+        return null;
+      };
+
+      const sendPicture = async (item, chosen) => {
+        const file = chosen ? await preparePicture(chosen) : null;
+        if (chosen && !file) {
+          setStatus($("item-status"), "That picture could not be read. Try a PNG, JPEG or GIF.", true);
+          return;
+        }
+        setStatus($("item-status"), file ? "Sending the picture..." : "Taking the picture away...");
+        try {
+          const response = await fetch(`/mod/api/itemart?kind=${encodeURIComponent(item.kind)}&id=${encodeURIComponent(item.id)}${file ? "" : "&remove=1"}`,
+            {method: "POST", headers: {"Content-Type": "application/octet-stream"}, body: file || new Uint8Array(0)});
+          const data = await response.json().catch(() => ({}));
+          setStatus($("item-status"), data.ok || data.error || "That did not work.", !data.ok);
+        }
+        catch (err) {
+          setStatus($("item-status"), "The server did not answer.", true);
+        }
+        refresh();
+      };
+      const pickPicture = item => {
+        const file = el("input");
+        file.type = "file";
+        file.accept = "image/*";
+        file.addEventListener("change", () => file.files[0] && sendPicture(item, file.files[0]));
+        file.click();
+      };
+
+      // ---- animal wear rules: a narrow moderation control, separate from
+      // making or deleting items (items.restrict in lib/roles.js).
+      let wearAnimals = [];
+      let wearRuleEntries = [];
+      let wearSelected = null;
+      let wearSelectedTypes = new Set();
+      let wearAnimal = "";
+      let wearRuleTimer = null;
+      let wearRuleAsked = 0;
+
+      const wearRuleFor = id => wearRuleEntries.find(rule => rule.id === Number(id));
+      const wearAnimalName = id => (wearAnimals.find(animal => animal.id === Number(id)) || {name: `Animal ${id}`}).name;
+      const wearNames = types => types.map(wearAnimalName).join(", ");
+      const selectedWearAnimal = () => Number(wearAnimal) || 0;
+
+      const toggleWearRule = async item => {
+        const animal = selectedWearAnimal();
+        if (!animal) return;
+        const current = item.blockedTypes || (wearRuleFor(item.id) || {}).blockedTypes || [];
+        const blocked = current.includes(animal) ? current.filter(type => type !== animal) : [...current, animal];
+        const result = await api("items/wear-rules", {id: item.id, blockedTypes: blocked.sort((one, two) => one - two)});
+        setStatus($("wear-rule-status"), said(result), !result.ok);
+        if (result.ok) await loadWearRules();
+      };
+      const chooseWearAnimal = animal => {
+        wearAnimal = String(animal);
+        wearSelected = null;
+        $("wear-rule-q").disabled = !selectedWearAnimal();
+        renderWearRuleEditor();
+        loadWearRules();
+      };
+
+      const renderWearRuleEditor = () => {
+        $("wear-rule-editor").hidden = !wearSelected;
+        if (!wearSelected) {
+          return;
+        }
+        $("wear-rule-title").textContent = `Where ${wearSelected.name || `clothing ${wearSelected.id}`} cannot be worn`;
+        $("wear-rule-animals").replaceChildren(...wearAnimals.map(animal => {
+          const box = el("input");
+          box.type = "checkbox";
+          box.checked = wearSelectedTypes.has(animal.id);
+          box.addEventListener("change", () => {
+            wearSelectedTypes[box.checked ? "add" : "delete"](animal.id);
+          });
+          const label = el("label", undefined, "check");
+          label.append(box, animal.name);
+          return label;
+        }));
+      };
+
+      const chooseWearRule = item => {
+        wearSelected = {id: Number(item.id), name: item.name || `clothing ${item.id}`};
+        const current = item.blockedTypes || (wearRuleFor(item.id) || {}).blockedTypes || [];
+        wearSelectedTypes = new Set(current);
+        setStatus($("wear-rule-status"), "");
+        renderWearRuleEditor();
+      };
+
+      const renderWearRules = (results, query, total) => {
+        const animal = selectedWearAnimal();
+        $("wear-rule-results").replaceChildren(...results.map(item => {
+          const row = el("li");
+          const blocked = item.blockedTypes || (wearRuleFor(item.id) || {}).blockedTypes || [];
+          row.append(el("span", item.name || "(no name)"), el("span", `clothing ${item.id}${item.custom ? ", custom" : ""}${blocked.length ? ` · blocked for ${wearNames(blocked)}` : ""}`, "meta"),
+            button(animal && blocked.includes(animal) ? `Allow ${wearAnimalName(animal)}` : `Block ${wearAnimalName(animal)}`,
+              () => toggleWearRule({...item, blockedTypes: blocked}), animal && blocked.includes(animal) ? "" : "primary"));
+          return row;
+        }));
+        $("wear-rule-more").hidden = Boolean(animal && query && results.length > 0 && total <= results.length);
+        $("wear-rule-more").textContent = !animal ? "Choose an animal, then search for clothing."
+          : !query ? "Search for clothing to control for this animal."
+          : results.length === 0 ? "No clothing matches."
+          : `${total} clothing items match; these are the first ${results.length}. Type more of the name.`;
+        const active = animal ? wearRuleEntries.filter(rule => rule.blockedTypes.includes(animal)) : [];
+        $("wear-rule-active").replaceChildren(...active.map(rule => {
+          const row = el("li");
+          row.append(el("span", rule.name || "(no name)"), el("span", `clothing ${rule.id} · blocked for ${wearNames(rule.blockedTypes)}`, "meta"),
+            button("Edit", () => chooseWearRule(rule)));
+          return row;
+        }));
+        $("no-wear-rules").hidden = active.length > 0;
+      };
+
+      const loadWearRules = async () => {
+        const query = $("wear-rule-q").value.trim();
+        const asked = ++wearRuleAsked;
+        const result = await api(`items/wear-rules?q=${encodeURIComponent(query)}`);
+        if (asked !== wearRuleAsked || !result.ok) {
+          return;
+        }
+        wearAnimals = result.data.animals || [];
+        $("wear-rule-animal").replaceChildren(...wearAnimals.map(animal => {
+          const button = el("button", animal.name, selectedWearAnimal() === animal.id ? "primary" : "");
+          button.type = "button";
+          button.setAttribute("aria-pressed", String(selectedWearAnimal() === animal.id));
+          button.addEventListener("click", () => chooseWearAnimal(animal.id));
+          return button;
+        }));
+        wearRuleEntries = result.data.rules || [];
+        renderWearRules(selectedWearAnimal() && query ? result.data.results || [] : [], query, result.data.total || 0);
+        renderWearRuleEditor();
+      };
+
+      $("wear-rule-q").addEventListener("input", () => {
+        clearTimeout(wearRuleTimer);
+        wearRuleTimer = setTimeout(loadWearRules, 250);
+      });
+      $("wear-rule-save").addEventListener("click", async () => {
+        if (!wearSelected) {
+          return;
+        }
+        const result = await api("items/wear-rules", {id: wearSelected.id, blockedTypes: [...wearSelectedTypes].sort((one, two) => one - two)});
+        setStatus($("wear-rule-status"), said(result), !result.ok);
+        if (result.ok) {
+          await loadWearRules();
+        }
+      });
+      $("wear-rule-close").addEventListener("click", () => {
+        wearSelected = null;
+        setStatus($("wear-rule-status"), "");
+        renderWearRuleEditor();
+      });
+
+      // ---- the dashboard's item lock: any item by name or id, locked or
+      // unlocked where it is found (the Items page lists every locked one).
+      let quickLockTimer = null;
+      let quickLockAsked = 0;
+      const quickLockFind = async () => {
+        const query = $("quick-lock-q").value.trim();
+        const asked = ++quickLockAsked;
+        const result = await api(`items/find?q=${encodeURIComponent(query)}&kind=${$("quick-lock-kind").value}`);
+        if (asked !== quickLockAsked || !result.ok) {
+          return;
+        }
+        const {results, total, lockedCount} = result.data;
+        $("lock-count").textContent = lockedCount === 1 ? "1 item is locked now." : `${lockedCount} items are locked now.`;
+        const shown = query ? results : [];
+        $("quick-lock-results").replaceChildren(...shown.map(item => {
+          const row = el("li");
+          row.append(el("span", item.name || "(no name)"),
+            el("span", `${item.kind === "den" ? "den item" : "clothing"} ${item.id}${item.custom ? ", custom" : ""}`, "meta"));
+          if (item.locked) {
+            row.append(el("span", "locked", "is-locked"));
+          }
+          row.append(button(item.locked ? "Unlock" : "Lock", async () => {
+            const changed = await api("items", {action: item.locked ? "unlock" : "lock", kind: item.kind, id: item.id});
+            setStatus($("quick-lock-status"), said(changed), !changed.ok);
+            await quickLockFind();
+          }, item.locked ? undefined : "primary"));
+          return row;
+        }));
+        $("quick-lock-more").hidden = !query || (results.length > 0 && total <= results.length);
+        $("quick-lock-more").textContent = results.length === 0 ? "No item matches."
+          : `${total} items match; these are the first ${results.length}. Type more of the name.`;
+      };
+      $("quick-lock-q").addEventListener("input", () => {
+        clearTimeout(quickLockTimer);
+        quickLockTimer = setTimeout(quickLockFind, 250);
+      });
+      $("quick-lock-kind").addEventListener("change", quickLockFind);
+      $("quick-lock-all").addEventListener("click", () => showTab("items"));
+
+      // ---- locks and taking items (lib/itemcontrol.js)
+      let lockedItems = [];
+      const renderLocked = () => {
+        $("locked-items").replaceChildren(...lockedItems.map(entry => {
+          const row = el("li", `${entry.name || "(no name)"} (${entry.kind === "den" ? "den item" : "clothing"} ${entry.id}) `);
+          row.append(button("Unlock", async () => {
+            const result = await api("items", {action: "unlock", kind: entry.kind, id: entry.id});
+            setStatus($("control-status"), said(result), !result.ok);
+            await refresh();
+          }));
+          return row;
+        }));
+        $("no-locked").hidden = lockedItems.length > 0;
+      };
+      $("lock-add").addEventListener("click", async () => {
+        const result = await api("items", {action: "lock", kind: $("lock-kind").value, id: $("lock-id").value.trim()});
+        setStatus($("control-status"), said(result), !result.ok);
+        if (result.ok) {
+          $("lock-id").value = "";
+          await refresh();
+        }
+      });
+      $("take-go").addEventListener("click", async () => {
+        const name = $("take-name").value.trim();
+        const id = $("take-id").value.trim();
+        if (!name || !id || !confirm(`Take every ${$("take-kind").value === "den" ? "den item" : "clothing item"} ${id} from ${name}?`)) {
+          return;
+        }
+        const result = await api("items", {action: "take", username: name, kind: $("take-kind").value, id});
+        setStatus($("control-status"), said(result), !result.ok);
+      });
+
+      // on a player's page, the pictures they uploaded are blurred till a
+      // moderator chooses to look: one that is gore need not be seen whole to
+      // be taken off. (The Review page shows them as they are.)
+      const revealed = new Set(); // pictures shown, by address (kept over refreshes)
+      const guardedPicture = src => {
+        const picture = el("img", undefined, revealed.has(src) ? "guarded shown" : "guarded");
+        picture.src = src;
+        picture.alt = "";
+        picture.title = revealed.has(src) ? "" : "Click to show";
+        picture.addEventListener("click", () => {
+          revealed.add(src);
+          picture.classList.add("shown");
+          picture.title = "";
+        });
+        return picture;
+      };
+
+      // ---- what players made that waits for approval (lib/playeritems.js):
+      // a card each, its picture as it is. a click shows it full size, where
+      // it can be judged too and the arrow keys go through the others.
+      let reviewList = [];
+      let reviewShown = "";
+      const reviewButtons = entry => {
+        const buttons = el("div", undefined, "buttons");
+        const decide = approve => async () => {
+          // turning away asks first; approving does not
+          if (!approve && !confirm(`Turn away ${entry.waiting === "item" ? "the item" : "the picture of"} "${entry.name}" by ${entry.maker}?`)) {
+            return;
+          }
+          const result = await api("review", {kind: entry.kind, id: entry.id, approve});
+          tell($("review-status"), result);
+          await refresh();
+          previewAgain();
+        };
+        buttons.append(button("Approve", decide(true), "primary"), button("Turn away", decide(false), "danger"));
+        return buttons;
+      };
+      const reviewPictures = () => reviewList.filter(entry => entry.artUrl).map(entry => ({src: entry.artUrl, small: true, title: entry.name,
+        detail: `${entry.waiting === "item" ? "A new item" : "A new picture"} by ${entry.maker}`, buttons: () => reviewButtons(entry)}));
+      const renderReview = data => {
+        const waiting = (data.waiting || []).filter(entry => !entry.audio);
+        reviewList = waiting;
+        $("no-review").hidden = waiting.length > 0;
+        $("review-count").textContent = waiting.length || "";
+        // drawn again only when it changed, so the pictures do not flicker.
+        const shown = JSON.stringify([data.waiting, data.stopped]);
+        if (shown === reviewShown) {
+          return;
+        }
+        reviewShown = shown;
+        const tracks = (data.waiting || []).filter(entry => entry.audio);
+        $("no-music-review").hidden = tracks.length > 0;
+        $("music-review-count").textContent = tracks.length || "";
+        $("music-review-list").replaceChildren(...tracks.map(entry => {
+          const card = el("div", undefined, "review-card");
+          card.style.gridTemplateColumns = "1fr auto";
+          const about = el("div");
+          const player = el("audio");
+          player.controls = true;
+          player.preload = "none";
+          player.src = entry.audioUrl;
+          about.append(el("strong", entry.name), el("div", `by ${entry.maker} · ${when(entry.createdAt)}`, "hint"), player);
+          const buttons = el("div", undefined, "buttons");
+          const decide = approve => async () => {
+            if (!approve && !confirm(`Turn away the track "${entry.name}" by ${entry.maker}?`)) {
+              return;
+            }
+            const result = await api("review", {kind: entry.kind, id: entry.id, approve});
+            tell($("review-status"), result);
+            await refresh();
+          };
+          buttons.append(button("Approve", decide(true), "primary"), button("Turn away", decide(false), "danger"));
+          card.append(about, buttons);
+          return card;
+        }));
+        $("review-list").replaceChildren(...waiting.map(entry => {
+          const card = el("div", undefined, "review-card");
+          const art = el("div", entry.artUrl ? undefined : "No picture", "art");
+          if (entry.artUrl) {
+            const picture = el("img");
+            picture.src = entry.artUrl;
+            picture.alt = `The picture of ${entry.name}`;
+            picture.addEventListener("click", () => openPreview(reviewPictures,
+              reviewList.filter(one => one.artUrl).findIndex(one => one.kind === entry.kind && one.id === entry.id)));
+            art.append(picture);
+          }
+          const about = el("div");
+          about.append(el("strong", entry.name), el("div", `${entry.waiting === "item" ? "A new item" : "A new picture"} · ${entry.kind === "den" ? "den item" : "clothing"} from ${entry.baseName}`, "hint"),
+            el("div", `by ${entry.maker} · ${when(entry.createdAt)}${entry.makerStrikes ? ` · ${entry.makerStrikes} of ${data.strikes} pictures turned away before` : ""}`, "hint"));
+          card.append(art, about, reviewButtons(entry));
+          return card;
+        }));
+        const stopped = data.stopped || [];
+        $("no-stopped").hidden = stopped.length > 0;
+        $("stopped-list").replaceChildren(...stopped.map(username => {
+          const row = el("li", `${username} `);
+          row.append(button("Let them upload again", async () => {
+            const result = await api("review", {action: "uploads", username, blocked: false});
+            tell($("review-status"), result);
+            await refresh();
+          }));
+          return row;
+        }));
+      };
+      for (const tab of document.querySelectorAll("[data-rsub]")) {
+        tab.addEventListener("click", () => {
+          for (const other of document.querySelectorAll("[data-rsub]")) {
+            other.setAttribute("aria-selected", String(other === tab));
+          }
+          for (const view of document.querySelectorAll("[data-rsub-view]")) {
+            view.hidden = view.dataset.rsubView !== tab.dataset.rsub;
+          }
+        });
+      }
+      $("stop-go").addEventListener("click", async () => {
+        const username = $("stop-name").value.trim();
+        if (!username) {
+          return;
+        }
+        const result = await api("review", {action: "uploads", username, blocked: true});
+        tell($("review-status"), result);
+        if (result.ok) {
+          $("stop-name").value = "";
+        }
+        await refresh();
+      });
+
+      let permissions = new Set(); // what the signed-in role may do (GET /mod/api/me)
+      let myName = ""; // and their username, from the same
+
+      const renderServerHealth = data => {
+        const sockets = data.sockets || {};
+        const memory = data.memory || {};
+        const update = data.update || {};
+        $("server-online").textContent = Number(data.players || 0).toLocaleString();
+        $("server-rooms").textContent = Number(data.rooms || 0).toLocaleString();
+        $("server-sockets").textContent = Number(sockets.openConnections || 0).toLocaleString();
+        $("server-memory").textContent = `${Number(memory.rssMb || 0).toLocaleString()} MB`;
+        $("server-service").replaceChildren(
+          el("li", `Uptime: ${duration(Number(data.uptimeSeconds || 0))}`),
+          el("li", `Heap: ${Number(memory.heapUsedMb || 0).toLocaleString()} MB used of ${Number(memory.heapTotalMb || 0).toLocaleString()} MB`),
+          el("li", `Connected addresses: ${Number(sockets.connectedAddresses || 0).toLocaleString()}`),
+        );
+        $("server-socket-details").replaceChildren(
+          el("li", `Accepted since start: ${Number(sockets.accepted || 0).toLocaleString()}`),
+          el("li", `Refused at limits: ${Number(sockets.rejected || 0).toLocaleString()}`),
+          el("li", `Flood disconnects: ${Number(sockets.floodDisconnects || 0).toLocaleString()}`),
+          el("li", `Handled message errors: ${Number(sockets.handlerErrors || 0).toLocaleString()}`),
+        );
+        const warning = $("server-update-warning");
+        if (update.needsPublish) {
+          const changed = Array.isArray(update.changed) ? update.changed : [];
+          const pieces = [];
+          if (changed.length) {
+            pieces.push(`${changed.length} local ${changed.length === 1 ? "file has" : "files have"} changed`);
+          }
+          if (Number(update.ahead || 0)) {
+            pieces.push(`${Number(update.ahead)} ${Number(update.ahead) === 1 ? "commit is" : "commits are"} not pushed`);
+          }
+          $("server-update-title").textContent = "Update not published to GitHub";
+          const files = changed.slice(0, 8).map(entry => entry.path).join(", ");
+          $("server-update-detail").textContent = `${pieces.join("; ")}. ${files ? `Changed: ${files}${changed.length > 8 ? ", …" : ""}. ` : ""}Commit and push when ready.`;
+          warning.hidden = false;
+        }
+        else {
+          warning.hidden = true;
+        }
+        $("server-updated").textContent = `Updated ${new Date(Number(data.now || Date.now())).toLocaleTimeString()}.`;
+      };
+
+      // ---- music uploaded by staff (lib/custommusic.js): an MP3 made a den
+      // music track, which players get from the item finder at once
+      const MUSIC = "/mod/api/music";
+      let musicShown = "";
+      const musicCall = async (query, body) => {
+        try {
+          const response = await fetch(`${MUSIC}${query}`, {method: "POST", headers: {"Content-Type": "audio/mpeg"}, body});
+          return await response.json().catch(() => ({error: "That did not work."}));
+        }
+        catch (err) {
+          return {error: "The server did not answer."};
+        }
+      };
+      const renderMusic = data => {
+        const tracks = data.tracks || [];
+        // drawn again only when something changed: a track being listened to keeps playing
+        const shown = JSON.stringify(tracks);
+        if (shown === musicShown) {
+          return;
+        }
+        musicShown = shown;
+        $("no-music").hidden = tracks.length > 0;
+        $("music-list").replaceChildren(...tracks.map(track => {
+          const row = el("tr");
+          const name = el("td");
+          const player = el("audio");
+          player.controls = true;
+          player.preload = "none";
+          player.src = `${MUSIC}?play=${track.id}`;
+          player.style.cssText = "display:block;margin-top:6px;height:32px;max-width:260px";
+          name.append(el("strong", track.name), player);
+          const actions = el("td");
+          actions.append(button("Delete", async () => {
+            if (!confirm(`Delete "${track.name}"? It is taken from every player who has it. This cannot be undone.`)) {
+              return;
+            }
+            const result = await musicCall(`?delete=${track.id}`, new Uint8Array(0));
+            setStatus($("music-status"), result.ok || result.error || "That did not work.", !result.ok);
+            await loadMusic();
+          }, "danger"));
+          row.append(name, el("td", String(track.id), "num"), el("td", `${when(track.createdAt)} · ${track.createdBy}${track.inShop ? ` · on sale, ${track.cost} gems` : ""}`),
+            el("td", `${(track.bytes / 1048576).toFixed(1)} MB`, "num"), actions);
+          return row;
+        }));
+      };
+      const loadMusic = async () => {
+        try {
+          const response = await fetch(MUSIC);
+          const data = await response.json().catch(() => ({}));
+          if (response.ok) {
+            renderMusic(data);
+          }
+        }
+        catch (err) {
+          // shown again with the next refresh
+        }
+      };
+      // the name from the file's, until one is typed
+      $("music-file").addEventListener("change", () => {
+        const file = $("music-file").files[0];
+        if (file && !$("music-name").value.trim()) {
+          $("music-name").value = file.name.replace(/\.mp3$/i, "").replace(/[_]+/g, " ").slice(0, 40);
+        }
+      });
+      $("music-upload").addEventListener("click", async () => {
+        const file = $("music-file").files[0];
+        if (!file || !$("music-name").value.trim()) {
+          setStatus($("music-status"), file ? "Give the track a name." : "Choose an MP3 first.", true);
+          return;
+        }
+        $("music-upload").disabled = true;
+        setStatus($("music-status"), "Uploading...");
+        const query = `?name=${encodeURIComponent($("music-name").value.trim())}&cost=${encodeURIComponent($("music-cost").value || 0)}&inShop=${$("music-shop").checked ? 1 : 0}`;
+        const result = await musicCall(query, new Uint8Array(await file.arrayBuffer()));
+        $("music-upload").disabled = false;
+        setStatus($("music-status"), result.ok || result.error || "That did not work.", !result.ok);
+        if (result.ok) {
+          for (const id of ["music-file", "music-name", "music-cost"]) {
+            $(id).value = "";
+          }
+          $("music-shop").checked = false;
+        }
+        await loadMusic();
+      });
+
+      const refresh = async () => {
+        clearTimeout(timer);
+        if (!signedIn) {
+          return;
+        }
+        const shown = tab;
+        const counts = permissions.has("player.view") ? await api("overview") : {ok: false};
+        if (counts.ok) {
+          $("report-count").textContent = counts.data.reports ? String(counts.data.reports) : "";
+          $("request-count").textContent = counts.data.requests ? String(counts.data.requests) : "";
+          $("masterpiece-count").textContent = counts.data.paintings ? String(counts.data.paintings) : "";
+          $("online-count").textContent = String(counts.data.online);
+          $("home-online").textContent = String(counts.data.online);
+          $("home-reports").textContent = String(counts.data.reports);
+          $("home-requests").textContent = String(counts.data.requests);
+          $("home-paintings").textContent = String(counts.data.paintings);
+          for (const [id, count] of [["home-reports", counts.data.reports], ["home-requests", counts.data.requests], ["home-paintings", counts.data.paintings]]) {
+            $(id).closest(".tile").classList.toggle("attention", count > 0);
+          }
+          // what waits, in the page's title too, for when it is in another tab.
+          const waiting = counts.data.reports + counts.data.requests + counts.data.paintings;
+          document.title = waiting ? `(${waiting}) Moderators` : "Moderators";
+        }
+        if (shown === "home") {
+          if (permissions.has("items.create") && !$("quick-lock-q").value.trim()) {
+            quickLockFind();
+          }
+          const result = await api("notes");
+          const notes = result.ok ? result.data.notes : [];
+          $("home-notes").replaceChildren(...notes.map(note => {
+            const row = el("li");
+            const head = el("div", undefined, "who");
+            const about = el("button", note.about, "about");
+            about.type = "button";
+            about.addEventListener("click", () => openPlayer(note.about));
+            head.append(about, `${when(note.at)} · by ${note.by}`);
+            row.append(head, note.text);
+            return row;
+          }));
+          $("no-home-notes").hidden = notes.length > 0;
+        }
+        else if (shown === "server") {
+          const result = await api("server");
+          if (result.ok) {
+            renderServerHealth(result.data);
+          }
+        }
+        // out of sight, only the counts (for the title); the rest when it is back.
+        if (document.hidden) {
+          timer = setTimeout(refresh, REFRESH_MS);
+          return;
+        }
+        if (shown === "players") {
+          const searchBy = $("player-search-by").value;
+          const byAddress = searchBy !== "name";
+          const query = $("player-search").value.trim();
+          const searchRun = ++playerSearchRun;
+          $("address-hint").hidden = searchBy !== "address";
+          $("player-only").hidden = byAddress;
+          if (byAddress && query === "") {
+            if (searchRun !== playerSearchRun || tab !== "players") {
+              return;
+            }
+            players = [];
+            renderPlayers();
+            $("players-more").hidden = true;
+            await loadDetail();
+          }
+          else {
+            const only = listOnly();
+            const result = await api(`players?q=${encodeURIComponent(query)}${byAddress ? `&by=${searchBy}` : only ? `&only=${only}` : ""}`);
+            if (searchRun !== playerSearchRun || tab !== "players"
+              || searchBy !== $("player-search-by").value
+              || query !== $("player-search").value.trim()
+              || (!byAddress && only !== listOnly())) {
+              return;
+            }
+            players = result.ok ? result.data.players : [];
+            renderPlayers();
+            const total = result.ok && result.data.total ? result.data.total : players.length;
+            $("players-more").hidden = byAddress || total <= players.length;
+            $("players-more").textContent = `Showing ${players.length} of ${total.toLocaleString()}. Type more of the name to narrow it down.`;
+            if (!result.ok && byAddress) {
+              $("no-players").textContent = said(result);
+            }
+            if (result.ok) {
+              await loadDetail();
+            }
+          }
+        }
+        else if (shown === "chat") {
+          // only the first page keeps itself up to date: older pages stay as they were read.
+          if (!chatQuery || chatLines.length <= 100) {
+            await loadChat(false);
+          }
+        }
+        else if (shown === "reports") {
+          const result = await api(`reports?handled=${$("report-filter").value}`);
+          if (result.ok) {
+            renderReports(result.data);
+          }
+        }
+        else if (shown === "requests") {
+          const result = await api(`requests?handled=${$("request-filter").value}`);
+          if (result.ok) {
+            renderRequests(result.data);
+          }
+        }
+        else if (shown === "masterpieces") {
+          const result = await api(`masterpieces?creator=${encodeURIComponent($("masterpiece-creator").value.trim())}&mine=${$("recent-mine").checked ? 1 : 0}`);
+          if (result.ok) {
+            renderMasterpieces(result.data);
+          }
+        }
+        else if (shown === "stats") {
+          await window.statsView.load(api);
+        }
+        else if (shown === "mod-log") {
+          const result = await api("modlog");
+          if (result.ok) {
+            $("mod-log").replaceChildren(...result.data.log.map(entry => {
+              const row = el("tr");
+              const detail = el("td", entry.detail);
+              detail.style.whiteSpace = "normal";
+              row.append(el("td", when(entry.at)), el("td", entry.by), el("td", entry.action), el("td", entry.target || "—"), detail);
+              return row;
+            }));
+            $("no-mod-log").hidden = result.data.log.length > 0;
+          }
+        }
+        else if (shown === "bans") {
+          const [result, hits] = await Promise.all([api("bans"), api("filterhits")]);
+          if (result.ok) {
+            renderBans(result.data);
+          }
+          if (hits.ok) {
+            renderFilterHits(hits.data.players);
+          }
+        }
+        else if (shown === "review") {
+          const result = await api("review");
+          if (result.ok) {
+            renderReview(result.data);
+          }
+        }
+        else if (shown === "wear-rules") {
+          await loadWearRules();
+        }
+        else if (shown === "music") {
+          await loadMusic();
+        }
+        else if (shown === "items") {
+          const result = await api("items");
+          if (result.ok) {
+            items = result.data.items;
+            lockedItems = result.data.locked;
+            renderItems();
+            renderLocked();
+          }
+        }
+        if (signedIn) {
+          clearTimeout(timer);
+          timer = setTimeout(refresh, REFRESH_MS);
+        }
+      };
+
+      // the page's address follows what is shown ("#players/John",
+      // "#chat/John"), for links to paste to other staff, and for Back.
+      let hashArg = "";
+      let applyingHash = false;
+      const setHash = () => {
+        const wanted = `#${tab}${hashArg ? `/${encodeURIComponent(hashArg)}` : ""}`;
+        if (location.hash !== wanted) {
+          history[applyingHash ? "replaceState" : "pushState"](null, "", wanted);
+        }
+      };
+      const applyHash = () => {
+        const [name, arg] = location.hash.slice(1).split("/");
+        const known = [...document.querySelectorAll("nav button")].some(one => one.dataset.tab === name);
+        if (!known) {
+          return false;
+        }
+        const value = arg ? decodeURIComponent(arg) : "";
+        applyingHash = true;
+        if (name === "players" && value) {
+          openPlayer(value);
+        }
+        else if (name === "chat" && value) {
+          openChat(value);
+        }
+        else if (name === "masterpieces" && value) {
+          openPaintings(value);
+        }
+        else {
+          hashArg = "";
+          showTab(name);
+        }
+        applyingHash = false;
+        return true;
+      };
+      window.addEventListener("popstate", () => {
+        if (signedIn) {
+          applyHash();
+        }
+      });
+
+      const showTab = name => {
+        tab = name;
+        setHash();
+        closePreview();
+        const named = document.querySelector(`nav button[data-tab="${name}"]`);
+        // the tab's own words: not its icon, nor its count
+        $("page-name").textContent = named ? [...named.childNodes].filter(node => node.nodeType === 3).map(node => node.textContent).join("").trim() : "";
+        for (const one of document.querySelectorAll("nav button")) {
+          one.setAttribute("aria-selected", String(one.dataset.tab === name));
+        }
+        for (const view of document.querySelectorAll("[data-view]")) {
+          view.hidden = view.dataset.view !== name;
+        }
+        refresh();
+      };
+      for (const one of document.querySelectorAll("nav button")) {
+        one.addEventListener("click", () => {
+          hashArg = "";
+          showTab(one.dataset.tab);
+        });
+      }
+      // the dashboard: each number opens its page; the search opens a player
+      for (const tile of document.querySelectorAll("[data-goto]")) {
+        tile.addEventListener("click", () => showTab(tile.dataset.goto));
+      }
+      const homeFind = () => {
+        const name = $("home-search").value.trim();
+        if (name) {
+          openPlayer(name);
+        }
+      };
+      $("home-search-go").addEventListener("click", homeFind);
+      $("home-search").addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          homeFind();
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          refresh();
+        }
+      });
+
+      // the permission (lib/roles.js) each button needs: one the signed-in
+      // role does not hold is not shown. the server checks again either way.
+      const ACTION_PERMISSIONS = {
+        ban: "player.ban", banReason: "player.ban", unban: "player.ban",
+        silence: "chat.silence", unsilence: "chat.silence",
+        kick: "player.kick", message: "player.warn", warn: "player.warn", unwarn: "player.warn",
+        rejectName: "player.names", acceptName: "player.names", clearBio: "player.names",
+        clearWallPosts: "player.names", banAddress: "address.ban", banDevices: "address.ban", unbanDevices: "address.ban",
+        summon: "player.summon", goto: "player.goto",
+      };
+      const applyPermissions = async () => {
+        const result = await api("me");
+        if (!result.ok) {
+          return;
+        }
+        const allowed = new Set(result.data.permissions || []);
+        permissions = allowed;
+        myName = result.data.username || "";
+        for (const pressed of document.querySelectorAll("button[data-action]")) {
+          const needed = ACTION_PERMISSIONS[pressed.dataset.action];
+          pressed.hidden = Boolean(needed) && !allowed.has(needed);
+        }
+        // a player's action boxes with none of their buttons left, and the
+        // pages of a player's own that the role may not see
+        for (const box of document.querySelectorAll("#detail .action")) {
+          box.hidden = ![...box.querySelectorAll("button[data-action]")].some(pressed => !pressed.hidden);
+        }
+        for (const sub of document.querySelectorAll(".subtabs button[data-needs]")) {
+          sub.hidden = !allowed.has(sub.dataset.needs);
+        }
+        // a role that does not judge paintings has approved none of them
+        $("recent-mine").closest("label").hidden = !allowed.has("masterpieces.approve");
+        // the pages the role may see; the first of them when the one open is not.
+        const pages = [...document.querySelectorAll("nav button")];
+        for (const page of pages) {
+          page.hidden = !allowed.has(page.dataset.needs);
+        }
+        // searching by address: for the roles that ban addresses
+        const byAddress = document.querySelector('#player-search-by option[value="address"]');
+        byAddress.hidden = byAddress.disabled = !allowed.has(byAddress.dataset.needs);
+        if (byAddress.disabled && $("player-search-by").value === "address") {
+          $("player-search-by").value = "name";
+        }
+        $("quick-lock").hidden = !allowed.has("items.create");
+        const open = pages.find(page => page.dataset.tab === tab && !page.hidden) || pages.find(page => !page.hidden);
+        if (open) {
+          tab = open.dataset.tab;
+        }
+        if (result.data.role) {
+          $("who").textContent = `${result.data.username} (${result.data.role})`;
+        }
+      };
+
+      const showPanel = username => {
+        signedIn = true;
+        $("who").textContent = username;
+        $("gate").hidden = true;
+        $("panel").hidden = false;
+        applyPermissions().then(() => {
+          if (!applyHash()) {
+            showTab(tab);
+          }
+        });
+      };
+
+      $("gate-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        $("gate-button").disabled = true;
+        const answer = await check.answer();
+        if (answer === "") {
+          $("gate-button").disabled = false;
+          setStatus($("gate-status"), window.captcha.FAILED, true);
+          return;
+        }
+        const result = await api("login", {username: $("username").value, password: $("password").value, code: $("code").value.trim(), captcha: answer});
+        check.reset();
+        $("gate-button").disabled = false;
+        if (result.ok) {
+          showPanel(result.data.username);
+        }
+        else {
+          setStatus($("gate-status"), said(result), true);
+          $("code").value = "";
+        }
+      });
+
+      $("discord-sign-in").addEventListener("click", () => {
+        location.href = "/dashboard/staff/discord/login";
+      });
+
+      // after Discord: the 2FA code, which opens the panel (POST discord/code)
+      const showDiscordCode = message => {
+        showGate(message);
+        $("gate-form").hidden = true;
+        $("discord-code-form").hidden = false;
+        $("discord-sign-in").textContent = "Start again with Discord";
+        $("discord-code").focus();
+      };
+
+      $("discord-code-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        $("discord-code-button").disabled = true;
+        const result = await api("discord/code", {code: $("discord-code").value.trim()});
+        $("discord-code-button").disabled = false;
+        $("discord-code").value = "";
+        if (result.ok) {
+          history.replaceState(null, "", location.pathname + location.hash);
+          $("discord-code-form").hidden = true;
+          $("gate-form").hidden = false;
+          showPanel(result.data.username);
+        }
+        else if (result.data.expired) {
+          history.replaceState(null, "", location.pathname + location.hash);
+          $("discord-code-form").hidden = true;
+          $("gate-form").hidden = false;
+          showGate(said(result));
+        }
+        else {
+          setStatus($("gate-status"), said(result), true);
+        }
+      });
+
+      $("sign-out").addEventListener("click", async () => {
+        await api("logout", {});
+        showGate("");
+      });
+
+      const start = async () => {
+        const result = await api("state");
+        discordLogin = Boolean(result.ok && result.data.discordLogin);
+        if (result.ok && result.data.signedIn) {
+          showPanel(result.data.username);
+        }
+        else {
+          const discordResult = new URLSearchParams(location.search).get("discord");
+          const discordMessage = {
+            denied: "That Discord account is not linked to an active staff account.",
+            expired: "The Discord sign-in request expired. Try again.",
+            cancelled: "Discord sign-in was cancelled.",
+            discord: "Discord could not confirm that sign-in. Try again.",
+            off: "Discord sign-in is not configured.",
+          }[discordResult] || "";
+          if (discordResult === "code" && result.status !== 0) {
+            showDiscordCode("");
+          }
+          else {
+            showGate(result.status === 0 ? result.data.error : discordMessage);
+          }
+        }
+      };
+
+      start();
+    </script>
+  </body>
+</html>

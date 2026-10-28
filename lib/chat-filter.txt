@@ -1,0 +1,74 @@
+# The server's chat filter (lib/chatfilter.js): typed chat, Jam-a-Gram
+# messages, Jammer Wall posts and bios. A message that breaks a rule here
+# reaches nobody, and its sender is told it was not sent (a bio is not
+# saved, and one saved before is not shown). Players cannot turn this
+# off (unlike the client's own filter). It is read again when this file
+# changes: no restart needed.
+#
+# One rule to a line; lines starting with # are comments. Capitals do not
+# matter. Messages are read the way people dodge filters: digits and signs
+# standing in for letters (4ss, a$$, n00b), letters drawn out (fuuuck), and
+# words spelled out a letter at a time (f u c k, f.u.c.k).
+#
+#   word            that word on its own ("ass", not "class" or "assume")
+#   word*           any word starting with it ("fuck*": fucking, fucker)
+#   *word*          any word with it anywhere inside (for words that never
+#                   turn up inside innocent ones)
+#   two words       those words one after the other
+#   a|b|c           any one of them
+#   a + b           a, then b as the very next word
+#   a .. b          a, then b at most 4 words later ("send .. nudes" catches
+#                   "send me some nudes", but not "nudes, send")
+#   a & b           both somewhere in the same message, in any order
+#   ?               any one word (a name: "fuck + ? + ass" catches
+#                   "fuck johns ass")
+#   !word           in a | list: but not this word ("?|!it" is any word
+#                   but "it"). A slot of only these takes up no word:
+#                   "a + !up" is a, not followed by "up" (or ending there)
+#
+# These combine: "fuck|screw + you|u + in|up + the|your + ass" is one rule.
+# Apostrophes are dropped before matching, so write "ill" for "i'll".
+# Prefer + over .. and & : the looser the rule, the more ordinary messages it
+# catches by accident ("fuck .. you" would also catch "i dont give a fuck
+# about you").
+
+# --- Slurs -------------------------------------------------------------------
+*nigger*
+*faggot*
+
+# --- Sexual talk aimed at someone ---------------------------------------------
+# Aimed at anyone: these use ? for the person, so names are caught too.
+# "Not a person" words (it, this, up, off...) are left out with !, so
+# "gonna fuck this up" and "fuck it" go through.
+
+# "fuck you in the ass", "ill fuck john in the ass", "bang her up the butt".
+fuck*|screw|bang|rape*|hump*|pound|breed .. in|up|on + the|your|ur|his|her|their|my|ma|yo|that + ass|butt|booty|pussy|dick|cock|hole|asshole|mouth|throat|vagina
+# "fuck johns ass", "fuck your pussy", "eat her pussy".
+fuck*|screw|bang|rape*|hump*|pound|breed|eat + ?|!the|!a|!this|!that + ass|butt|booty|pussy|dick|cock|tits|titties|boobs|hole|asshole|vagina|penis|clit
+# "fuck pussy", "suck dick", "eat pussy".
+fuck*|eat|suck*|lick* + pussy|dick|cock|tits|titties|boobs|clit|penis|vagina|nipples|dih
+# "fuck you hard", "ill bang john raw". Plain "fuck you" is an insult and stays.
+fuck*|screw|bang|rape*|hump*|pound|breed + ?|!this|!that|!it|!the|!a|!up|!off + hard|harder|raw|deep|senseless
+# Saying what you'll do to someone: "ill fuck you", "im gonna fuck john",
+# "i wanna bang her". Not "ill fuck him up" (a threat, not sex) or "gonna
+# fuck this level up".
+ill|imma|ima|gonna|gunna|wanna|lemme|let me|tryna|finna|want to|going to|i will|i want to|i would|id|lets + fuck|screw|bang|rape|hump|breed + ?|!up|!off|!around|!it|!this|!that|!with|!over|!everything|!everyone|!something|!shit|!myself|!yourself|!themselves|!the|!a|!all|!things|!stuff + !up|!off|!over|!shit
+# Asking to: "wanna fuck?", "lets bang". Not "wanna fuck around".
+wanna|want to|lets|can we|do you want to + fuck|bang|screw + !up|!off|!around|!with|!this|!that|!it|!over|!shit|!things|!everything
+# Asking for or offering sex acts: "suck my dick", "lick johns pussy",
+# "grab her ass".
+suck*|lick*|blow|ride|touch|rub|finger*|jerk|stroke|grab|squeeze + ?|!the|!a|!some|!these|!those|!all + dick|cock|pussy|tits|titties|boobs|balls|ass|butt|booty|nipples|clit|penis|vagina|dih
+# Asking for pictures: "send me some nudes", "show me ur tits".
+send|show|see|sending|post .. nudes|noods|nude|naked|tits|titties|boobs|pussy|dick|cock|nipples|penis|vagina
+# Asking for sex: "wanna have sex", "lets cyber", "sex with john".
+wanna|want to|lets|can we|have|having|do you want to + sex|cyber|cybersex|seks|secks
+sex|cyber|cybersex + with + ?
+sext|sexting|cybersex
+# "cum on you", "cum inside her", "nut in ur mouth".
+cum|cumming|jizz + on|in|inside|all over + ?
+nut|nutting + on|in|inside|all over + you|u|ur|your|my|me|her|his|him|them
+# Sex acts and porn words that have no everyday use in this game.
+blowjob*|handjob*|rimjob*|deepthroat*|cumshot*|creampie*|gangbang*|threesome*|orgasm*|masturbat*|jerk off|jack off|jerking off|jacking off
+porn*|hentai|rule34|r34|onlyfans|nudes|noods|dildo*|vibrator*|horny|hornie|erection|boner
+# Roleplay asks: "wanna erp", "dm me for erp".
+erp & wanna|want|lets|dm|pm|anyone
